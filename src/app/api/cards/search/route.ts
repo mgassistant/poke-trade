@@ -1,48 +1,48 @@
+// @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
-// GET /api/cards/search — Search Pokemon TCG API for cards
-// This proxies through our backend so we can add caching, rate limiting, etc.
+// GET /api/cards/search?q=pikachu&limit=20
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get("q") || "";
-  const page = searchParams.get("page") || "1";
-  const pageSize = searchParams.get("pageSize") || "20";
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!query.trim()) {
-    return NextResponse.json({ data: [], totalCount: 0 });
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    const apiUrl = `https://api.pokemontcg.io/v2/cards?q=name:"${encodeURIComponent(query)}"&page=${page}&pageSize=${pageSize}&orderBy=-set.releaseDate`;
+  const { searchParams } = request.nextUrl;
+  const q = searchParams.get("q") || "";
+  const set = searchParams.get("set") || "";
+  const rarity = searchParams.get("rarity") || "";
+  const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
 
-    const res = await fetch(apiUrl, {
-      headers: {
-        ...(process.env.POKEMON_TCG_API_KEY
-          ? { "X-Api-Key": process.env.POKEMON_TCG_API_KEY }
-          : {}),
-      },
-      next: { revalidate: 1800 }, // Cache 30 min
-    });
-
-    if (!res.ok) {
-      return NextResponse.json({ error: "API error", status: res.status }, { status: 502 });
-    }
-
-    const data = await res.json();
-
-    // Filter to only cards with images
-    const filtered = (data.data || []).filter(
-      (card: { images?: { small?: string; large?: string } }) =>
-        card.images?.small || card.images?.large
-    );
-
-    return NextResponse.json({
-      data: filtered,
-      totalCount: data.totalCount || 0,
-      page: data.page || 1,
-      pageSize: data.pageSize || 20,
-    });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch cards" }, { status: 500 });
+  if (!q && !set) {
+    return NextResponse.json({ cards: [] });
   }
+
+  let query = supabase
+    .from("cards")
+    .select("id, name, number, rarity, card_type, image_url, market_value, set_id, card_sets(id, name, series, symbol_url)")
+    .limit(limit);
+
+  if (q) {
+    query = query.ilike("name", `%${q}%`);
+  }
+  if (set) {
+    query = query.eq("set_id", set);
+  }
+  if (rarity && rarity !== "All") {
+    query = query.eq("rarity", rarity);
+  }
+
+  query = query.order("name", { ascending: true });
+
+  const { data: cards, error } = await query;
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ cards: cards || [] });
 }

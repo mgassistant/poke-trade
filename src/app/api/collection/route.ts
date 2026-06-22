@@ -144,5 +144,37 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ item });
   }
 
+  if (action === "remove_item") {
+    const { item_id } = body;
+
+    // Verify item belongs to user via collection
+    const { data: item } = await supabase
+      .from("collection_items")
+      .select("id, collection_id, card_id, collections(user_id)")
+      .eq("id", item_id)
+      .single();
+
+    if (!item || (item.collections as AnyRow)?.user_id !== user.id) {
+      return NextResponse.json({ error: "Item not found" }, { status: 404 });
+    }
+
+    const { error } = await supabase
+      .from("collection_items")
+      .delete()
+      .eq("id", item_id);
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Log activity
+    await supabase.from("activity_feed").insert({
+      user_id: user.id,
+      activity_type: "collection_remove",
+      data: { card_id: item.card_id },
+      related_id: item_id,
+    });
+
+    return NextResponse.json({ success: true });
+  }
+
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }
