@@ -137,7 +137,7 @@ export function MarketplaceClient({ initialCards }: MarketplaceClientProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: Math.min(i * 0.03, 0.5) }}
               >
-                <Link href={`/marketplace/${card.id}`}>
+                <Link href={`/card/${card.id}`}>
                   <Card className="group cursor-pointer hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,212,255,0.1)] overflow-hidden">
                     <CardContent className="p-3">
                       <div className="relative aspect-[2.5/3.5] bg-muted/30 rounded-lg overflow-hidden mb-3">
