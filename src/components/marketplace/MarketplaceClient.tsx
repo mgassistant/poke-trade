@@ -39,9 +39,10 @@ export function MarketplaceClient({ initialCards }: MarketplaceClientProps) {
     setLoading(false);
   };
 
+  const withImages = cards.filter((c) => c.images?.large || c.images?.small);
   const filteredCards = activeFilter === "All"
-    ? cards
-    : cards.filter((c) => c.rarity === activeFilter);
+    ? withImages
+    : withImages.filter((c) => c.rarity === activeFilter);
 
   return (
     <div className="min-h-screen py-8">

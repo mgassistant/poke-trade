@@ -144,12 +144,26 @@ export async function getPopularCards(): Promise<TCGCard[]> {
 }
 
 export async function getFeaturedCards(): Promise<TCGCard[]> {
-  const { data } = await fetchAPI<TCGCard>("cards", {
-    q: 'supertype:pokemon rarity:"Illustration Rare" OR rarity:"Special Illustration Rare" OR rarity:"Rare Holo VMAX" OR rarity:"Rare Ultra"',
-    pageSize: "8",
-    orderBy: "-set.releaseDate",
-  });
-  return data;
+  // Pull popular, valuable cards that are guaranteed to have images
+  const queries = [
+    'name:charizard supertype:pokemon (rarity:"Rare Holo" OR rarity:"Rare Ultra" OR rarity:"Rare Holo VMAX")',
+    'name:pikachu supertype:pokemon (rarity:"Rare" OR rarity:"Rare Holo" OR rarity:"Rare Ultra")',
+    'name:umbreon supertype:pokemon (rarity:"Rare Holo" OR rarity:"Rare Ultra")',
+    'name:mewtwo supertype:pokemon (rarity:"Rare Holo" OR rarity:"Rare Ultra")',
+  ];
+
+  const results = await Promise.allSettled(
+    queries.map((q) =>
+      fetchAPI<TCGCard>("cards", { q, pageSize: "3", orderBy: "-set.releaseDate" })
+    )
+  );
+
+  const cards = results
+    .filter((r): r is PromiseFulfilledResult<APIResponse<TCGCard>> => r.status === "fulfilled")
+    .flatMap((r) => r.value.data)
+    .filter((card) => card.images?.large || card.images?.small);
+
+  return cards.slice(0, 8);
 }
 
 export function getMarketPrice(card: TCGCard): number | null {

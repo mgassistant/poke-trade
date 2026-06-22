@@ -11,7 +11,7 @@ export default async function PriceGuidePage() {
   let sets: Awaited<ReturnType<typeof getSets>>["data"] = [];
   try {
     const [cardsRes, setsRes] = await Promise.all([
-      searchCards('supertype:pokemon rarity:"Rare Holo" OR rarity:"Rare Ultra" OR rarity:"Illustration Rare"', 1, 20),
+      searchCards('supertype:pokemon (rarity:"Rare Holo" OR rarity:"Rare Ultra" OR rarity:"Rare Holo VMAX")', 1, 20),
       getSets(1, 20),
     ]);
     topCards = cardsRes.data;
