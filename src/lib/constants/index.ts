@@ -197,9 +197,9 @@ export const PLATFORM_FEES = {
 } as const;
 
 export const NAV_LINKS = [
-  { href: "/trade-center", label: "Trade Center" },
   { href: "/marketplace", label: "Marketplace" },
-  { href: "/compare", label: "Compare Prices" },
-  { href: "/price-guide", label: "Price Guide" },
+  { href: "/trade-center", label: "Trade Center" },
+  { href: "/compare", label: "Compare" },
+  { href: "/drops", label: "Drop Alerts" },
   { href: "/protect", label: "Protect" },
 ] as const;
