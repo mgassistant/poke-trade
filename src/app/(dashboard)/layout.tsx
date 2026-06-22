@@ -28,6 +28,9 @@ const sidebarLinks = [
     { href: "/dashboard/portfolio", label: "Portfolio", icon: BarChart3 },
     { href: "/dashboard/want-list", label: "Want List", icon: Heart },
   ]},
+  { section: "Drops", items: [
+    { href: "/dashboard/drops", label: "Drop Alerts", icon: Bell },
+  ]},
   { section: "Activity", items: [
     { href: "/dashboard/purchases", label: "Purchases", icon: CreditCard },
     { href: "/dashboard/sales", label: "Sales", icon: History },

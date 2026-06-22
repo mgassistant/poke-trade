@@ -433,11 +433,17 @@ export default function TradesPage() {
                         </div>
                       )}
 
-                      {/* Complete action for accepted trades */}
-                      {trade.status === "accepted" && (
+                      {/* Shipping workflow for accepted/in-transit trades */}
+                      {(trade.status === "accepted" || trade.status === "in_transit" || trade.status === "awaiting_shipment") && (
                         <div className="flex flex-wrap gap-2 px-4 pb-4 border-t border-border pt-3">
+                          <Link href={`/dashboard/trades/${trade.id}/shipping`}>
+                            <Button size="sm" className="gap-1 bg-[#E3350D] hover:bg-[#c72e0b]">
+                              📦 Shipping Workflow
+                            </Button>
+                          </Link>
                           <Button
                             size="sm"
+                            variant="outline"
                             onClick={() => handleAction(trade.id, "complete")}
                             disabled={acting === trade.id}
                             className="gap-1"
