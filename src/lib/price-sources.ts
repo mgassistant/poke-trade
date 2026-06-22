@@ -301,10 +301,10 @@ export const AVAILABLE_APIS = [
   {
     name: "PokemonPriceTracker",
     url: "https://pokemonpricetracker.com",
-    status: "ready" as const,
-    free: true,
-    provides: ["TCGPlayer prices", "eBay sold data", "PSA/BGS/CGC graded prices", "Population reports"],
-    rateLimit: "100 credits/day free",
+    status: "active" as const,
+    free: false,
+    provides: ["TCGPlayer prices", "eBay sold data", "PSA/BGS/CGC graded prices", "6mo price history", "Japanese card data", "Sealed product prices"],
+    rateLimit: "Pro: 20,000 credits/day",
   },
   {
     name: "JustTCG",

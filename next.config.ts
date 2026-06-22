@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "tcgplayer-cdn.tcgplayer.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "ruuhbwjmhqecomwrgaeq.supabase.co",
         pathname: "/storage/**",
       },

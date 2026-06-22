@@ -59,11 +59,35 @@ export function CompareClient() {
     setSelectedCard(null);
 
     try {
-      const res = await fetch(
-        `https://api.pokemontcg.io/v2/cards?q=name:"${search}"&pageSize=12&orderBy=-set.releaseDate&select=id,name,set,images,rarity,tcgplayer,cardmarket`
-      );
-      const data = await res.json();
-      setResults((data.data || []).filter((c: CardPriceResult) => c.images?.small));
+      // Try our Pro API first (PokemonPriceTracker with TCGPlayer CDN images)
+      const proRes = await fetch(`/api/prices?search=${encodeURIComponent(search)}&limit=12&includeEbay=true`);
+      const proData = await proRes.json();
+
+      if (proData.data?.length > 0) {
+        // Map Pro API response to our card format
+        const mapped = proData.data.map((card: any) => ({
+          id: card.tcgPlayerId || card.id,
+          name: card.name,
+          set: { name: card.setName, images: { symbol: "" } },
+          images: { small: card.images?.small || "", large: card.images?.large || card.images?.medium || "" },
+          rarity: card.rarity,
+          tcgplayer: card.tcgplayer ? {
+            url: card.tcgplayer.url,
+            updatedAt: card.tcgplayer.lastUpdated,
+            prices: card.tcgplayer.variants || { market: { market: card.tcgplayer.market, low: card.tcgplayer.low, mid: null, high: null } },
+          } : undefined,
+          cardmarket: undefined,
+          ebayData: card.ebay,
+        }));
+        setResults(mapped.filter((c: CardPriceResult) => c.images?.small));
+      } else {
+        // Fallback to Pokemon TCG API
+        const res = await fetch(
+          `https://api.pokemontcg.io/v2/cards?q=name:"${search}"&pageSize=12&orderBy=-set.releaseDate&select=id,name,set,images,rarity,tcgplayer,cardmarket`
+        );
+        const data = await res.json();
+        setResults((data.data || []).filter((c: CardPriceResult) => c.images?.small));
+      }
     } catch {
       setResults([]);
     }
