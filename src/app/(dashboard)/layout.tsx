@@ -13,6 +13,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useUser } from "@/lib/hooks/useUser";
 
 const sidebarLinks = [
   { section: "Overview", items: [
@@ -48,6 +49,7 @@ const sidebarLinks = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { profile } = useUser();
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -98,6 +100,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             ))}
           </nav>
+
+          {/* Admin Link */}
+          {profile?.is_admin && (
+            <div className="px-3 pb-2">
+              <Link
+                href="/admin"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+              >
+                <Shield className="h-4 w-4 shrink-0" />
+                Admin Panel
+              </Link>
+            </div>
+          )}
 
           {/* Bottom */}
           <div className="p-3 border-t border-gray-200">
