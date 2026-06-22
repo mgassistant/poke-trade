@@ -14,15 +14,15 @@ export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-20 items-center justify-between">
+        <div className="flex h-24 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <Image
               src="/logo.png"
               alt="Poké-Trade"
-              width={240}
-              height={72}
-              className="h-14 sm:h-16 w-auto"
+              width={300}
+              height={90}
+              className="h-16 sm:h-20 w-auto"
               priority
             />
           </Link>

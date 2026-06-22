@@ -51,10 +51,12 @@ export const SUBSCRIPTION_TIERS = [
     name: "Free",
     price: 0,
     features: [
-      "Up to 25 active listings",
+      "10 free P2P trades per month",
+      "$1.25/side per trade after ($2.50 total)",
+      "Up to 25 active marketplace listings",
+      "5% marketplace sale fee",
       "Basic collection tracking",
       "Basic trade matching",
-      "5% marketplace fee",
       "Community access",
     ],
   },
@@ -63,11 +65,12 @@ export const SUBSCRIPTION_TIERS = [
     name: "Poké-Trade Pro",
     price: 9.99,
     features: [
-      "Unlimited listings",
+      "Unlimited P2P trades (no per-trade fee)",
+      "Unlimited marketplace listings",
+      "3% marketplace sale fee",
       "Advanced trade matching",
-      "Collection analytics",
+      "Collection analytics & value charts",
       "Market price alerts",
-      "3% marketplace fee",
       "Pro badge on profile",
       "Priority support",
     ],
@@ -79,12 +82,70 @@ export const SUBSCRIPTION_TIERS = [
     features: [
       "Everything in Pro",
       "Portfolio analytics & investment tracking",
+      "Card authentication service discount (20% off)",
       "Featured profile placement",
-      "Premium market insights",
+      "Premium market insights & reports",
       "Early access to new features",
-      "3% marketplace fee",
       "Elite badge on profile",
       "Dedicated support",
+    ],
+  },
+] as const;
+
+export const TRADE_FEES = {
+  free: {
+    monthlyFree: 10,
+    perTradeFee: 2.50,   // total ($1.25 per side)
+    perSideFee: 1.25,
+  },
+  pro: {
+    monthlyFree: Infinity,
+    perTradeFee: 0,
+    perSideFee: 0,
+  },
+  elite: {
+    monthlyFree: Infinity,
+    perTradeFee: 0,
+    perSideFee: 0,
+  },
+} as const;
+
+export const AUTH_SERVICE_TIERS = [
+  {
+    name: "Basic Verification",
+    price: 14.99,
+    turnaround: "3-5 business days",
+    features: [
+      "Visual authenticity check",
+      "Surface inspection",
+      "Poké-Trade Verified badge",
+      "Digital certificate",
+    ],
+  },
+  {
+    name: "Premium Authentication",
+    price: 29.99,
+    turnaround: "5-7 business days",
+    features: [
+      "Everything in Basic",
+      "Light test & texture analysis",
+      "Centering measurement",
+      "Condition assessment",
+      "Market value estimate",
+      "Tamper-proof hologram seal",
+    ],
+  },
+  {
+    name: "Elite Authentication",
+    price: 49.99,
+    turnaround: "7-10 business days",
+    features: [
+      "Everything in Premium",
+      "Full PSA/BGS-style grading comparison",
+      "Professional photography",
+      "Population report context",
+      "Insurance-grade documentation",
+      "Priority listing on marketplace",
     ],
   },
 ] as const;
@@ -140,5 +201,5 @@ export const NAV_LINKS = [
   { href: "/marketplace", label: "Marketplace" },
   { href: "/collection", label: "Collection" },
   { href: "/price-guide", label: "Price Guide" },
-  { href: "/community", label: "Community" },
+  { href: "/protect", label: "Protect" },
 ] as const;

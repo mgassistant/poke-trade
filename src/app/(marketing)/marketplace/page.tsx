@@ -9,7 +9,7 @@ export const metadata = {
 export default async function MarketplacePage() {
   let initialCards: Awaited<ReturnType<typeof searchCards>>["data"] = [];
   try {
-    const result = await searchCards('supertype:pokemon (rarity:"Rare Holo" OR rarity:"Rare Ultra" OR rarity:"Rare Holo V" OR rarity:"Rare Holo VMAX")', 1, 20);
+    const result = await searchCards('supertype:pokemon (set.id:swsh4 OR set.id:swsh7 OR set.id:swsh9 OR set.id:swsh11 OR set.id:swsh12pt5) (rarity:"Rare Holo" OR rarity:"Rare Ultra" OR rarity:"Rare Holo V" OR rarity:"Rare Holo VMAX")', 1, 20);
     initialCards = result.data;
   } catch {
     initialCards = [];

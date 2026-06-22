@@ -143,27 +143,29 @@ export async function getPopularCards(): Promise<TCGCard[]> {
   return results.flatMap((r) => r.data).slice(0, 12);
 }
 
+// Known card IDs that have confirmed working images
+const FEATURED_CARD_IDS = [
+  "swsh4-25",    // Charizard VMAX (Vivid Voltage)
+  "swsh7-203",   // Umbreon VMAX Alt Art (Evolving Skies)
+  "swsh45sv-SV107", // Charizard VMAX Shiny
+  "sm35-1",      // Charizard GX
+  "swsh35-44",   // Pikachu VMAX
+  "swsh12pt5-160", // Lugia V Alt Art
+  "swsh9-166",   // Arceus VSTAR
+  "swsh11-174",  // Giratina VSTAR
+];
+
 export async function getFeaturedCards(): Promise<TCGCard[]> {
-  // Pull popular, valuable cards that are guaranteed to have images
-  const queries = [
-    'name:charizard supertype:pokemon (rarity:"Rare Holo" OR rarity:"Rare Ultra" OR rarity:"Rare Holo VMAX")',
-    'name:pikachu supertype:pokemon (rarity:"Rare" OR rarity:"Rare Holo" OR rarity:"Rare Ultra")',
-    'name:umbreon supertype:pokemon (rarity:"Rare Holo" OR rarity:"Rare Ultra")',
-    'name:mewtwo supertype:pokemon (rarity:"Rare Holo" OR rarity:"Rare Ultra")',
-  ];
-
-  const results = await Promise.allSettled(
-    queries.map((q) =>
-      fetchAPI<TCGCard>("cards", { q, pageSize: "3", orderBy: "-set.releaseDate" })
-    )
-  );
-
-  const cards = results
-    .filter((r): r is PromiseFulfilledResult<APIResponse<TCGCard>> => r.status === "fulfilled")
-    .flatMap((r) => r.value.data)
-    .filter((card) => card.images?.large || card.images?.small);
-
-  return cards.slice(0, 8);
+  try {
+    const idQuery = FEATURED_CARD_IDS.map((id) => `id:${id}`).join(" OR ");
+    const { data } = await fetchAPI<TCGCard>("cards", {
+      q: idQuery,
+      pageSize: "8",
+    });
+    return data.filter((card) => card.images?.large || card.images?.small);
+  } catch {
+    return [];
+  }
 }
 
 export function getMarketPrice(card: TCGCard): number | null {
