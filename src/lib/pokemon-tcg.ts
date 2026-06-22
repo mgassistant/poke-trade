@@ -72,10 +72,15 @@ async function fetchAPI<T>(
   const searchParams = new URLSearchParams(params);
   const url = `${BASE_URL}/${endpoint}?${searchParams}`;
 
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (process.env.POKEMON_TCG_API_KEY) {
+    headers["X-Api-Key"] = process.env.POKEMON_TCG_API_KEY;
+  }
+
   const res = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     next: { revalidate: 3600 }, // Cache for 1 hour
   });
 
