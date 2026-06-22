@@ -44,9 +44,9 @@ export function Footer() {
               <Image
                 src="/logo.png"
                 alt="Poké-Trade"
-                width={140}
-                height={42}
-                className="h-9 w-auto"
+                width={280}
+                height={84}
+                className="h-14 w-auto"
               />
             </Link>
             <p className="mt-3 text-sm text-gray-500 max-w-xs">

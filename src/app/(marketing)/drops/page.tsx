@@ -1,370 +1,712 @@
 "use client";
 
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { motion } from "framer-motion";
-import { Bell, ArrowRight, Check, Zap, Clock, ShoppingCart, Smartphone, Globe, Crown, Target } from "lucide-react";
+import {
+  Bell, Zap, ExternalLink, Search, Filter,
+  ChevronDown, Eye, Clock, ArrowUpDown,
+  TrendingDown, TrendingUp, Package, ShoppingCart,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const RETAILERS = [
-  { name: "Pokémon Center", icon: "🎯", status: "Live", products: 45, color: "text-primary" },
-  { name: "Target", icon: "🎯", status: "Live", products: 32, color: "text-destructive" },
-  { name: "Walmart", icon: "🏪", status: "Live", products: 28, color: "text-primary" },
-  { name: "Amazon", icon: "📦", status: "Live", products: 65, color: "text-warning" },
-  { name: "GameStop", icon: "🎮", status: "Live", products: 22, color: "text-destructive" },
-  { name: "Best Buy", icon: "💻", status: "Live", products: 18, color: "text-primary" },
-  { name: "TCGPlayer", icon: "🃏", status: "Live", products: "500+", color: "text-secondary" },
-  { name: "Costco", icon: "🏬", status: "Live", products: 12, color: "text-destructive" },
-  { name: "Macy's", icon: "🛍️", status: "Live", products: 8, color: "text-secondary" },
-  { name: "eBay Deals", icon: "🔨", status: "Coming Soon", products: "—", color: "text-muted-foreground" },
+/* ────────── types ────────── */
+
+interface DropProduct {
+  id: string;
+  retailer: string;
+  product_name: string;
+  product_url: string | null;
+  image_url: string | null;
+  retail_price: number | null;
+  current_price: number | null;
+  in_stock: boolean;
+  last_in_stock_at: string | null;
+  last_checked_at: string | null;
+  category: string | null;
+  set_name: string | null;
+  release_date: string | null;
+  created_at: string;
+}
+
+interface DropAlert {
+  id: string;
+  product_id: string;
+  alert_type: string;
+  title: string;
+  message: string | null;
+  previous_price: number | null;
+  new_price: number | null;
+  created_at: string;
+  drop_products: {
+    product_name: string;
+    retailer: string;
+    product_url: string | null;
+    image_url: string | null;
+    current_price: number | null;
+    in_stock: boolean;
+  } | null;
+}
+
+/* ────────── constants ────────── */
+
+const RETAILERS: {
+  key: string;
+  name: string;
+  icon: string;
+  color: string;
+  bgColor: string;
+}[] = [
+  { key: "pokemon_center", name: "Pokémon Center", icon: "🎯", color: "text-red-600", bgColor: "bg-red-50 border-red-200" },
+  { key: "target", name: "Target", icon: "🎯", color: "text-red-700", bgColor: "bg-red-50 border-red-200" },
+  { key: "walmart", name: "Walmart", icon: "🏪", color: "text-blue-600", bgColor: "bg-blue-50 border-blue-200" },
+  { key: "amazon", name: "Amazon", icon: "📦", color: "text-orange-500", bgColor: "bg-orange-50 border-orange-200" },
+  { key: "gamestop", name: "GameStop", icon: "🎮", color: "text-red-600", bgColor: "bg-red-50 border-red-200" },
+  { key: "bestbuy", name: "Best Buy", icon: "💻", color: "text-blue-700", bgColor: "bg-blue-50 border-blue-200" },
+  { key: "tcgplayer", name: "TCGPlayer", icon: "🃏", color: "text-indigo-600", bgColor: "bg-indigo-50 border-indigo-200" },
+  { key: "costco", name: "Costco", icon: "🏬", color: "text-red-700", bgColor: "bg-red-50 border-red-200" },
 ];
 
-const RECENT_DROPS = [
-  { product: "Prismatic Evolutions Elite Trainer Box", retailer: "Pokémon Center", time: "2 min ago", status: "In Stock", price: "$54.99", url: "https://www.pokemoncenter.com" },
-  { product: "Mega Evolution S4 Chaos Rising Booster Bundle", retailer: "Target", time: "8 min ago", status: "In Stock", price: "$21.99", url: "https://www.target.com/s?searchTerm=pokemon+chaos+rising" },
-  { product: "Chaos Rising Elite Trainer Box", retailer: "Amazon", time: "15 min ago", status: "Sold Out", price: "$49.99", url: "https://www.amazon.com/s?k=pokemon+chaos+rising+etb" },
-  { product: "Mega Evolution S4 Booster Bundle", retailer: "Walmart", time: "22 min ago", status: "Low Stock", price: "$21.99", url: "https://www.walmart.com/search?q=pokemon+chaos+rising" },
-  { product: "Mega Evolution Booster Bundle", retailer: "Costco", time: "35 min ago", status: "In Stock", price: "$21.99", url: "https://www.costco.com" },
-  { product: "First Partner Series III Collection", retailer: "GameStop", time: "1 hour ago", status: "In Stock", price: "$39.99", url: "https://www.gamestop.com/search/?q=pokemon+first+partner" },
-  { product: "Prismatic Evolutions Super Premium Collection", retailer: "Macy's", time: "2 hours ago", status: "Sold Out", price: "$149.99", url: "https://www.macys.com/shop/search?keyword=pokemon" },
-  { product: "Spring 25 D7 5 Box", retailer: "Walmart", time: "3 hours ago", status: "In Stock", price: "$29.86", url: "https://www.walmart.com/search?q=pokemon+spring+25" },
+const CATEGORIES = [
+  { key: "", label: "All Categories" },
+  { key: "booster_pack", label: "Booster Packs" },
+  { key: "etb", label: "Elite Trainer Boxes" },
+  { key: "booster_box", label: "Booster Boxes" },
+  { key: "collection_box", label: "Collection Boxes" },
+  { key: "tin", label: "Tins" },
+  { key: "special", label: "Special / Premium" },
 ];
+
+const STOCK_FILTERS = [
+  { key: "", label: "All Stock" },
+  { key: "true", label: "In Stock Only" },
+  { key: "false", label: "Out of Stock" },
+];
+
+const SORT_OPTIONS = [
+  { key: "newest", label: "Newest First" },
+  { key: "price-asc", label: "Price: Low → High" },
+  { key: "price-desc", label: "Price: High → Low" },
+  { key: "restocked", label: "Recently Restocked" },
+];
+
+const ALERT_ICONS: Record<string, string> = {
+  restock: "🟢",
+  price_drop: "💰",
+  new_release: "🆕",
+  low_stock: "⚠️",
+};
+
+const ALERT_COLORS: Record<string, string> = {
+  restock: "border-l-green-500 bg-green-50/50",
+  price_drop: "border-l-blue-500 bg-blue-50/50",
+  new_release: "border-l-purple-500 bg-purple-50/50",
+  low_stock: "border-l-yellow-500 bg-yellow-50/50",
+};
+
+/* ────────── helpers ────────── */
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function retailerLabel(key: string): string {
+  return RETAILERS.find((r) => r.key === key)?.name ?? key;
+}
+
+function retailerIcon(key: string): string {
+  return RETAILERS.find((r) => r.key === key)?.icon ?? "🏪";
+}
+
+function retailerBadgeClass(key: string): string {
+  return RETAILERS.find((r) => r.key === key)?.bgColor ?? "bg-gray-50 border-gray-200";
+}
+
+function categoryLabel(key: string): string {
+  return CATEGORIES.find((c) => c.key === key)?.label ?? key;
+}
+
+function stockBadge(inStock: boolean, className?: string) {
+  if (inStock) {
+    return (
+      <span className={`inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full ${className ?? ""}`}>
+        <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+        In Stock
+      </span>
+    );
+  }
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full ${className ?? ""}`}>
+      <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+      Out of Stock
+    </span>
+  );
+}
+
+/* ────────── component ────────── */
 
 export default function DropsPage() {
+  const [products, setProducts] = useState<DropProduct[]>([]);
+  const [alerts, setAlerts] = useState<DropAlert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [alertsLoading, setAlertsLoading] = useState(true);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Filters
+  const [retailerFilter, setRetailerFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [stockFilter, setStockFilter] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+
+  // Retailer stats (derived)
+  const [retailerCounts, setRetailerCounts] = useState<Record<string, number>>({});
+
+  // Watchlist tracking (local state)
+  const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
+
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (retailerFilter) params.set("retailer", retailerFilter);
+    if (categoryFilter) params.set("category", categoryFilter);
+    if (stockFilter) params.set("in_stock", stockFilter);
+    if (searchQuery) params.set("q", searchQuery);
+    params.set("sort", sortBy);
+    params.set("page", page.toString());
+
+    try {
+      const res = await fetch(`/api/drops/products?${params}`);
+      const data = await res.json();
+      if (data.products) {
+        setProducts(data.products);
+        setTotalProducts(data.total);
+        setTotalPages(data.totalPages);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [retailerFilter, categoryFilter, stockFilter, searchQuery, sortBy, page]);
+
+  const fetchAlerts = useCallback(async () => {
+    setAlertsLoading(true);
+    try {
+      const res = await fetch("/api/drops/alerts?limit=15");
+      const data = await res.json();
+      if (data.alerts) setAlerts(data.alerts);
+    } catch {
+      // ignore
+    } finally {
+      setAlertsLoading(false);
+    }
+  }, []);
+
+  // Fetch retailer counts once
+  useEffect(() => {
+    async function fetchCounts() {
+      try {
+        const res = await fetch("/api/drops/products?sort=newest&page=1");
+        const data = await res.json();
+        // We don't get per-retailer counts from the API, so compute from total
+        // This is a simplification — in production you'd have a dedicated endpoint
+      } catch {
+        // ignore
+      }
+    }
+    fetchCounts();
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
+
+  // Load watchlist
+  useEffect(() => {
+    async function loadWatchlist() {
+      try {
+        const res = await fetch("/api/drops/watchlist");
+        const data = await res.json();
+        if (data.watchlist) {
+          setWatchedIds(new Set(data.watchlist.map((w: { product_id: string }) => w.product_id)));
+        }
+      } catch {
+        // Not logged in or error
+      }
+    }
+    loadWatchlist();
+  }, []);
+
+  const toggleWatch = async (productId: string) => {
+    const isWatched = watchedIds.has(productId);
+    const newSet = new Set(watchedIds);
+
+    if (isWatched) {
+      newSet.delete(productId);
+      setWatchedIds(newSet);
+      try {
+        await fetch(`/api/drops/watchlist?product_id=${productId}`, { method: "DELETE" });
+      } catch {
+        newSet.add(productId);
+        setWatchedIds(new Set(newSet));
+      }
+    } else {
+      newSet.add(productId);
+      setWatchedIds(newSet);
+      try {
+        await fetch("/api/drops/watchlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ product_id: productId }),
+        });
+      } catch {
+        newSet.delete(productId);
+        setWatchedIds(new Set(newSet));
+      }
+    }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchQuery(searchInput);
+    setPage(1);
+  };
+
+  const inStockCount = products.filter((p) => p.in_stock).length;
+
   return (
     <div className="min-h-screen">
-      {/* Hero */}
-      <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0">
-        </div>
+      {/* ── Hero ── */}
+      <section className="relative py-16 md:py-20 overflow-hidden bg-gradient-to-br from-amber-50 via-white to-red-50">
+        <div className="absolute top-4 right-8 text-6xl opacity-10 select-none">⚡</div>
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <Badge className="mb-6 px-4 py-1.5 bg-warning/10 text-warning border-warning/20">
-            <Bell className="h-3.5 w-3.5 mr-1.5" />
+          <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 bg-amber-100/80 text-amber-700 rounded-full text-sm font-medium border border-amber-200/60">
+            <Zap className="h-4 w-4" />
             Drop Alerts
-          </Badge>
+            {alerts.length > 0 && (
+              <span className="ml-1 px-2 py-0.5 text-xs bg-amber-500 text-white rounded-full font-bold">
+                {alerts.length}
+              </span>
+            )}
+          </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight">
-            <span className="text-foreground">Never Miss a </span>
-            <span className="text-warning">Restock</span>
-            <br />
-            <span className="text-foreground">Again</span>
+            <span className="text-gray-900">Never Miss a </span>
+            <span className="text-amber-500">Restock</span>
           </h1>
-          <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Real-time alerts when Pokémon cards restock at retail. Pokémon Center, Target, Walmart, Amazon, GameStop — all monitored 24/7. Get notified in seconds, not minutes.
+          <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
+            Real-time stock monitoring across {RETAILERS.length} major retailers.
+            {totalProducts > 0 && (
+              <span className="font-medium text-gray-700"> Tracking {totalProducts} products.</span>
+            )}
           </p>
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="xl" className="bg-warning hover:bg-warning/90 text-black font-semibold" asChild>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg shadow-amber-500/20" asChild>
               <Link href="/register">
-                <Bell className="h-4 w-4 mr-1" />
-                Enable Drop Alerts
+                <Bell className="h-4 w-4 mr-1.5" />
+                Subscribe to Alerts
               </Link>
             </Button>
-            <Button size="xl" variant="outline" asChild>
+            <Button size="lg" variant="outline" className="border-gray-300" asChild>
               <Link href="/pricing">View Plans</Link>
             </Button>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Free: 3 alerts/day · Pro: Unlimited · Elite: Priority alerts (30s faster)
-          </p>
         </div>
       </section>
 
-      {/* Live Feed Preview */}
-      <section className="py-20 bg-gray-50">
+      {/* ── Live Alerts Ticker ── */}
+      {!alertsLoading && alerts.length > 0 && (
+        <section className="border-y border-gray-200 bg-white">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Live Alerts</h2>
+              <span className="text-xs text-gray-400">Last 24 hours</span>
+            </div>
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+              {alerts.slice(0, 8).map((alert) => (
+                <div
+                  key={alert.id}
+                  className={`flex items-center gap-3 p-3 rounded-lg border-l-4 transition-colors ${ALERT_COLORS[alert.alert_type] ?? "border-l-gray-300 bg-gray-50/50"}`}
+                >
+                  <span className="text-lg shrink-0">{ALERT_ICONS[alert.alert_type] ?? "📢"}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{alert.title}</p>
+                    <p className="text-xs text-gray-500 truncate">{alert.message}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs text-gray-400">{timeAgo(alert.created_at)}</p>
+                    {alert.drop_products?.product_url && (
+                      <a
+                        href={alert.drop_products.product_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-amber-600 hover:text-amber-700 font-medium"
+                      >
+                        View →
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Retailer Grid ── */}
+      <section className="py-10 bg-gray-50/80">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Recent drops */}
-            <div>
-              <div className="flex items-center gap-2 mb-6">
-                <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
-                <h2 className="text-2xl font-bold">Live Drop Feed</h2>
-              </div>
-              <div className="space-y-3">
-                {RECENT_DROPS.map((drop, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.08 }}
-                  >
-                    <Card className="hover:border-warning/20 transition-colors">
-                      <CardContent className="p-4 flex items-center gap-4">
-                        <div className="shrink-0">
-                          <Bell className="h-5 w-5 text-warning" />
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Monitored Retailers</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            {RETAILERS.map((r) => {
+              const isActive = retailerFilter === r.key;
+              return (
+                <button
+                  key={r.key}
+                  onClick={() => {
+                    setRetailerFilter(isActive ? "" : r.key);
+                    setPage(1);
+                  }}
+                  className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all text-center ${
+                    isActive
+                      ? "border-amber-400 bg-amber-50 shadow-sm ring-1 ring-amber-300"
+                      : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                  }`}
+                >
+                  <span className="text-2xl">{r.icon}</span>
+                  <span className="text-xs font-medium text-gray-700 leading-tight">{r.name}</span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                    <span className="text-[10px] text-gray-400">Live</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Filters + Product Grid ── */}
+      <section className="py-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          {/* Filter Bar */}
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-3 mb-6">
+            {/* Search */}
+            <form onSubmit={handleSearch} className="relative flex-1 w-full md:max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search products..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-10 h-10"
+              />
+            </form>
+
+            {/* Category */}
+            <div className="relative">
+              <select
+                value={categoryFilter}
+                onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
+                className="h-10 pl-3 pr-8 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-300"
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c.key} value={c.key}>{c.label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Stock */}
+            <div className="relative">
+              <select
+                value={stockFilter}
+                onChange={(e) => { setStockFilter(e.target.value); setPage(1); }}
+                className="h-10 pl-3 pr-8 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-300"
+              >
+                {STOCK_FILTERS.map((s) => (
+                  <option key={s.key} value={s.key}>{s.label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Sort */}
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+                className="h-10 pl-3 pr-8 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-300"
+              >
+                {SORT_OPTIONS.map((s) => (
+                  <option key={s.key} value={s.key}>{s.label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Active filter clear */}
+            {(retailerFilter || categoryFilter || stockFilter || searchQuery) && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setRetailerFilter("");
+                  setCategoryFilter("");
+                  setStockFilter("");
+                  setSearchQuery("");
+                  setSearchInput("");
+                  setPage(1);
+                }}
+                className="text-xs text-gray-500"
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
+
+          {/* Results count */}
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-gray-500">
+              {loading ? "Loading..." : `${totalProducts} products found`}
+              {retailerFilter && ` at ${retailerLabel(retailerFilter)}`}
+            </p>
+            {!loading && totalProducts > 0 && (
+              <p className="text-sm text-gray-500">
+                <span className="text-green-600 font-medium">{inStockCount} in stock</span>
+                {" · "}
+                <span className="text-red-500">{products.length - inStockCount} out</span>
+              </p>
+            )}
+          </div>
+
+          {/* Product Grid */}
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-4 space-y-3">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                    <div className="flex justify-between">
+                      <Skeleton className="h-6 w-16" />
+                      <Skeleton className="h-6 w-20" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-16">
+              <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-700 mb-1">No products found</h3>
+              <p className="text-sm text-gray-500">Try adjusting your filters or search query.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {products.map((product) => {
+                const isWatched = watchedIds.has(product.id);
+                const onSale = product.retail_price && product.current_price && product.current_price < product.retail_price;
+                const savings = onSale ? product.retail_price! - product.current_price! : 0;
+
+                return (
+                  <Card key={product.id} className="group hover:shadow-md transition-all hover:-translate-y-0.5 overflow-hidden">
+                    <CardContent className="p-0">
+                      {/* Product image placeholder */}
+                      <div className="h-32 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center relative">
+                        <span className="text-4xl opacity-20">🃏</span>
+                        {/* Stock badge overlay */}
+                        <div className="absolute top-2 left-2">
+                          {stockBadge(product.in_stock)}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-sm truncate">{drop.product}</span>
+                        {/* Watch button */}
+                        <button
+                          onClick={() => toggleWatch(product.id)}
+                          className={`absolute top-2 right-2 p-1.5 rounded-full transition-all ${
+                            isWatched
+                              ? "bg-amber-500 text-white shadow-md"
+                              : "bg-white/80 text-gray-400 hover:text-amber-500 hover:bg-white shadow-sm"
+                          }`}
+                          title={isWatched ? "Remove from watchlist" : "Add to watchlist"}
+                        >
+                          <Bell className="h-3.5 w-3.5" fill={isWatched ? "currentColor" : "none"} />
+                        </button>
+                        {onSale && (
+                          <div className="absolute bottom-2 left-2">
+                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded">
+                              <TrendingDown className="h-3 w-3" />
+                              Save ${savings.toFixed(2)}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-xs text-muted-foreground">{drop.retailer}</span>
-                            <span className="text-xs text-muted-foreground">·</span>
-                            <span className="text-xs text-muted-foreground">{drop.time}</span>
-                          </div>
+                        )}
+                      </div>
+
+                      {/* Details */}
+                      <div className="p-4 space-y-2.5">
+                        {/* Retailer badge */}
+                        <div className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${retailerBadgeClass(product.retailer)}`}>
+                          <span>{retailerIcon(product.retailer)}</span>
+                          {retailerLabel(product.retailer)}
                         </div>
-                        <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                          <div className="font-bold text-sm">{drop.price}</div>
-                          <Badge
-                            variant={drop.status === "In Stock" ? "default" : drop.status === "Low Stock" ? "warning" : "outline"}
-                            className={`text-[10px] ${
-                              drop.status === "In Stock" ? "bg-success/20 text-success border-success/20" :
-                              drop.status === "Low Stock" ? "bg-warning/20 text-warning border-warning/20" :
-                              "text-muted-foreground"
-                            }`}
-                          >
-                            {drop.status}
-                          </Badge>
-                          {drop.status !== "Sold Out" && (
+
+                        {/* Name */}
+                        <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 min-h-[2.5rem]">
+                          {product.product_name}
+                        </h3>
+
+                        {/* Set + Category */}
+                        {(product.set_name || product.category) && (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {product.set_name && (
+                              <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                {product.set_name}
+                              </span>
+                            )}
+                            {product.category && (
+                              <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                {categoryLabel(product.category)}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Price */}
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-lg font-bold text-gray-900">
+                            ${product.current_price?.toFixed(2) ?? "—"}
+                          </span>
+                          {onSale && (
+                            <span className="text-xs text-gray-400 line-through">
+                              ${product.retail_price?.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 pt-1">
+                          {product.in_stock && product.product_url ? (
                             <a
-                              href={drop.url}
+                              href={product.product_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[10px] text-primary hover:underline font-medium"
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 h-9 bg-amber-500 hover:bg-amber-600 text-black text-sm font-semibold rounded-lg transition-colors"
                             >
-                              Buy Now →
+                              <ShoppingCart className="h-3.5 w-3.5" />
+                              Buy Now
+                            </a>
+                          ) : (
+                            <div className="flex-1 inline-flex items-center justify-center gap-1.5 h-9 bg-gray-100 text-gray-400 text-sm font-medium rounded-lg cursor-not-allowed">
+                              <Eye className="h-3.5 w-3.5" />
+                              Unavailable
+                            </div>
+                          )}
+                          {product.product_url && (
+                            <a
+                              href={product.product_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-colors"
+                              title="Open retailer page"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
                             </a>
                           )}
                         </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
 
-            {/* How it works */}
-            <div>
-              <h2 className="text-2xl font-bold mb-6">
-                How <span className="text-warning">Drop Alerts</span> Work
-              </h2>
-              <div className="space-y-6">
-                {[
-                  {
-                    icon: <Target className="h-5 w-5" />,
-                    title: "We Monitor 24/7",
-                    desc: "Our bots check major retailers every 30-60 seconds for stock changes, price drops, and new listings.",
-                  },
-                  {
-                    icon: <Zap className="h-5 w-5" />,
-                    title: "Instant Detection",
-                    desc: "The moment stock appears, we detect it — usually within 30 seconds of going live.",
-                  },
-                  {
-                    icon: <Bell className="h-5 w-5" />,
-                    title: "Push Notification",
-                    desc: "Get notified instantly via push notification, email, or in-app alert. You choose how.",
-                  },
-                  {
-                    icon: <ShoppingCart className="h-5 w-5" />,
-                    title: "One-Tap Buy",
-                    desc: "Direct links take you straight to the product page. Add to cart before it sells out.",
-                  },
-                ].map((step, i) => (
-                  <motion.div
-                    key={step.title}
-                    initial={{ opacity: 0, y: 15 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                    className="flex gap-4"
-                  >
-                    <div className="h-10 w-10 rounded-xl bg-warning/10 text-warning flex items-center justify-center shrink-0">
-                      {step.icon}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-sm">{step.title}</h3>
-                      <p className="text-xs text-muted-foreground mt-1">{step.desc}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                        {/* Last checked */}
+                        {product.last_checked_at && (
+                          <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            Checked {timeAgo(product.last_checked_at)}
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
-          </div>
-        </div>
-      </section>
+          )}
 
-      {/* Monitored Retailers */}
-      <section className="py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-4">
-            Monitored <span className="text-primary">Retailers</span>
-          </h2>
-          <p className="text-center text-muted-foreground mb-12">
-            We track stock across every major Pokémon card retailer
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {RETAILERS.map((retailer, i) => (
-              <motion.div
-                key={retailer.name}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.06 }}
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
               >
-                <Card className="text-center hover:border-warning/30 transition-all hover:-translate-y-1">
-                  <CardContent className="pt-6 pb-4">
-                    <div className="text-3xl mb-2">{retailer.icon}</div>
-                    <h3 className="font-semibold text-sm">{retailer.name}</h3>
-                    <div className="flex items-center justify-center gap-2 mt-2">
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] ${
-                          retailer.status === "Live" ? "text-success border-success/30" : "text-muted-foreground"
-                        }`}
-                      >
-                        {retailer.status}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">{retailer.products} products</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+                Previous
+              </Button>
+              <span className="text-sm text-gray-500 px-3">
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Alert Types */}
-      <section className="py-20 bg-gray-50">
+      {/* ── How It Works ── */}
+      <section className="py-16 bg-gray-50/80">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Alert <span className="text-warning">Types</span>
+          <h2 className="text-2xl font-bold text-center mb-10">
+            How <span className="text-amber-500">Drop Alerts</span> Work
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: "📦", title: "Restock Alert", desc: "Sold-out product is back in stock at any retailer" },
-              { icon: "💰", title: "Price Drop", desc: "Product price falls below your target threshold" },
-              { icon: "🆕", title: "New Release", desc: "Brand new product listing goes live at retail" },
-              { icon: "⚡", title: "Flash Deal", desc: "Limited-time sale or clearance on Pokémon products" },
-            ].map((type, i) => (
-              <motion.div
-                key={type.title}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-              >
-                <Card className="h-full text-center hover:border-warning/20 transition-all">
-                  <CardContent className="pt-6">
-                    <div className="text-4xl mb-3">{type.icon}</div>
-                    <h3 className="font-semibold text-sm mb-1">{type.title}</h3>
-                    <p className="text-xs text-muted-foreground">{type.desc}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
+              { icon: "🔍", title: "We Monitor 24/7", desc: "Bots check major retailers every 30–60 seconds for stock changes, price drops, and new listings." },
+              { icon: "⚡", title: "Instant Detection", desc: "The moment stock appears, we detect it — usually within 30 seconds of going live." },
+              { icon: "🔔", title: "Push Notification", desc: "Get notified instantly via push notification, email, or in-app alert. You choose how." },
+              { icon: "🛒", title: "One-Tap Buy", desc: "Direct links take you straight to the product page. Add to cart before it sells out." },
+            ].map((step) => (
+              <div key={step.title} className="text-center p-6 rounded-xl bg-white border border-gray-100 shadow-sm">
+                <div className="text-3xl mb-3">{step.icon}</div>
+                <h3 className="font-semibold text-sm text-gray-900 mb-1">{step.title}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{step.desc}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Pricing tiers for alerts */}
-      <section className="py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Drop Alert <span className="text-primary">Plans</span>
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {[
-              {
-                name: "Free",
-                price: "$0",
-                features: [
-                  "3 alerts per day",
-                  "5-minute delay on alerts",
-                  "Pokémon Center + Target only",
-                  "In-app notifications only",
-                ],
-                cta: "Get Started",
-                popular: false,
-              },
-              {
-                name: "Pro",
-                price: "$9.99/mo",
-                features: [
-                  "Unlimited alerts",
-                  "Real-time (< 60 second delay)",
-                  "All 7 retailers monitored",
-                  "Push + Email + In-app alerts",
-                  "Custom product watchlists",
-                  "Price drop thresholds",
-                ],
-                cta: "Go Pro",
-                popular: true,
-              },
-              {
-                name: "Elite",
-                price: "$19.99/mo",
-                features: [
-                  "Everything in Pro",
-                  "Priority alerts (30 seconds faster)",
-                  "Exclusive pre-release intel",
-                  "Sealed product price tracking",
-                  "Investment analytics on sealed",
-                  "SMS alerts (coming soon)",
-                ],
-                cta: "Go Elite",
-                popular: false,
-              },
-            ].map((plan, i) => (
-              <motion.div
-                key={plan.name}
-                initial={{ opacity: 0, y: 25 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.12 }}
-              >
-                <Card className={`h-full relative ${plan.popular ? "border-warning/50 shadow-[0_0_30px_rgba(245,158,11,0.1)]" : ""}`}>
-                  {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="px-4 bg-warning text-black border-warning font-semibold">Most Popular</Badge>
-                    </div>
-                  )}
-                  <CardContent className="pt-10 pb-8">
-                    <h3 className="text-lg font-bold">{plan.name}</h3>
-                    <div className="mt-3 text-3xl font-bold">{plan.price}</div>
-                    <ul className="mt-6 space-y-3">
-                      {plan.features.map((f) => (
-                        <li key={f} className="flex items-start gap-2.5 text-sm">
-                          <Check className="h-4 w-4 text-warning shrink-0 mt-0.5" />
-                          <span>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button
-                      className={`w-full mt-8 ${plan.popular ? "bg-warning hover:bg-warning/90 text-black" : ""}`}
-                      variant={plan.popular ? "default" : "outline"}
-                      size="lg"
-                      asChild
-                    >
-                      <Link href="/register">{plan.cta}</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-          <p className="text-center text-xs text-muted-foreground mt-6">
-            Drop Alerts are included with Pro and Elite memberships at no extra cost.
-          </p>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-20 bg-gray-50">
+      {/* ── CTA ── */}
+      <section className="py-16 bg-gradient-to-br from-amber-50 via-white to-red-50">
         <div className="mx-auto max-w-3xl px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">
-            Stop Refreshing. Start <span className="text-warning">Getting Alerts</span>.
+            Stop Refreshing. Start <span className="text-amber-500">Getting Alerts</span>.
           </h2>
-          <p className="text-muted-foreground mb-8">
+          <p className="text-gray-500 mb-8">
             Join thousands of collectors who never miss a drop. Free to start.
           </p>
-          <Button size="xl" className="bg-warning hover:bg-warning/90 text-black font-semibold" asChild>
+          <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg shadow-amber-500/20" asChild>
             <Link href="/register">
-              <Bell className="h-4 w-4 mr-1" />
+              <Bell className="h-4 w-4 mr-1.5" />
               Enable Drop Alerts
-              <ArrowRight className="h-4 w-4 ml-1" />
             </Link>
           </Button>
         </div>

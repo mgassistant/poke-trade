@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const { receiver_id, items_offered, items_wanted, cash_amount, notes } = body;
+  const { receiver_id, items_offered, items_wanted, cash_amount, notes, shipping_method } = body;
 
   if (!receiver_id) return NextResponse.json({ error: "Receiver required" }, { status: 400 });
   if (receiver_id === user.id) return NextResponse.json({ error: "Cannot trade with yourself" }, { status: 400 });
@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       status: "pending",
       cash_amount: cash_amount || null,
       notes: notes || null,
+      shipping_method: shipping_method || 'direct',
     })
     .select()
     .single();

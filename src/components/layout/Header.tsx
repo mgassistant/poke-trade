@@ -22,7 +22,7 @@ export function Header() {
               alt="Poké-Trade"
               width={300}
               height={90}
-              className="h-10 sm:h-14 w-auto"
+              className="h-16 sm:h-20 w-auto"
               priority
             />
           </Link>

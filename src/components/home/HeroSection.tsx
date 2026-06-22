@@ -43,7 +43,7 @@ export function HeroSection() {
               alt="Poké-Trade"
               width={600}
               height={180}
-              className="h-28 sm:h-36 md:h-44 lg:h-52 w-auto mx-auto drop-shadow-lg"
+              className="h-40 sm:h-48 md:h-56 lg:h-64 w-auto mx-auto drop-shadow-lg"
               priority
             />
           </motion.div>
@@ -71,7 +71,7 @@ export function HeroSection() {
                 <ArrowRight className="h-4 w-4 ml-1" />
               </Link>
             </Button>
-            <Button size="xl" variant="outline" className="text-base border-white/40 text-white hover:bg-white/10 hover:text-white" asChild>
+            <Button size="xl" className="text-base bg-white/20 text-white border-2 border-white hover:bg-white hover:text-red-600 font-semibold backdrop-blur-sm" asChild>
               <Link href="/marketplace">Browse Cards</Link>
             </Button>
           </div>
