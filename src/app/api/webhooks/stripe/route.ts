@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
+import { markEventProcessed } from "@/lib/webhook-idempotency";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,6 +25,12 @@ export async function POST(request: Request) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Webhook signature verification failed:", message);
     return NextResponse.json({ error: `Webhook Error: ${message}` }, { status: 400 });
+  }
+
+  // Idempotency check — prevent replay attacks
+  if (!markEventProcessed(event.id)) {
+    console.log(`Duplicate webhook event ignored: ${event.id}`);
+    return NextResponse.json({ received: true, duplicate: true });
   }
 
   try {

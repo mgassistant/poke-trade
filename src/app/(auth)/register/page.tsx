@@ -1,27 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 
+// Client-side password strength (mirrors auth-security.ts logic)
+function getPasswordStrength(password: string) {
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+  if (/\d/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+  score = Math.min(score, 4);
+
+  const labels: Record<number, { label: string; color: string }> = {
+    0: { label: "Very Weak", color: "bg-red-500" },
+    1: { label: "Weak", color: "bg-orange-500" },
+    2: { label: "Fair", color: "bg-yellow-500" },
+    3: { label: "Strong", color: "bg-green-400" },
+    4: { label: "Very Strong", color: "bg-green-600" },
+  };
+
+  return { score, ...labels[score] };
+}
+
 export default function RegisterPage() {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [honeypot, setHoneypot] = useState(""); // bot trap
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    // Honeypot check — bots fill hidden fields
+    if (honeypot) {
+      // Silently "succeed" to confuse bots
+      setSuccess(true);
+      setLoading(false);
+      return;
+    }
 
     if (username.length < 3) {
       setError("Username must be at least 3 characters");
@@ -41,10 +71,16 @@ export default function RegisterPage() {
       return;
     }
 
+    if (passwordStrength.score < 2) {
+      setError("Password is too weak. Add uppercase letters, numbers, or special characters.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const supabase = createClient();
 
-      // Check username availability (skip if profiles table doesn't exist yet)
+      // Check username availability
       const { data: existing, error: profileError } = await supabase
         .from("profiles")
         .select("id")
@@ -125,6 +161,20 @@ export default function RegisterPage() {
             </div>
           )}
 
+          {/* Honeypot field — hidden from real users, bots fill it */}
+          <div className="absolute opacity-0 -z-10" aria-hidden="true" style={{ position: "absolute", left: "-9999px" }}>
+            <label htmlFor="website">Website</label>
+            <Input
+              id="website"
+              name="website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+            />
+          </div>
+
           <div className="space-y-2">
             <label htmlFor="username" className="text-sm font-medium">Username</label>
             <Input
@@ -164,6 +214,26 @@ export default function RegisterPage() {
               required
               minLength={8}
             />
+            {/* Password strength meter */}
+            {password.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex gap-1 h-1.5">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className={`flex-1 rounded-full transition-colors ${
+                        i < passwordStrength.score
+                          ? passwordStrength.color
+                          : "bg-muted"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Strength: {passwordStrength.label}
+                </p>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">At least 8 characters</p>
           </div>
 
