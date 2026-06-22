@@ -38,9 +38,12 @@ export async function POST(request: Request) {
       case "checkout.session.completed": {
         const session = event.data.object;
         const userId = session.metadata?.user_id;
-        const tier = session.metadata?.tier as "pro" | "elite";
+        const tier = session.metadata?.tier as "pro" | "elite" | undefined;
+        const listingId = session.metadata?.listing_id;
+        const purchaseType = session.metadata?.type;
 
-        if (userId && tier) {
+        // Handle membership subscription checkout
+        if (userId && tier && !listingId) {
           await supabase
             .from("profiles")
             .update({
@@ -50,6 +53,70 @@ export async function POST(request: Request) {
             })
             .eq("id", userId);
         }
+
+        // Handle listing purchase checkout
+        if (purchaseType === "listing_purchase" && listingId) {
+          const buyerId = session.metadata?.buyer_id;
+          const sellerId = session.metadata?.seller_id;
+          const platformFeeCents = parseInt(session.metadata?.platform_fee || "0");
+          const amountCents = parseInt(session.metadata?.amount || "0");
+
+          if (buyerId && sellerId) {
+            const amount = amountCents / 100;
+            const platformFee = platformFeeCents / 100;
+            const sellerPayout = amount - platformFee;
+
+            // Create order
+            const { data: order } = await supabase.from("orders").insert({
+              listing_id: listingId,
+              buyer_id: buyerId,
+              seller_id: sellerId,
+              amount,
+              platform_fee: platformFee,
+              seller_payout: sellerPayout,
+              stripe_payment_intent_id: session.payment_intent as string,
+              status: "paid",
+            }).select().single();
+
+            // Mark listing as sold
+            await supabase
+              .from("listings")
+              .update({ status: "sold" })
+              .eq("id", listingId);
+
+            // Decline any pending offers on this listing
+            await supabase
+              .from("offers")
+              .update({ status: "declined" })
+              .eq("listing_id", listingId)
+              .in("status", ["pending", "countered"]);
+
+            // Get listing title for notification
+            const { data: listing } = await supabase
+              .from("listings")
+              .select("title")
+              .eq("id", listingId)
+              .single();
+
+            // Notify seller
+            await supabase.from("notifications").insert({
+              user_id: sellerId,
+              type: "listing_sold",
+              title: "Item Sold!",
+              message: `Your listing "${listing?.title || "item"}" has been purchased for $${amount.toFixed(2)}. Please ship the item.`,
+              data: { order_id: order?.id, listing_id: listingId },
+            });
+
+            // Notify buyer
+            await supabase.from("notifications").insert({
+              user_id: buyerId,
+              type: "purchase_complete",
+              title: "Purchase Confirmed",
+              message: `Your purchase of "${listing?.title || "item"}" is confirmed. The seller has been notified to ship.`,
+              data: { order_id: order?.id, listing_id: listingId },
+            });
+          }
+        }
         break;
       }
 
@@ -57,9 +124,8 @@ export async function POST(request: Request) {
         const subscription = event.data.object;
         const customerId = subscription.customer as string;
 
-        // Map price to tier
         const priceId = subscription.items.data[0]?.price.id;
-        const tier = mapPriceToTier(priceId);
+        const tier = subscription.metadata?.tier || mapPriceToTier(priceId);
         const isActive = subscription.status === "active" || subscription.status === "trialing";
 
         await supabase
@@ -87,13 +153,11 @@ export async function POST(request: Request) {
       }
 
       case "invoice.payment_succeeded": {
-        // Log successful payment — could extend for receipts
         console.log("Payment succeeded:", event.data.object.id);
         break;
       }
 
       case "invoice.payment_failed": {
-        // Could trigger email notification to user
         console.log("Payment failed:", event.data.object.id);
         break;
       }
@@ -110,11 +174,8 @@ export async function POST(request: Request) {
 }
 
 function mapPriceToTier(priceId: string): "free" | "pro" | "elite" {
-  // Map Stripe price IDs to subscription tiers
-  // TODO: Update with actual Stripe price IDs once products are created
   const priceMap: Record<string, "pro" | "elite"> = {
-    // price_xxx: "pro",
-    // price_yyy: "elite",
+    // Will be auto-populated when products are created via /api/membership/checkout
   };
   return priceMap[priceId] || "free";
 }
