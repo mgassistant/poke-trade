@@ -129,7 +129,7 @@ async function fetchPokeTrace(cardName: string): Promise<PriceSource[]> {
 
   try {
     const res = await fetch(
-      `https://api.poketrace.com/v1/cards/search?q=${encodeURIComponent(cardName)}&limit=5`,
+      `https://api.poketrace.com/v1/cards?search=${encodeURIComponent(cardName)}&limit=3`,
       {
         headers: { "X-API-Key": apiKey },
         next: { revalidate: 3600 },
@@ -137,18 +137,33 @@ async function fetchPokeTrace(cardName: string): Promise<PriceSource[]> {
     );
     if (!res.ok) return [];
     const data = await res.json();
-    // Extract eBay sold prices from response
-    return (data.data || []).map((card: Record<string, unknown>) => ({
-      source: "poketrace.com",
-      platform: "eBay Sold",
-      icon: "🔨",
-      low: (card as Record<string, unknown>).ebayLow as number | null,
-      mid: (card as Record<string, unknown>).ebayAvg as number | null,
-      high: (card as Record<string, unknown>).ebayHigh as number | null,
-      market: (card as Record<string, unknown>).ebayMarket as number | null,
-      lastUpdated: new Date().toISOString(),
-      url: null,
-    }));
+    const sources: PriceSource[] = [];
+
+    for (const card of (data.data || []) as Record<string, unknown>[]) {
+      const prices = card.prices as Record<string, unknown> | undefined;
+      const ebay = prices?.ebay as Record<string, Record<string, number>> | undefined;
+      const urls = card.marketplaceUrls as Record<string, string> | undefined;
+
+      if (ebay) {
+        // Get Near Mint or Lightly Played eBay data
+        const nmData = ebay.NEAR_MINT || ebay.LIGHTLY_PLAYED || Object.values(ebay)[0];
+        if (nmData) {
+          sources.push({
+            source: "poketrace.com",
+            platform: "eBay Sold",
+            icon: "🔨",
+            low: nmData.low || null,
+            mid: nmData.avg || null,
+            high: nmData.high || null,
+            market: nmData.avg30d || nmData.avg || null,
+            lastUpdated: (nmData.lastUpdated as unknown as string) || null,
+            url: urls?.ebay || null,
+            condition: "Near Mint",
+          });
+        }
+      }
+    }
+    return sources;
   } catch {
     return [];
   }
@@ -293,10 +308,10 @@ export const AVAILABLE_APIS = [
   {
     name: "PokeTrace",
     url: "https://poketrace.com",
-    status: "ready" as const,
-    free: true,
-    provides: ["eBay sold listings", "TCGPlayer prices", "CardMarket prices", "Graded card data (Pro)"],
-    rateLimit: "Free tier: US market + raw prices",
+    status: "active" as const,
+    free: false,
+    provides: ["eBay sold by condition (1d/7d/30d avg)", "TCGPlayer prices", "CardMarket prices", "Direct eBay search links", "Card images (CDN)"],
+    rateLimit: "250 req/day (Free tier)",
   },
   {
     name: "PokemonPriceTracker",
