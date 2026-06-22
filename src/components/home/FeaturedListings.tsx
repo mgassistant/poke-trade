@@ -15,7 +15,7 @@ export function FeaturedListings({ cards }: FeaturedListingsProps) {
   if (cards.length === 0) return null;
 
   return (
-    <section className="py-24 bg-card/20">
+    <section className="py-24 bg-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -25,10 +25,10 @@ export function FeaturedListings({ cards }: FeaturedListingsProps) {
           className="flex items-center justify-between mb-12"
         >
           <div>
-            <h2 className="text-3xl sm:text-4xl font-bold">
-              Featured <span className="text-primary">Cards</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+              Featured <span className="text-red-600">Cards</span>
             </h2>
-            <p className="mt-2 text-muted-foreground">
+            <p className="mt-2 text-gray-500">
               Real-time data from the Pokémon TCG market
             </p>
           </div>

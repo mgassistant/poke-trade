@@ -32,8 +32,6 @@ export default function TradeCenterPage() {
       {/* Hero */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-secondary/8 rounded-full blur-[150px]" />
-          <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] bg-primary/8 rounded-full blur-[150px]" />
         </div>
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <Badge variant="secondary" className="mb-6 px-4 py-1.5">
@@ -42,7 +40,7 @@ export default function TradeCenterPage() {
           </Badge>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight">
             <span className="text-foreground">The </span>
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text" style={{ WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            <span className="text-red-600">
               Trade Center
             </span>
           </h1>
@@ -64,7 +62,7 @@ export default function TradeCenterPage() {
       </section>
 
       {/* Live Trade Demo */}
-      <section className="py-20 bg-card/20">
+      <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -94,7 +92,7 @@ export default function TradeCenterPage() {
               <CardContent>
                 <div className="grid md:grid-cols-3 gap-6 items-center">
                   {/* Offering */}
-                  <div className="glass-card rounded-xl p-4">
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
                     <div className="text-xs font-semibold text-primary mb-3">🎴 YOU OFFER</div>
                     <div className="flex items-center gap-3 p-2 bg-muted/20 rounded-lg mb-2">
                       <div className="h-12 w-9 bg-muted/40 rounded flex items-center justify-center text-lg">🔥</div>
@@ -117,7 +115,7 @@ export default function TradeCenterPage() {
                   </div>
 
                   {/* Wanting */}
-                  <div className="glass-card rounded-xl p-4">
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
                     <div className="text-xs font-semibold text-secondary mb-3">🎯 YOU WANT</div>
                     <div className="flex items-center gap-3 p-2 bg-muted/20 rounded-lg">
                       <div className="h-12 w-9 bg-muted/40 rounded flex items-center justify-center text-lg">🌙</div>
@@ -164,7 +162,7 @@ export default function TradeCenterPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="p-4 bg-secondary/5 rounded-xl border border-secondary/20">
+                <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center text-sm">JR</div>
                     <div>
@@ -198,7 +196,7 @@ export default function TradeCenterPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Card className="mb-4 border-success/30 glow-blue">
+            <Card className="mb-4 border-green-200 shadow-md">
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <Badge className="bg-success/20 text-success border-success/30">Step 3</Badge>
@@ -262,7 +260,7 @@ export default function TradeCenterPage() {
                 transition={{ delay: i * 0.05 }}
                 className="flex items-center gap-2"
               >
-                <div className="glass-card rounded-lg px-4 py-3 flex items-center gap-2">
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm px-4 py-3 flex items-center gap-2">
                   <span className="text-lg">{s.icon}</span>
                   <div>
                     <div className={`font-semibold text-sm ${s.color}`}>{s.status}</div>
@@ -279,7 +277,7 @@ export default function TradeCenterPage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-20 bg-card/20">
+      <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-4">
             Negotiation <span className="text-secondary">Features</span>
@@ -402,7 +400,7 @@ export default function TradeCenterPage() {
       </section>
 
       {/* Reputation */}
-      <section className="py-20 bg-card/20">
+      <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">
             Trader <span className="text-secondary">Ranks</span>

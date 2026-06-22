@@ -1,29 +1,30 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #0A0A0F;
-  --color-foreground: #E5E7EB;
-  --color-card: #13131A;
-  --color-card-foreground: #E5E7EB;
-  --color-elevated: #1A1A2E;
-  --color-muted: #27273A;
-  --color-muted-foreground: #9CA3AF;
-  --color-border: #2D2D44;
-  --color-border-glow: rgba(0, 212, 255, 0.15);
-  --color-input: #1E1E30;
-  --color-ring: #00D4FF;
-  --color-primary: #00D4FF;
-  --color-primary-foreground: #0A0A0F;
-  --color-secondary: #8B5CF6;
+  /* Light theme (default) - Pokémon Center inspired */
+  --color-background: #FFFFFF;
+  --color-foreground: #1F2937;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #1F2937;
+  --color-elevated: #F9FAFB;
+  --color-muted: #F3F4F6;
+  --color-muted-foreground: #6B7280;
+  --color-border: #E5E7EB;
+  --color-border-glow: rgba(227, 53, 13, 0.1);
+  --color-input: #FFFFFF;
+  --color-ring: #E3350D;
+  --color-primary: #E3350D;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #3B4CCA;
   --color-secondary-foreground: #FFFFFF;
-  --color-accent: #8B5CF6;
-  --color-accent-foreground: #FFFFFF;
+  --color-accent: #FFCB05;
+  --color-accent-foreground: #1F2937;
   --color-destructive: #EF4444;
   --color-destructive-foreground: #FFFFFF;
   --color-success: #10B981;
   --color-warning: #F59E0B;
-  --color-popover: #13131A;
-  --color-popover-foreground: #E5E7EB;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #1F2937;
   --radius-lg: 0.75rem;
   --radius-md: 0.5rem;
   --radius-sm: 0.25rem;
@@ -37,53 +38,48 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Glassmorphism utilities */
+/* Clean card styles (replacing glass-morphism) */
 .glass {
-  background: rgba(19, 19, 26, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(45, 45, 68, 0.5);
+  background: #FFFFFF;
+  border-bottom: 1px solid #E5E7EB;
 }
 
 .glass-card {
-  background: rgba(19, 19, 26, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(45, 45, 68, 0.4);
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
   border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .glass-elevated {
-  background: rgba(26, 26, 46, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(45, 45, 68, 0.6);
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
 }
 
-/* Glow effects */
+/* Clean shadow utilities (replacing glow effects) */
 .glow-blue {
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.15), 0 0 40px rgba(0, 212, 255, 0.05);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
 .glow-purple {
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.15), 0 0 40px rgba(139, 92, 246, 0.05);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
 .glow-text-blue {
-  text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+  text-shadow: none;
 }
 
 .glow-text-purple {
-  text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+  text-shadow: none;
 }
 
-/* Gradient backgrounds */
+/* Clean gradient backgrounds */
 .gradient-primary {
-  background: linear-gradient(135deg, #00D4FF 0%, #8B5CF6 100%);
+  background: linear-gradient(135deg, #E3350D 0%, #C42A0A 100%);
 }
 
 .gradient-card {
-  background: linear-gradient(180deg, rgba(19, 19, 26, 0.9) 0%, rgba(10, 10, 15, 0.95) 100%);
+  background: linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%);
 }
 
 /* Scrollbar styling */
@@ -93,20 +89,47 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-background);
+  background: #F3F4F6;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-muted);
+  background: #D1D5DB;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border);
+  background: #9CA3AF;
 }
 
 /* Selection */
 ::selection {
-  background: rgba(0, 212, 255, 0.3);
-  color: #ffffff;
+  background: rgba(227, 53, 13, 0.15);
+  color: #1F2937;
+}
+
+/* Dark mode variables (kept for optional toggle) */
+.dark {
+  --color-background: #0A0A0F;
+  --color-foreground: #E5E7EB;
+  --color-card: #13131A;
+  --color-card-foreground: #E5E7EB;
+  --color-elevated: #1A1A2E;
+  --color-muted: #27273A;
+  --color-muted-foreground: #9CA3AF;
+  --color-border: #2D2D44;
+  --color-border-glow: rgba(227, 53, 13, 0.15);
+  --color-input: #1E1E30;
+  --color-ring: #E3350D;
+  --color-primary: #E3350D;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #3B4CCA;
+  --color-secondary-foreground: #FFFFFF;
+  --color-accent: #FFCB05;
+  --color-accent-foreground: #FFFFFF;
+  --color-destructive: #EF4444;
+  --color-destructive-foreground: #FFFFFF;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-popover: #13131A;
+  --color-popover-foreground: #E5E7EB;
 }

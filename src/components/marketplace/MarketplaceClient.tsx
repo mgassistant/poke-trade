@@ -118,7 +118,7 @@ export function MarketplaceClient() {
         </div>
 
         {/* Search + Filters Bar */}
-        <div className="glass-card rounded-xl p-4 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <form onSubmit={handleSearch} className="flex-1 flex gap-2">
               <div className="relative flex-1">

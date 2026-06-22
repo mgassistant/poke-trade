@@ -21,14 +21,14 @@ export default function GradingGuidePage() {
 
         <div className="prose prose-invert prose-sm max-w-none space-y-8">
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">What Is Card Grading?</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">What Is Card Grading?</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               Card grading is a professional service where experts evaluate the condition of a Pokémon card and assign it a numerical grade. The card is then sealed in a tamper-evident plastic case (&quot;slab&quot;) with a label showing the grade. Graded cards are authenticated, protected, and typically command higher prices than raw (ungraded) cards.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">The Big Three Grading Companies</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">The Big Three Grading Companies</h2>
 
             <Card className="mt-4">
               <CardContent className="p-5">
@@ -78,7 +78,7 @@ export default function GradingGuidePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">The PSA Grade Scale</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">The PSA Grade Scale</h2>
             <div className="mt-4 space-y-2">
               {[
                 { grade: "PSA 10", name: "Gem Mint", desc: "Perfect condition. Sharp corners, perfect centering (within 55/45), no flaws visible under magnification." },
@@ -90,7 +90,7 @@ export default function GradingGuidePage() {
                 { grade: "PSA 4", name: "VG-EX", desc: "Heavy wear. Rounded corners, noticeable scratches, creasing possible." },
                 { grade: "PSA 1–3", name: "Poor to VG", desc: "Significant damage: creases, stains, tears, heavy wear. Mainly for rare vintage cards where any authenticated copy has value." },
               ].map((item) => (
-                <div key={item.grade} className="p-3 bg-card/50 rounded-lg border border-border/30">
+                <div key={item.grade} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-baseline gap-2">
                     <span className="font-bold text-foreground text-sm">{item.grade}</span>
                     <span className="text-xs text-primary">({item.name})</span>
@@ -102,7 +102,7 @@ export default function GradingGuidePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Should You Grade or Sell Raw?</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Should You Grade or Sell Raw?</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               Grading isn&apos;t always worth it. Here&apos;s how to decide:
             </p>
@@ -127,7 +127,7 @@ export default function GradingGuidePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">How Grading Affects Value</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">How Grading Affects Value</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               The impact of grading on value varies enormously by card and grade. Here are some general patterns:
             </p>

@@ -24,7 +24,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Information We Collect</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Information We Collect</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               We collect information you provide directly to us, information we collect automatically, and information from third parties.
             </p>
@@ -47,7 +47,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">How We Use Your Information</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">How We Use Your Information</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">We use the information we collect to:</p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-1">
               <li>Provide, maintain, and improve the Platform</li>
@@ -64,7 +64,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Data Sharing</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Data Sharing</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               We do not sell your personal information. We may share your information in the following circumstances:
             </p>
@@ -78,7 +78,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Cookies</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Cookies</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               We use cookies and similar technologies to operate the Platform, remember your preferences, and analyze usage. For detailed information about the cookies we use and how to manage them, please see our{" "}
               <Link href="/cookies" className="text-primary hover:underline">Cookie Policy</Link>.
@@ -86,7 +86,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Your Rights</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Your Rights</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               Depending on your location, you may have the following rights regarding your personal information:
             </p>
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Data Retention</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Data Retention</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               We retain your personal information for as long as your account is active or as needed to provide you services. We may also retain certain information as required by law or for legitimate business purposes, such as:
             </p>
@@ -119,7 +119,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Children&apos;s Privacy</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Children&apos;s Privacy</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               Poké-Trade is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If we become aware that we have collected personal information from a child under 13, we will take steps to delete that information promptly. If you believe a child under 13 has provided us with personal information, please contact us at{" "}
               <a href="mailto:privacy@poke-trade.com" className="text-primary hover:underline">privacy@poke-trade.com</a>.
@@ -130,21 +130,21 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Security</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Security</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               We implement appropriate technical and organizational measures to protect your personal information, including encryption in transit (TLS), secure password hashing, and access controls. However, no method of transmission or storage is 100% secure, and we cannot guarantee absolute security.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Changes to This Policy</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Changes to This Policy</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               We may update this Privacy Policy from time to time. We will notify you of material changes by posting the new policy on this page and updating the &quot;Last updated&quot; date. Continued use of the Platform after changes constitutes acceptance of the updated policy.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Contact Us</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Contact Us</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               If you have questions about this Privacy Policy or our data practices, contact us at:
             </p>

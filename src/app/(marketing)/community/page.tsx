@@ -21,7 +21,6 @@ export default function CommunityPage() {
       {/* Hero */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-1/3 right-1/4 w-[500px] h-[500px] bg-secondary/8 rounded-full blur-[150px]" />
         </div>
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <Badge variant="secondary" className="mb-6 px-4 py-1.5">
@@ -45,7 +44,7 @@ export default function CommunityPage() {
       </section>
 
       {/* Activity Feed Preview */}
-      <section className="py-20 bg-card/20">
+      <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             <div>

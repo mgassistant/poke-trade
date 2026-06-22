@@ -24,14 +24,14 @@ export default function CookiesPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">What Are Cookies?</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">What Are Cookies?</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               Cookies are small text files placed on your device when you visit a website. They are widely used to make websites work efficiently, provide a better user experience, and give website operators useful information. Cookies may be &quot;session&quot; cookies (deleted when you close your browser) or &quot;persistent&quot; cookies (remain on your device for a set period or until you delete them).
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Essential Cookies</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Essential Cookies</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               These cookies are necessary for the Platform to function and cannot be switched off. They are usually set in response to actions you take, such as logging in, setting preferences, or filling in forms.
             </p>
@@ -44,7 +44,7 @@ export default function CookiesPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Analytics Cookies</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Analytics Cookies</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               These cookies help us understand how visitors interact with the Platform by collecting and reporting information anonymously. This helps us improve the site for everyone.
             </p>
@@ -59,7 +59,7 @@ export default function CookiesPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Preference Cookies</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Preference Cookies</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               These cookies remember choices you make to give you a better, personalized experience.
             </p>
@@ -72,7 +72,7 @@ export default function CookiesPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">How to Manage Cookies</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">How to Manage Cookies</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               You have the right to accept or reject cookies. Here&apos;s how to manage them:
             </p>
@@ -96,14 +96,14 @@ export default function CookiesPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Changes to This Policy</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Changes to This Policy</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               We may update this Cookie Policy from time to time to reflect changes in technology, legislation, or our data practices. The &quot;Last updated&quot; date at the top will always reflect the most recent version.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Contact</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Contact</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               If you have questions about our use of cookies, contact us at{" "}
               <a href="mailto:privacy@poke-trade.com" className="text-primary hover:underline">privacy@poke-trade.com</a>.

@@ -24,7 +24,7 @@ export default function AcceptableUsePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Prohibited Items</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Prohibited Items</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               The following items are strictly prohibited from being listed, sold, or traded on Poké-Trade:
             </p>
@@ -39,7 +39,7 @@ export default function AcceptableUsePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Prohibited Behavior</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Prohibited Behavior</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               The following behaviors are not allowed on Poké-Trade:
             </p>
@@ -80,7 +80,7 @@ export default function AcceptableUsePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Account Rules</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Account Rules</h2>
             <ul className="list-disc pl-6 text-muted-foreground space-y-1 mt-4">
               <li><strong className="text-foreground">One account per person:</strong> Multiple accounts are prohibited. If you need a business account, contact support.</li>
               <li><strong className="text-foreground">Account sharing:</strong> Do not share your account credentials with others. You are responsible for all activity on your account.</li>
@@ -91,7 +91,7 @@ export default function AcceptableUsePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Enforcement & Consequences</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Enforcement & Consequences</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               We enforce this policy through a combination of automated systems and manual review by our Trust & Safety team. Consequences are proportional to the severity of the violation:
             </p>
@@ -110,7 +110,7 @@ export default function AcceptableUsePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Reporting Violations</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Reporting Violations</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               If you encounter a violation of this policy, please report it immediately:
             </p>

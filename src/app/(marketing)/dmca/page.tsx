@@ -24,7 +24,7 @@ export default function DMCAPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Filing a DMCA Takedown Notice</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Filing a DMCA Takedown Notice</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               If you believe that content hosted on Poké-Trade infringes your copyright, you may submit a written notification to our designated DMCA agent. Your notice must include <strong className="text-foreground">all</strong> of the following:
             </p>
@@ -54,7 +54,7 @@ export default function DMCAPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Counter-Notice Process</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Counter-Notice Process</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               If you believe that material you posted was removed or disabled by mistake or misidentification, you may file a counter-notice. Your counter-notice must include:
             </p>
@@ -81,18 +81,18 @@ export default function DMCAPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Repeat Infringers</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Repeat Infringers</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               In accordance with the DMCA, Poké-Trade will terminate the accounts of users who are repeat copyright infringers. We consider a user to be a repeat infringer if they have been the subject of more than two valid DMCA takedown notices. Account termination for repeat infringement is permanent and not subject to appeal.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Designated DMCA Agent</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Designated DMCA Agent</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               All DMCA notices and counter-notices should be sent to our designated agent:
             </p>
-            <div className="mt-3 p-4 bg-card/50 rounded-lg border border-border/30">
+            <div className="mt-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <p className="text-sm text-foreground font-semibold">Poké-Trade DMCA Agent</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Email: <a href="mailto:dmca@poke-trade.com" className="text-primary hover:underline">dmca@poke-trade.com</a>
@@ -107,7 +107,7 @@ export default function DMCAPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Note on Pokémon IP</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Note on Pokémon IP</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               Poké-Trade is not affiliated with, endorsed by, or connected to Nintendo, Game Freak, Creatures Inc., or The Pokémon Company. Card images displayed on the Platform are sourced from publicly available APIs for informational and identification purposes, consistent with fair use. If you are a rights holder and believe your content is being used improperly, please contact our DMCA agent.
             </p>

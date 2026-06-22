@@ -24,7 +24,7 @@ export default function ShippingGuidePage() {
 
         <div className="prose prose-invert prose-sm max-w-none space-y-8">
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2 flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" />
               Packaging Your Cards
             </h2>
@@ -56,7 +56,7 @@ export default function ShippingGuidePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2 flex items-center gap-2">
               <Truck className="h-5 w-5 text-primary" />
               Shipping Methods
             </h2>
@@ -93,7 +93,7 @@ export default function ShippingGuidePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2 flex items-center gap-2">
               <MapPin className="h-5 w-5 text-primary" />
               Tracking Requirements
             </h2>
@@ -112,7 +112,7 @@ export default function ShippingGuidePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2 flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
               Insurance Recommendations
             </h2>
@@ -131,7 +131,7 @@ export default function ShippingGuidePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2 flex items-center gap-2">
               <Globe className="h-5 w-5 text-primary" />
               International Shipping
             </h2>
@@ -152,7 +152,7 @@ export default function ShippingGuidePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-warning" />
               Common Mistakes to Avoid
             </h2>

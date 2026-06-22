@@ -112,7 +112,7 @@ export function CompareClient() {
         </div>
 
         {/* Search */}
-        <div className="glass-card rounded-xl p-4 mb-8">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-8">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -158,7 +158,7 @@ export function CompareClient() {
                       <Card
                         className={`cursor-pointer transition-all hover:-translate-y-1 ${
                           selectedCard?.id === card.id
-                            ? "border-primary glow-blue"
+                            ? "border-red-500 shadow-md"
                             : "hover:border-primary/30"
                         }`}
                         onClick={() => setSelectedCard(card)}

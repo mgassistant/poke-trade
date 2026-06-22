@@ -25,9 +25,9 @@ export function CardGrid({ cards, variant = "showcase" }: CardGridProps) {
           transition={{ duration: 0.4, delay: i * 0.06 }}
           className="group"
         >
-          <div className="glass-card rounded-xl overflow-hidden cursor-pointer hover:border-primary/40 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_8px_30px_rgba(0,212,255,0.12)]">
+          <div className="bg-white rounded-xl overflow-hidden cursor-pointer border border-gray-200 shadow-sm hover:border-red-200 transition-all duration-300 hover:-translate-y-2 hover:shadow-lg">
             {/* Card Image */}
-            <div className="relative aspect-[2.5/3.5] bg-muted/30 overflow-hidden">
+            <div className="relative aspect-[2.5/3.5] bg-gray-50 overflow-hidden">
               <Image
                 src={card.images.large || card.images.small}
                 alt={card.name}
@@ -35,22 +35,20 @@ export function CardGrid({ cards, variant = "showcase" }: CardGridProps) {
                 className="object-contain p-2 group-hover:scale-105 transition-transform duration-500"
                 sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
               />
-              {/* Hover overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
 
             {/* Card Info */}
             <div className="p-3">
               {card.rarity && (
-                <Badge variant="outline" className="text-[10px] mb-1.5 border-primary/30 text-primary/80">
+                <Badge variant="outline" className="text-[10px] mb-1.5 border-gray-200 text-gray-500">
                   {card.rarity}
                 </Badge>
               )}
-              <h3 className="font-semibold text-sm truncate">{card.name}</h3>
-              <p className="text-xs text-muted-foreground truncate">{card.set.name}</p>
+              <h3 className="font-semibold text-sm truncate text-gray-900">{card.name}</h3>
+              <p className="text-xs text-gray-500 truncate">{card.set.name}</p>
               {variant === "marketplace" && (
                 <div className="flex items-center justify-between mt-2">
-                  <span className="text-primary font-bold text-sm">
+                  <span className="text-red-600 font-bold text-sm">
                     {formatCardPrice(getMarketPrice(card))}
                   </span>
                   {card.set.images.symbol && (

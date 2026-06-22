@@ -142,7 +142,7 @@ export default function DashboardPage() {
               { label: "Browse Marketplace", icon: ArrowUpRight, href: "/marketplace", color: "text-purple-400" },
               { label: "Update Want List", icon: Heart, href: "/dashboard/want-list", color: "text-red-400" },
               { label: "View Portfolio", icon: BarChart3, href: "/dashboard/portfolio", color: "text-yellow-400" },
-              { label: "Check Notifications", icon: Bell, href: "/dashboard/notifications", color: "text-cyan-400" },
+              { label: "Check Notifications", icon: Bell, href: "/dashboard/notifications", color: "text-red-500" },
             ].map((action) => (
               <Link
                 key={action.label}

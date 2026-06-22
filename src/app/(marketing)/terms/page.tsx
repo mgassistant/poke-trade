@@ -18,7 +18,7 @@ export default function TermsPage() {
 
         <div className="prose prose-invert prose-sm max-w-none space-y-8">
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Marketplace Disclaimer</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Marketplace Disclaimer</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               Poké-Trade is an online platform that allows users to connect with one another for the purpose of buying, selling, and trading collectible items.
             </p>
@@ -51,7 +51,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Limitation of Liability</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Limitation of Liability</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               To the maximum extent permitted by law, Poké-Trade shall not be liable for:
             </p>
@@ -70,7 +70,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Authentication Services</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Authentication Services</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               Poké-Trade may offer optional authentication services through independent third-party providers. Authentication services are <strong className="text-foreground">not performed by Poké-Trade</strong>.
             </p>
@@ -83,14 +83,14 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Platform Role</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Platform Role</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               Poké-Trade functions solely as a technology platform that facilitates communication and transaction opportunities between users. Poké-Trade does not take ownership of items and does not become a party to any transaction occurring through the platform.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-foreground border-b border-border/30 pb-2">Intellectual Property</h2>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Intellectual Property</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               Poké-Trade is not affiliated with, endorsed by, or connected to Nintendo, Game Freak, Creatures Inc., or The Pokémon Company. Pokémon and all related marks are trademarks and © of their respective owners. Card images and pricing data are sourced from publicly available APIs for informational purposes.
             </p>

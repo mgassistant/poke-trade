@@ -161,7 +161,7 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   return (
     <button
       onClick={() => setOpen(!open)}
-      className="w-full text-left p-4 rounded-lg bg-card/50 hover:bg-card/80 border border-border/30 transition-colors"
+      className="w-full text-left p-4 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors"
     >
       <div className="flex items-start justify-between gap-3">
         <span className="font-medium text-sm text-foreground">{q}</span>

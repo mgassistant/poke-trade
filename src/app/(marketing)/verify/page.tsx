@@ -89,7 +89,7 @@ export default function VerifyPage() {
         </div>
 
         {/* Verification Tool */}
-        <Card className="mb-8 border-success/20 glow-blue">
+        <Card className="mb-8 border-green-200 shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-success" />
@@ -105,8 +105,8 @@ export default function VerifyPage() {
                   onClick={() => { setSelectedGrader(grader); setCertNumber(""); }}
                   className={`p-3 rounded-xl text-center transition-all ${
                     selectedGrader.name === grader.name
-                      ? "glass-card border-success/50 bg-success/5"
-                      : "glass-card hover:border-border"
+                      ? "bg-white rounded-xl border border-green-300 shadow-sm"
+                      : "bg-white rounded-xl border border-gray-200 hover:border-gray-300 shadow-sm"
                   }`}
                 >
                   <div className="text-2xl mb-1">{grader.icon}</div>

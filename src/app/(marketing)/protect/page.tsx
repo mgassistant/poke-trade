@@ -15,8 +15,6 @@ export default function ProtectPage() {
       {/* Hero */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-1/3 left-1/3 w-[500px] h-[500px] bg-success/5 rounded-full blur-[150px]" />
-          <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px]" />
         </div>
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <Badge className="mb-6 px-4 py-1.5 bg-success/10 text-success border-success/20">
@@ -34,7 +32,7 @@ export default function ProtectPage() {
             assesses condition, and provides a digital certificate — all at a fraction of grading costs.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="xl" className="bg-success hover:bg-success/90 text-white glow-blue" asChild>
+            <Button size="xl" className="bg-success hover:bg-success/90 text-white shadow-sm" asChild>
               <Link href="/register">
                 Get Cards Authenticated
                 <ArrowRight className="h-4 w-4 ml-1" />
@@ -48,7 +46,7 @@ export default function ProtectPage() {
       </section>
 
       {/* Why Authenticate */}
-      <section className="py-20 bg-card/20">
+      <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-4">
             Why <span className="text-success">Authenticate</span>?
@@ -77,7 +75,7 @@ export default function ProtectPage() {
                     </div>
                     <h3 className="font-semibold mb-1">{item.title}</h3>
                     <p className="text-sm text-muted-foreground mb-4">{item.desc}</p>
-                    <div className="pt-3 border-t border-border/30">
+                    <div className="pt-3 border-t border-gray-200">
                       <span className="text-2xl font-bold text-success">{item.stat}</span>
                       <span className="text-xs text-muted-foreground ml-2">{item.statLabel}</span>
                     </div>
@@ -108,7 +106,7 @@ export default function ProtectPage() {
                 transition={{ delay: i * 0.12 }}
               >
                 <Card className={`h-full relative ${
-                  tier.name === "Premium Authentication" ? "border-success/50 glow-blue" : ""
+                  tier.name === "Premium Authentication" ? "border-success/50 shadow-sm" : ""
                 }`}>
                   {tier.name === "Premium Authentication" && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -156,7 +154,7 @@ export default function ProtectPage() {
       </section>
 
       {/* How It Works */}
-      <section className="py-20 bg-card/20">
+      <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-16">
             How It <span className="text-success">Works</span>

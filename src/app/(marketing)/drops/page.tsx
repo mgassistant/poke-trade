@@ -38,8 +38,6 @@ export default function DropsPage() {
       {/* Hero */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-warning/5 rounded-full blur-[150px]" />
-          <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px]" />
         </div>
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <Badge className="mb-6 px-4 py-1.5 bg-warning/10 text-warning border-warning/20">
@@ -73,7 +71,7 @@ export default function DropsPage() {
       </section>
 
       {/* Live Feed Preview */}
-      <section className="py-20 bg-card/20">
+      <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Recent drops */}
@@ -229,7 +227,7 @@ export default function DropsPage() {
       </section>
 
       {/* Alert Types */}
-      <section className="py-20 bg-card/20">
+      <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-12">
             Alert <span className="text-warning">Types</span>
@@ -354,7 +352,7 @@ export default function DropsPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-card/20">
+      <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-3xl px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">
             Stop Refreshing. Start <span className="text-warning">Getting Alerts</span>.

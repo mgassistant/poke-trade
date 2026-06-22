@@ -121,7 +121,7 @@ export default function NewsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <Card className="mb-8 border-primary/30 glow-blue overflow-hidden">
+            <Card className="mb-8 border-red-200 shadow-md overflow-hidden">
               <CardContent className="p-6 sm:p-8">
                 <div className="flex items-center gap-2 mb-3">
                   <Badge>{article.category}</Badge>

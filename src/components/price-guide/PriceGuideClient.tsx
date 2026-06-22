@@ -54,7 +54,7 @@ export function PriceGuideClient({ initialCards, sets }: PriceGuideClientProps) 
         </div>
 
         {/* Search */}
-        <div className="glass-card rounded-xl p-4 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -91,7 +91,7 @@ export function PriceGuideClient({ initialCards, sets }: PriceGuideClientProps) 
 
         {view === "cards" ? (
           /* Card Price Table */
-          <div className="glass-card rounded-xl overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="grid grid-cols-[auto_1fr_auto_auto] sm:grid-cols-[auto_1fr_auto_auto_auto] gap-4 p-4 border-b border-border/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               <div className="w-12" />
               <div>Card</div>

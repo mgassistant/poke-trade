@@ -12,9 +12,7 @@ export default function CollectionPage() {
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-1/3 left-1/3 w-[500px] h-[500px] bg-primary/8 rounded-full blur-[150px]" />
-        </div>
+
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -65,7 +63,7 @@ export default function CollectionPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <Card className="p-6 glow-blue">
+              <Card className="p-6 shadow-lg border-gray-200">
                 <div className="space-y-5">
                   <div className="flex justify-between items-center">
                     <div>
@@ -74,7 +72,7 @@ export default function CollectionPage() {
                     </div>
                     <Badge variant="success">+12.4%</Badge>
                   </div>
-                  <div className="h-28 bg-muted/20 rounded-xl flex items-end justify-around p-3 gap-1 border border-border/30">
+                  <div className="h-28 bg-muted/20 rounded-xl flex items-end justify-around p-3 gap-1 border border-gray-200">
                     {[35, 42, 38, 55, 48, 62, 58, 72, 68, 78, 82, 90].map((h, i) => (
                       <motion.div
                         key={i}
@@ -108,7 +106,7 @@ export default function CollectionPage() {
       </section>
 
       {/* Features grid */}
-      <section className="py-20 bg-card/20">
+      <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-16">
             Collection <span className="text-primary">Features</span>

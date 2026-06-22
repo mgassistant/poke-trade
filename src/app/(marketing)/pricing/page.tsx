@@ -38,7 +38,7 @@ export default function PricingPage() {
               <Card
                 className={`h-full relative ${
                   tier.id === "pro"
-                    ? "border-primary/50 glow-blue scale-[1.03]"
+                    ? "border-red-300 shadow-lg ring-1 ring-red-100 scale-[1.03]"
                     : ""
                 }`}
               >

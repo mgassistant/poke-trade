@@ -30,7 +30,7 @@ const testimonials = [
 
 export function TestimonialsSection() {
   return (
-    <section className="py-24">
+    <section className="py-24 bg-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -39,10 +39,10 @@ export function TestimonialsSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold">
-            Trusted by <span className="text-primary">Collectors</span>
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+            Trusted by <span className="text-red-600">Collectors</span>
           </h2>
-          <p className="mt-4 text-muted-foreground">
+          <p className="mt-4 text-gray-500">
             Hear from real traders on the platform
           </p>
         </motion.div>
@@ -56,23 +56,23 @@ export function TestimonialsSection() {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.1 }}
             >
-              <Card className="h-full hover:border-primary/20 transition-all duration-300">
+              <Card className="h-full hover:border-red-200 transition-all duration-300 hover:shadow-md">
                 <CardContent className="pt-6">
                   <div className="flex gap-0.5 mb-4">
                     {Array.from({ length: t.rating }).map((_, j) => (
-                      <Star key={j} className="h-4 w-4 fill-warning text-warning" />
+                      <Star key={j} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                     ))}
                   </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+                  <p className="text-sm text-gray-600 leading-relaxed mb-5">
                     &ldquo;{t.review}&rdquo;
                   </p>
-                  <div className="flex items-center gap-3 pt-4 border-t border-border/30">
-                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-lg">
+                  <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
+                    <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-lg">
                       {t.avatar}
                     </div>
                     <div>
-                      <div className="text-sm font-semibold">{t.name}</div>
-                      <div className="text-xs text-muted-foreground">{t.role}</div>
+                      <div className="text-sm font-semibold text-gray-900">{t.name}</div>
+                      <div className="text-xs text-gray-500">{t.role}</div>
                     </div>
                   </div>
                 </CardContent>

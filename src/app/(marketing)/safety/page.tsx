@@ -49,7 +49,6 @@ export default function SafetyPage() {
       {/* Hero */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-1/3 left-1/3 w-[500px] h-[500px] bg-success/5 rounded-full blur-[150px]" />
         </div>
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <Badge className="mb-6 px-4 py-1.5 bg-success/10 text-success border-success/20">
@@ -67,7 +66,7 @@ export default function SafetyPage() {
       </section>
 
       {/* 7 Layers */}
-      <section className="py-20 bg-card/20">
+      <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-4">
             7 Layers of <span className="text-success">Protection</span>
@@ -206,7 +205,7 @@ export default function SafetyPage() {
       </section>
 
       {/* Escrow Explainer */}
-      <section className="py-20 bg-card/20">
+      <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-12">
             How <span className="text-primary">Escrow</span> Protects You
@@ -278,7 +277,7 @@ export default function SafetyPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-card/20">
+      <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-3xl px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">
             The Safest Place to <span className="text-success">Trade Cards</span>

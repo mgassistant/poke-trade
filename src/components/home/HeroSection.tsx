@@ -9,20 +9,20 @@ import { Badge } from "@/components/ui/badge";
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-[92vh] flex items-center justify-center">
-      {/* Background effects */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/8 rounded-full blur-[150px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-secondary/8 rounded-full blur-[150px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/3 rounded-full blur-[200px]" />
-        {/* Grid pattern */}
+    <section className="relative min-h-[88vh] flex items-center justify-center overflow-hidden">
+      {/* Background gradient — Pokémon brand red to blue */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-red-600 via-red-500 to-blue-700" />
+        {/* Subtle Poké Ball pattern */}
         <div
-          className="absolute inset-0 opacity-[0.02]"
+          className="absolute inset-0 opacity-[0.06]"
           style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)`,
-            backgroundSize: "60px 60px",
+            backgroundImage: `radial-gradient(circle at 50% 50%, transparent 30%, rgba(255,255,255,0.3) 30%, rgba(255,255,255,0.3) 32%, transparent 32%), radial-gradient(circle at 50% 50%, rgba(255,255,255,0.15) 12%, transparent 12%)`,
+            backgroundSize: "120px 120px",
           }}
         />
+        {/* Soft overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center py-20">
@@ -43,41 +43,36 @@ export function HeroSection() {
               alt="Poké-Trade"
               width={600}
               height={180}
-              className="h-32 sm:h-40 md:h-48 lg:h-56 w-auto mx-auto drop-shadow-[0_0_40px_rgba(0,212,255,0.3)]"
+              className="h-28 sm:h-36 md:h-44 lg:h-52 w-auto mx-auto drop-shadow-lg"
               priority
             />
           </motion.div>
 
-          <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-sm">
+          <Badge className="mb-6 px-4 py-1.5 text-sm bg-white/20 text-white border-white/30 backdrop-blur-sm">
             <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-            The #1 Pokémon Card Trading Platform
+            The Premier Pokémon Card Trading Platform
           </Badge>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]">
-            <span className="text-foreground">Trade. Buy. Sell.</span>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] text-white">
+            Trade. Buy. Sell.
             <br />
-            <span
-              className="bg-gradient-to-r from-primary via-blue-400 to-secondary bg-clip-text"
-              style={{ WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
-            >
-              Collect.
-            </span>
+            <span className="text-yellow-300">Collect.</span>
           </h1>
 
-          <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-6 text-lg sm:text-xl text-white/85 max-w-2xl mx-auto leading-relaxed">
             The safest, smartest Pokémon card marketplace.
-            Smart trade matching, real-time pricing, and fees as low as <span className="text-primary font-semibold">3%</span>.
+            Trusted trading, verified cards, and fees as low as <span className="text-yellow-300 font-semibold">3%</span>.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="xl" variant="gradient" className="text-base px-10" asChild>
+            <Button size="xl" className="text-base px-10 bg-white text-red-600 hover:bg-gray-100 font-semibold shadow-lg" asChild>
               <Link href="/register">
-                Start Trading Free
+                Start Trading
                 <ArrowRight className="h-4 w-4 ml-1" />
               </Link>
             </Button>
-            <Button size="xl" variant="outline" className="text-base" asChild>
-              <Link href="/marketplace">Browse Marketplace</Link>
+            <Button size="xl" variant="outline" className="text-base border-white/40 text-white hover:bg-white/10 hover:text-white" asChild>
+              <Link href="/marketplace">Browse Cards</Link>
             </Button>
           </div>
 
@@ -101,16 +96,13 @@ export function HeroSection() {
                 transition={{ delay: 0.7 + i * 0.1 }}
                 className="text-center"
               >
-                <div className="text-2xl sm:text-3xl font-bold text-primary glow-text-blue">{stat.value}</div>
-                <div className="text-xs sm:text-sm text-muted-foreground mt-1">{stat.label}</div>
+                <div className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</div>
+                <div className="text-xs sm:text-sm text-white/70 mt-1">{stat.label}</div>
               </motion.div>
             ))}
           </motion.div>
         </motion.div>
       </div>
-
-      {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
     </section>
   );
 }

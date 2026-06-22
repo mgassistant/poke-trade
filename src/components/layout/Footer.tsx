@@ -35,7 +35,7 @@ const footerLinks = {
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/50 bg-card/50">
+    <footer className="bg-gray-50 border-t border-gray-200">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="py-12 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           {/* Brand */}
@@ -49,7 +49,7 @@ export function Footer() {
                 className="h-9 w-auto"
               />
             </Link>
-            <p className="mt-3 text-sm text-muted-foreground max-w-xs">
+            <p className="mt-3 text-sm text-gray-500 max-w-xs">
               The safest, smartest, and most trusted Pokémon card marketplace and trading platform.
             </p>
           </div>
@@ -57,13 +57,13 @@ export function Footer() {
           {/* Link columns */}
           {Object.entries(footerLinks).map(([title, links]) => (
             <div key={title}>
-              <h3 className="text-sm font-semibold text-foreground mb-3">{title}</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">{title}</h3>
               <ul className="space-y-2">
                 {links.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -74,13 +74,13 @@ export function Footer() {
           ))}
         </div>
 
-        <Separator />
+        <Separator className="bg-gray-200" />
 
         <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-gray-500">
             © {new Date().getFullYear()} Poké-Trade. All rights reserved.
           </p>
-          <p className="text-xs text-muted-foreground/60 max-w-lg text-center sm:text-right">
+          <p className="text-xs text-gray-400 max-w-lg text-center sm:text-right">
             Poké-Trade is not affiliated with, endorsed by, or connected to Nintendo, Game Freak, Creatures Inc., or The Pokémon Company. Pokémon and all related marks are trademarks of their respective owners.
           </p>
         </div>
