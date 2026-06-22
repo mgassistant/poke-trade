@@ -41,9 +41,9 @@ export function HeroSection() {
             <Image
               src="/logo.png"
               alt="Poké-Trade"
-              width={320}
-              height={96}
-              className="h-20 sm:h-24 md:h-28 w-auto mx-auto drop-shadow-[0_0_30px_rgba(0,212,255,0.3)]"
+              width={600}
+              height={180}
+              className="h-32 sm:h-40 md:h-48 lg:h-56 w-auto mx-auto drop-shadow-[0_0_40px_rgba(0,212,255,0.3)]"
               priority
             />
           </motion.div>

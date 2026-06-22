@@ -20,9 +20,9 @@ export function Header() {
             <Image
               src="/logo.png"
               alt="Poké-Trade"
-              width={160}
-              height={48}
-              className="h-10 w-auto"
+              width={200}
+              height={60}
+              className="h-12 w-auto"
               priority
             />
           </Link>
