@@ -18,8 +18,8 @@ const footerLinks = {
     { label: "Contact", href: "/contact" },
   ],
   Support: [
+    { label: "Trust & Safety", href: "/safety" },
     { label: "Help Center", href: "/help" },
-    { label: "Safety Guide", href: "/safety" },
     { label: "Shipping Guide", href: "/shipping-guide" },
     { label: "Grading Guide", href: "/grading-guide" },
     { label: "Report an Issue", href: "/report" },
