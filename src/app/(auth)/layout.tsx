@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function AuthLayout({
   children,
@@ -16,13 +17,15 @@ export default function AuthLayout({
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="h-10 w-10 rounded-lg gradient-primary flex items-center justify-center">
-              <span className="text-white font-bold">PT</span>
-            </div>
-            <span className="text-xl font-bold">
-              <span className="text-primary">Poké</span>-Trade
-            </span>
+          <Link href="/" className="inline-flex items-center">
+            <Image
+              src="/logo.png"
+              alt="Poké-Trade"
+              width={200}
+              height={60}
+              className="h-14 w-auto"
+              priority
+            />
           </Link>
         </div>
 

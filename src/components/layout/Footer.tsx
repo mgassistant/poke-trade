@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 
 const footerLinks = {
@@ -39,13 +40,14 @@ export function Footer() {
         <div className="py-12 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-4 lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
-                <span className="text-white font-bold text-sm">PT</span>
-              </div>
-              <span className="text-lg font-bold">
-                <span className="text-primary">Poké</span>-Trade
-              </span>
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/logo.png"
+                alt="Poké-Trade"
+                width={140}
+                height={42}
+                className="h-9 w-auto"
+              />
             </Link>
             <p className="mt-3 text-sm text-muted-foreground max-w-xs">
               The safest, smartest, and most trusted Pokémon card marketplace and trading platform.
