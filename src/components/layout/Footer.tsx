@@ -4,18 +4,18 @@ import { Separator } from "@/components/ui/separator";
 
 const footerLinks = {
   Platform: [
-    { label: "Trade Center", href: "/trade-center" },
     { label: "Marketplace", href: "/marketplace" },
+    { label: "Trade Center", href: "/trade-center" },
+    { label: "Compare Prices", href: "/compare" },
+    { label: "Drop Alerts", href: "/drops" },
     { label: "Price Guide", href: "/price-guide" },
-    { label: "Collection Tracker", href: "/collection" },
-    { label: "Community", href: "/community" },
   ],
-  Company: [
-    { label: "About", href: "/about" },
-    { label: "Pricing", href: "/pricing" },
-    { label: "Blog", href: "/blog" },
-    { label: "Careers", href: "/careers" },
-    { label: "Contact", href: "/contact" },
+  Community: [
+    { label: "News & Intel", href: "/news" },
+    { label: "Wins Feed", href: "/wins" },
+    { label: "Collection Tracker", href: "/collection" },
+    { label: "Protect", href: "/protect" },
+    { label: "Community", href: "/community" },
   ],
   Support: [
     { label: "Trust & Safety", href: "/safety" },

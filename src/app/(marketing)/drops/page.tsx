@@ -16,16 +16,20 @@ const RETAILERS = [
   { name: "GameStop", icon: "🎮", status: "Live", products: 22, color: "text-destructive" },
   { name: "Best Buy", icon: "💻", status: "Live", products: 18, color: "text-primary" },
   { name: "TCGPlayer", icon: "🃏", status: "Live", products: "500+", color: "text-secondary" },
+  { name: "Costco", icon: "🏬", status: "Live", products: 12, color: "text-destructive" },
+  { name: "Macy's", icon: "🛍️", status: "Live", products: 8, color: "text-secondary" },
   { name: "eBay Deals", icon: "🔨", status: "Coming Soon", products: "—", color: "text-muted-foreground" },
 ];
 
 const RECENT_DROPS = [
-  { product: "Prismatic Evolutions Elite Trainer Box", retailer: "Pokémon Center", time: "2 min ago", status: "In Stock", price: "$54.99" },
-  { product: "Surging Sparks Booster Box", retailer: "Target", time: "8 min ago", status: "In Stock", price: "$143.99" },
-  { product: "Chaos Rising ETB", retailer: "Amazon", time: "15 min ago", status: "Sold Out", price: "$49.99" },
-  { product: "Crown Zenith Premium Collection", retailer: "Walmart", time: "22 min ago", status: "Low Stock", price: "$39.99" },
-  { product: "Obsidian Flames Booster Box", retailer: "GameStop", time: "35 min ago", status: "In Stock", price: "$129.99" },
-  { product: "151 Ultra-Premium Collection", retailer: "Pokémon Center", time: "1 hour ago", status: "Sold Out", price: "$119.99" },
+  { product: "Prismatic Evolutions Elite Trainer Box", retailer: "Pokémon Center", time: "2 min ago", status: "In Stock", price: "$54.99", url: "https://www.pokemoncenter.com" },
+  { product: "Mega Evolution S4 Chaos Rising Booster Bundle", retailer: "Target", time: "8 min ago", status: "In Stock", price: "$21.99", url: "https://www.target.com/s?searchTerm=pokemon+chaos+rising" },
+  { product: "Chaos Rising Elite Trainer Box", retailer: "Amazon", time: "15 min ago", status: "Sold Out", price: "$49.99", url: "https://www.amazon.com/s?k=pokemon+chaos+rising+etb" },
+  { product: "Mega Evolution S4 Booster Bundle", retailer: "Walmart", time: "22 min ago", status: "Low Stock", price: "$21.99", url: "https://www.walmart.com/search?q=pokemon+chaos+rising" },
+  { product: "Mega Evolution Booster Bundle", retailer: "Costco", time: "35 min ago", status: "In Stock", price: "$21.99", url: "https://www.costco.com" },
+  { product: "First Partner Series III Collection", retailer: "GameStop", time: "1 hour ago", status: "In Stock", price: "$39.99", url: "https://www.gamestop.com/search/?q=pokemon+first+partner" },
+  { product: "Prismatic Evolutions Super Premium Collection", retailer: "Macy's", time: "2 hours ago", status: "Sold Out", price: "$149.99", url: "https://www.macys.com/shop/search?keyword=pokemon" },
+  { product: "Spring 25 D7 5 Box", retailer: "Walmart", time: "3 hours ago", status: "In Stock", price: "$29.86", url: "https://www.walmart.com/search?q=pokemon+spring+25" },
 ];
 
 export default function DropsPage() {
@@ -102,7 +106,7 @@ export default function DropsPage() {
                             <span className="text-xs text-muted-foreground">{drop.time}</span>
                           </div>
                         </div>
-                        <div className="text-right shrink-0">
+                        <div className="text-right shrink-0 flex flex-col items-end gap-1">
                           <div className="font-bold text-sm">{drop.price}</div>
                           <Badge
                             variant={drop.status === "In Stock" ? "default" : drop.status === "Low Stock" ? "warning" : "outline"}
@@ -114,6 +118,16 @@ export default function DropsPage() {
                           >
                             {drop.status}
                           </Badge>
+                          {drop.status !== "Sold Out" && (
+                            <a
+                              href={drop.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] text-primary hover:underline font-medium"
+                            >
+                              Buy Now →
+                            </a>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
