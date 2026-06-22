@@ -29,47 +29,59 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setError("Username can only contain letters, numbers, and underscores");
+      setLoading(false);
+      return;
+    }
+
     if (password.length < 8) {
       setError("Password must be at least 8 characters");
       setLoading(false);
       return;
     }
 
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    // Check username availability
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("username", username.toLowerCase())
-      .single();
+      // Check username availability (skip if profiles table doesn't exist yet)
+      const { data: existing, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", username.toLowerCase())
+        .single();
 
-    if (existing) {
-      setError("Username is already taken");
-      setLoading(false);
-      return;
-    }
+      if (!profileError && existing) {
+        setError("Username is already taken");
+        setLoading(false);
+        return;
+      }
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          username: username.toLowerCase(),
-          display_name: username,
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username: username.toLowerCase(),
+            display_name: username,
+          },
+          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
         },
-        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
-      },
-    });
+      });
 
-    if (error) {
-      setError(error.message);
+      if (signUpError) {
+        setError(signUpError.message || "Failed to create account. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      setSuccess(true);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setError(message);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setSuccess(true);
-    setLoading(false);
   };
 
   const handleGoogleSignup = async () => {
@@ -109,7 +121,7 @@ export default function RegisterPage() {
         <form onSubmit={handleRegister} className="space-y-4">
           {error && (
             <div className="bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-md p-3">
-              {error}
+              {typeof error === "string" ? error : "Something went wrong. Please try again."}
             </div>
           )}
 
