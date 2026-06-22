@@ -38,7 +38,7 @@ interface WantListItemData {
 }
 
 const PRIORITIES = ["High", "Medium", "Low"] as const;
-const CONDITIONS = ["Any", "Mint", "Near Mint", "Excellent", "Good", "Played", "Poor"];
+const CONDITIONS = ["Any", "Gem Mint", "Mint", "Near Mint", "Lightly Played", "Moderately Played", "Heavily Played", "Damaged"];
 
 export default function WantListPage() {
   const [items, setItems] = useState<WantListItemData[]>([]);

@@ -50,12 +50,13 @@ interface Listing {
 
 const CONDITIONS = [
   { value: "", label: "All" },
+  { value: "gem_mint", label: "Gem Mint" },
   { value: "mint", label: "Mint" },
   { value: "near_mint", label: "NM" },
-  { value: "excellent", label: "Excellent" },
-  { value: "good", label: "Good" },
-  { value: "played", label: "Played" },
-  { value: "poor", label: "Poor" },
+  { value: "lightly_played", label: "LP" },
+  { value: "moderately_played", label: "MP" },
+  { value: "heavily_played", label: "HP" },
+  { value: "damaged", label: "DMG" },
 ];
 
 const SORT_OPTIONS = [
@@ -65,12 +66,18 @@ const SORT_OPTIONS = [
 ];
 
 const CONDITION_LABELS: Record<string, string> = {
-  mint: "Mint",
+  gem_mint: "GM",
+  mint: "M",
   near_mint: "NM",
-  excellent: "EX",
-  good: "Good",
-  played: "PL",
-  poor: "Poor",
+  lightly_played: "LP",
+  moderately_played: "MP",
+  heavily_played: "HP",
+  damaged: "DMG",
+  // Legacy fallbacks
+  excellent: "NM",
+  good: "LP",
+  played: "MP",
+  poor: "DMG",
 };
 
 export default function MarketplacePage() {

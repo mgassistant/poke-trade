@@ -65,21 +65,28 @@ interface CollectionCard {
 type Tab = "active" | "sold" | "cancelled";
 
 const CONDITIONS = [
-  { value: "mint", label: "Mint" },
-  { value: "near_mint", label: "Near Mint" },
-  { value: "excellent", label: "Excellent" },
-  { value: "good", label: "Good" },
-  { value: "played", label: "Played" },
-  { value: "poor", label: "Poor" },
+  { value: "gem_mint", label: "Gem Mint (GM)" },
+  { value: "mint", label: "Mint (M)" },
+  { value: "near_mint", label: "Near Mint (NM)" },
+  { value: "lightly_played", label: "Lightly Played (LP)" },
+  { value: "moderately_played", label: "Moderately Played (MP)" },
+  { value: "heavily_played", label: "Heavily Played (HP)" },
+  { value: "damaged", label: "Damaged (DMG)" },
 ];
 
 const CONDITION_LABELS: Record<string, string> = {
-  mint: "Mint",
-  near_mint: "Near Mint",
-  excellent: "Excellent",
-  good: "Good",
-  played: "Played",
-  poor: "Poor",
+  gem_mint: "GM",
+  mint: "M",
+  near_mint: "NM",
+  lightly_played: "LP",
+  moderately_played: "MP",
+  heavily_played: "HP",
+  damaged: "DMG",
+  // Legacy fallbacks
+  excellent: "NM",
+  good: "LP",
+  played: "MP",
+  poor: "DMG",
 };
 
 export default function SalesPage() {

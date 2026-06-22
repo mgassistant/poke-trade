@@ -4,13 +4,15 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import {
   Wallet, Plus, Search, X, Filter, ChevronLeft, ChevronRight,
-  Trash2, Grid, SortAsc
+  Trash2, Grid, SortAsc, Camera
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import CardScanner from "@/components/cards/CardScanner";
+import { CONDITIONS as CONDITION_LIST, getConditionInfo, getConditionValue } from "@/lib/constants/conditions";
 
 interface CardData {
   id: string;
@@ -46,17 +48,12 @@ interface CollectionData {
   collection_items: CollectionItemData[];
 }
 
-const CONDITIONS = ["Mint", "Near Mint", "Excellent", "Good", "Played", "Poor"];
-const CONDITION_MAP: Record<string, string> = {
-  "Mint": "mint",
-  "Near Mint": "near_mint",
-  "Excellent": "excellent",
-  "Good": "good",
-  "Played": "played",
-  "Poor": "poor",
-};
+const CONDITIONS = CONDITION_LIST.map((c) => c.label);
+const CONDITION_MAP: Record<string, string> = Object.fromEntries(
+  CONDITION_LIST.map((c) => [c.label, c.value])
+);
 const CONDITION_REVERSE: Record<string, string> = Object.fromEntries(
-  Object.entries(CONDITION_MAP).map(([k, v]) => [v, k])
+  CONDITION_LIST.map((c) => [c.value, `${c.shortLabel}`])
 );
 
 type SortOption = "value-desc" | "value-asc" | "name-asc" | "name-desc" | "date-desc";
@@ -71,6 +68,7 @@ export default function CollectionPage() {
   const [addCondition, setAddCondition] = useState("Near Mint");
   const [addQuantity, setAddQuantity] = useState(1);
   const [adding, setAdding] = useState<string | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   // Filters
   const [filterSet, setFilterSet] = useState("");
@@ -239,9 +237,14 @@ export default function CollectionPage() {
           <h1 className="text-2xl font-bold">My Collection</h1>
           <p className="text-muted-foreground text-sm mt-1">Track and manage your card collection</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="gap-2">
-          <Plus className="h-4 w-4" /> Add Card
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowScanner(true)} variant="outline" className="gap-2">
+            <Camera className="h-4 w-4" /> Scan Card
+          </Button>
+          <Button onClick={() => setShowAddModal(true)} className="gap-2">
+            <Plus className="h-4 w-4" /> Add Card
+          </Button>
+        </div>
       </div>
 
       {/* Stats Header */}
@@ -403,9 +406,14 @@ export default function CollectionPage() {
                   {item.cards?.card_sets?.name || ""} · #{item.cards?.number}
                 </p>
                 <div className="flex items-center justify-between mt-2">
-                  <Badge variant="outline" className="text-[10px]">
-                    {CONDITION_REVERSE[item.condition] || item.condition}
-                  </Badge>
+                  {(() => {
+                    const ci = getConditionInfo(item.condition);
+                    return (
+                      <Badge variant="outline" className={`text-[10px] ${ci.color} ${ci.borderColor}`}>
+                        {ci.shortLabel}
+                      </Badge>
+                    );
+                  })()}
                   <span className="text-xs font-medium">
                     ${((item.current_value || item.cards?.market_value || 0)).toFixed(2)}
                   </span>
@@ -573,6 +581,48 @@ export default function CollectionPage() {
           </div>
         </div>
       )}
+
+      {/* Card Scanner Modal */}
+      <CardScanner
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onAddCard={async (cardId, condition, quantity) => {
+          if (!collections.length) {
+            const createRes = await fetch("/api/collection", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "create_collection", name: "My Collection" }),
+            });
+            const created = await createRes.json();
+            if (created.collection) {
+              await fetch("/api/collection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "add_item",
+                  collection_id: created.collection.id,
+                  card_id: cardId,
+                  condition,
+                  quantity,
+                }),
+              });
+            }
+          } else {
+            await fetch("/api/collection", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "add_item",
+                collection_id: collections[0].id,
+                card_id: cardId,
+                condition,
+                quantity,
+              }),
+            });
+          }
+          fetchCollection();
+        }}
+      />
     </div>
   );
 }

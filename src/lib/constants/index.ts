@@ -8,12 +8,13 @@ export const TRADER_LEVELS = [
 ] as const;
 
 export const CARD_CONDITIONS = [
+  { value: "gem_mint", label: "Gem Mint (GM)" },
   { value: "mint", label: "Mint (M)" },
   { value: "near_mint", label: "Near Mint (NM)" },
   { value: "lightly_played", label: "Lightly Played (LP)" },
   { value: "moderately_played", label: "Moderately Played (MP)" },
   { value: "heavily_played", label: "Heavily Played (HP)" },
-  { value: "damaged", label: "Damaged (D)" },
+  { value: "damaged", label: "Damaged (DMG)" },
 ] as const;
 
 export const CARD_RARITIES = [
