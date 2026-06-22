@@ -63,14 +63,16 @@ export const SUBSCRIPTION_TIERS = [
   {
     id: "pro",
     name: "Poké-Trade Pro",
-    price: 9.99,
+    price: 19.99,
     features: [
       "Unlimited P2P trades (no per-trade fee)",
+      "Unlimited drop alerts (real-time)",
       "Unlimited marketplace listings",
       "3% marketplace sale fee",
       "Advanced trade matching",
       "Collection analytics & value charts",
       "Market price alerts",
+      "All 7 retailers monitored",
       "Pro badge on profile",
       "Priority support",
     ],
@@ -78,11 +80,13 @@ export const SUBSCRIPTION_TIERS = [
   {
     id: "elite",
     name: "Poké-Trade Elite",
-    price: 19.99,
+    price: 39.99,
     features: [
       "Everything in Pro",
+      "Priority drop alerts (30s faster)",
       "Portfolio analytics & investment tracking",
-      "Card authentication service discount (20% off)",
+      "Card authentication discount (20% off)",
+      "Poké-Trade Protect (escrow) included",
       "Featured profile placement",
       "Premium market insights & reports",
       "Early access to new features",
