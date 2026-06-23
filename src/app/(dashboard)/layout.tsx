@@ -47,6 +47,7 @@ const sidebarLinks = [
     { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
     { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
     { href: "/dashboard/membership", label: "Membership", icon: Shield },
+    { href: "/dashboard/protection", label: "Protection", icon: Shield },
     { href: "/dashboard/settings", label: "Settings", icon: Settings },
   ]},
 ];

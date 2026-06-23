@@ -23,7 +23,9 @@ const adminLinks = [
   ]},
   { section: "Operations", items: [
     { href: "/admin/verification", label: "Verification", icon: CheckCircle },
+    { href: "/admin/disputes", label: "Disputes", icon: FileWarning },
     { href: "/admin/drops", label: "Drop Products", icon: Package },
+    { href: "/admin/insurance", label: "Insurance Leads", icon: Shield },
     { href: "/admin/reports", label: "Reports", icon: FileWarning },
   ]},
   { section: "Content", items: [

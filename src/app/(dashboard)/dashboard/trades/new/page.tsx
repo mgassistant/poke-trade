@@ -898,7 +898,7 @@ function NewTradeContent() {
                       ⚠️ No trade protection on free tier with Direct Ship
                     </p>
                     <p className="text-xs text-orange-600 mt-1">
-                      Upgrade to Pro ($9.99/mo) for $50 protection on all trades, or add protection below.
+                      Upgrade to Pro ($19.99/mo) for up to $100 discretionary platform credit per trade, or add protection below.
                     </p>
                   </div>
                   <button
@@ -913,7 +913,7 @@ function NewTradeContent() {
                       <div>
                         <p className="font-medium text-sm">Add Trade Protection</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          $2.99 per trade · Up to $500 protection
+                          $2.99 per trade · Up to $500 discretionary platform credit (subject to review)
                         </p>
                       </div>
                       <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-0.5 ${
