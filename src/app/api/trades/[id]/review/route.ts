@@ -12,10 +12,26 @@ export async function POST(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const { rating, comment } = body;
+  const {
+    rating,
+    comment,
+    communication_rating,
+    accuracy_rating,
+    shipping_rating,
+    condition_rating,
+    review_photos,
+  } = body;
 
   if (!rating || rating < 1 || rating > 5) {
     return NextResponse.json({ error: "Rating must be between 1 and 5" }, { status: 400 });
+  }
+
+  // Validate category ratings if provided
+  const categoryFields = [communication_rating, accuracy_rating, shipping_rating, condition_rating];
+  for (const val of categoryFields) {
+    if (val !== undefined && val !== null && (val < 1 || val > 5)) {
+      return NextResponse.json({ error: "Category ratings must be between 1 and 5" }, { status: 400 });
+    }
   }
 
   // Get trade
@@ -29,6 +45,15 @@ export async function POST(
   if (!trade) return NextResponse.json({ error: "Trade not found" }, { status: 404 });
   if (trade.status !== "completed") {
     return NextResponse.json({ error: "Can only review completed trades" }, { status: 400 });
+  }
+
+  // 14-day review window
+  if (trade.completed_at) {
+    const completedAt = new Date(trade.completed_at).getTime();
+    const fourteenDays = 14 * 24 * 60 * 60 * 1000;
+    if (Date.now() - completedAt > fourteenDays) {
+      return NextResponse.json({ error: "Review window has closed (14 days after completion)" }, { status: 400 });
+    }
   }
 
   const revieweeId = trade.sender_id === user.id ? trade.receiver_id : trade.sender_id;
@@ -45,7 +70,7 @@ export async function POST(
     return NextResponse.json({ error: "You already reviewed this trade" }, { status: 400 });
   }
 
-  // Create review
+  // Create review with categorical ratings
   const { data: review, error } = await supabase
     .from("reviews")
     .insert({
@@ -55,6 +80,11 @@ export async function POST(
       rating,
       comment: comment || null,
       review_type: "trade",
+      communication_rating: communication_rating || null,
+      accuracy_rating: accuracy_rating || null,
+      shipping_rating: shipping_rating || null,
+      condition_rating: condition_rating || null,
+      review_photos: review_photos || [],
     })
     .select()
     .single();
@@ -74,6 +104,14 @@ export async function POST(
       .update({ trade_score: Math.round(avg * 100) / 100 })
       .eq("id", revieweeId);
   }
+
+  // Log trade event
+  await supabase.from("trade_events").insert({
+    trade_id: id,
+    event_type: "reviewed",
+    actor_id: user.id,
+    details: { rating, communication_rating, accuracy_rating, shipping_rating, condition_rating },
+  });
 
   // Notify
   await supabase.from("notifications").insert({

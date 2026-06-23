@@ -75,9 +75,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Listing limit reached (${limits.max_listings}).` }, { status: 429 });
   }
 
-  // Require photos for $50+ items
-  if (price >= 50 && (!photos || photos.length < 2)) {
-    return NextResponse.json({ error: "Front and back photos required for listings over $50" }, { status: 400 });
+  // Require photos for $50+ items (front and back for $100+)
+  if (price >= 100 && (!photos || photos.length < 2)) {
+    return NextResponse.json({ error: "Front and back photos required for high-value listings ($100+)" }, { status: 400 });
+  }
+  if (price >= 50 && (!photos || photos.length < 1)) {
+    return NextResponse.json({ error: "At least one photo required for listings over $50" }, { status: 400 });
   }
 
   const { data: card } = await supabase
@@ -128,6 +131,58 @@ export async function POST(request: NextRequest) {
       auto_detected: true,
       details: `Listed at $${price}, market value $${card?.market_value}`,
     });
+  }
+
+  // Run fraud risk assessment
+  try {
+    const { calculateListingRisk } = await import("@/lib/fraud-detection");
+
+    // Count recent listings
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentCount } = await supabase
+      .from("listings")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", oneHourAgo);
+
+    const { count: disputeCount } = await supabase
+      .from("disputes")
+      .select("id", { count: "exact", head: true })
+      .eq("initiator_id", user.id);
+
+    const listingRisk = {
+      id: listing.id,
+      price,
+      photos: photos || [],
+      created_at: listing.created_at,
+      card_market_value: card?.market_value || null,
+    };
+
+    const sellerRisk = {
+      id: user.id,
+      created_at: profile?.created_at || new Date().toISOString(),
+      verification_level: profile?.verification_level || 0,
+      trust_score: profile?.trust_score || 100,
+      total_trades: profile?.total_trades || 0,
+      total_sales: profile?.total_sales || 0,
+      dispute_count: disputeCount || 0,
+      recent_listing_count: recentCount || 0,
+    };
+
+    const riskAssessment = calculateListingRisk(listingRisk, sellerRisk);
+
+    if (riskAssessment.level === "high") {
+      await supabase.from("fraud_flags").insert({
+        listing_id: listing.id,
+        user_id: user.id,
+        risk_score: riskAssessment.score,
+        risk_level: riskAssessment.level,
+        flags: riskAssessment.flags,
+        status: "pending",
+      });
+    }
+  } catch {
+    // Non-critical: don't block listing creation if fraud check fails
   }
 
   await supabase.from("activity_feed").insert({

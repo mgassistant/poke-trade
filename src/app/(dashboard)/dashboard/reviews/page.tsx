@@ -3,11 +3,14 @@
 import { useEffect, useState, useCallback, Suspense } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
-import { Star, Loader2, MessageSquare } from "lucide-react";
+import { Star, Loader2, MessageSquare, Filter, Send } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ReputationCard } from "@/components/ReputationCard";
+import { ReviewForm } from "@/components/ReviewForm";
+import type { ReputationProfile } from "@/lib/reputation";
 
 interface ReviewProfile {
   id: string;
@@ -21,112 +24,103 @@ interface Review {
   reviewer_id: string;
   reviewee_id: string;
   rating: number;
+  communication_rating: number | null;
+  accuracy_rating: number | null;
+  shipping_rating: number | null;
+  condition_rating: number | null;
   comment: string | null;
+  seller_response: string | null;
+  seller_response_at: string | null;
+  review_type: string;
   created_at: string;
   reviewer?: ReviewProfile;
   reviewee?: ReviewProfile;
   trade_offer?: { id: string; created_at: string; status: string } | null;
 }
 
-interface ReviewStats {
-  average_rating: number;
-  total_reviews: number;
-}
-
 type ReviewTab = "received" | "given";
+type ReviewFilter = "all" | "trade" | "sale" | "5-star" | "1-star";
 
 function ReviewsContent() {
   const searchParams = useSearchParams();
   const tradeId = searchParams.get("trade");
 
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [stats, setStats] = useState<ReviewStats>({ average_rating: 0, total_reviews: 0 });
+  const [reputation, setReputation] = useState<ReputationProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<ReviewTab>("received");
-
-  // Leave review
+  const [filter, setFilter] = useState<ReviewFilter>("all");
   const [showReviewForm, setShowReviewForm] = useState(!!tradeId);
-  const [reviewTradeId, setReviewTradeId] = useState(tradeId || "");
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [hoverRating, setHoverRating] = useState(0);
+  const [respondingTo, setRespondingTo] = useState<string | null>(null);
+  const [responseText, setResponseText] = useState("");
+  const [sendingResponse, setSendingResponse] = useState(false);
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/reviews?tab=${tab}`);
+      const res = await fetch(`/api/reviews?tab=${tab}&filter=${filter}`);
       const data = await res.json();
       if (data.reviews) setReviews(data.reviews);
-      if (data.stats) setStats(data.stats);
+      if (data.reputation) setReputation(data.reputation);
     } catch {
+      // silent
     } finally {
       setLoading(false);
     }
-  }, [tab]);
+  }, [tab, filter]);
 
   useEffect(() => {
     fetchReviews();
   }, [fetchReviews]);
 
-  const handleSubmitReview = async () => {
-    if (!reviewTradeId) return;
-    setSubmitting(true);
+  const handleSubmitResponse = async (reviewId: string) => {
+    if (!responseText.trim()) return;
+    setSendingResponse(true);
     try {
-      const res = await fetch(`/api/trades/${reviewTradeId}/review`, {
+      const res = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating: reviewRating, comment: reviewComment || null }),
+        body: JSON.stringify({ review_id: reviewId, response: responseText }),
       });
-      const data = await res.json();
       if (res.ok) {
-        setShowReviewForm(false);
-        setReviewTradeId("");
-        setReviewComment("");
-        setReviewRating(5);
+        setRespondingTo(null);
+        setResponseText("");
         fetchReviews();
-      } else {
-        alert(data.error || "Failed to submit review");
       }
     } catch {
-      alert("Something went wrong");
+      // silent
     } finally {
-      setSubmitting(false);
+      setSendingResponse(false);
     }
   };
 
-  const renderStars = (rating: number, interactive = false) => {
-    return (
-      <div className="flex gap-0.5">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            disabled={!interactive}
-            onClick={() => interactive && setReviewRating(star)}
-            onMouseEnter={() => interactive && setHoverRating(star)}
-            onMouseLeave={() => interactive && setHoverRating(0)}
-            className={interactive ? "cursor-pointer" : "cursor-default"}
-          >
-            <Star
-              className={`h-5 w-5 ${
-                star <= (interactive ? (hoverRating || reviewRating) : rating)
-                  ? "fill-yellow-400 text-yellow-400"
-                  : "text-muted-foreground/30"
-              }`}
-            />
-          </button>
-        ))}
-      </div>
-    );
-  };
+  const renderStars = (rating: number) => (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={`h-4 w-4 ${
+            star <= rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"
+          }`}
+        />
+      ))}
+    </div>
+  );
+
+  const filters: { key: ReviewFilter; label: string }[] = [
+    { key: "all", label: "All" },
+    { key: "trade", label: "Trades" },
+    { key: "sale", label: "Sales" },
+    { key: "5-star", label: "5★" },
+    { key: "1-star", label: "1★" },
+  ];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Reviews</h1>
-          <p className="text-muted-foreground text-sm mt-1">Reviews you&apos;ve given and received</p>
+          <p className="text-muted-foreground text-sm mt-1">Your trading reputation</p>
         </div>
         {!showReviewForm && (
           <Button size="sm" variant="outline" onClick={() => setShowReviewForm(true)} className="gap-2">
@@ -135,65 +129,19 @@ function ReviewsContent() {
         )}
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardContent className="pt-4 pb-3 text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              {renderStars(Math.round(stats.average_rating))}
-            </div>
-            <div className="text-xl font-bold">{stats.average_rating.toFixed(1)}</div>
-            <div className="text-xs text-muted-foreground">Average Rating</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3 text-center">
-            <div className="text-xl font-bold">{stats.total_reviews}</div>
-            <div className="text-xs text-muted-foreground">Total Reviews</div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Reputation Card */}
+      {reputation && <ReputationCard reputation={reputation} />}
 
-      {/* Leave Review Form */}
+      {/* Review Form */}
       {showReviewForm && (
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="font-semibold mb-4">Leave a Review</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-muted-foreground block mb-1">Trade ID</label>
-                <input
-                  type="text"
-                  value={reviewTradeId}
-                  onChange={(e) => setReviewTradeId(e.target.value)}
-                  placeholder="Enter the completed trade ID"
-                  className="w-full h-9 rounded-md border border-border bg-input px-3 text-sm text-foreground"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground block mb-2">Rating</label>
-                {renderStars(reviewRating, true)}
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground block mb-1">Comment</label>
-                <textarea
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  placeholder="How was your trading experience?"
-                  className="w-full h-20 rounded-md border border-border bg-input px-3 py-2 text-sm text-foreground resize-none"
-                  maxLength={500}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleSubmitReview} disabled={submitting || !reviewTradeId} className="gap-2">
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className="h-4 w-4" />}
-                  Submit Review
-                </Button>
-                <Button variant="ghost" onClick={() => setShowReviewForm(false)}>Cancel</Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <ReviewForm
+          tradeId={tradeId || ""}
+          onSubmit={() => {
+            setShowReviewForm(false);
+            fetchReviews();
+          }}
+          onCancel={() => setShowReviewForm(false)}
+        />
       )}
 
       {/* Tabs */}
@@ -204,7 +152,7 @@ function ReviewsContent() {
             tab === "received" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          Received
+          Reviews I&apos;ve Received
         </button>
         <button
           onClick={() => setTab("given")}
@@ -212,8 +160,26 @@ function ReviewsContent() {
             tab === "given" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          Given
+          Reviews I&apos;ve Given
         </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-2">
+        <Filter className="h-4 w-4 text-muted-foreground" />
+        {filters.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              filter === f.key
+                ? "bg-foreground text-background"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       {/* Reviews List */}
@@ -237,7 +203,7 @@ function ReviewsContent() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Star className="h-12 w-12 text-muted-foreground/20 mb-4" />
-            <h3 className="font-semibold mb-1">No {tab} reviews</h3>
+            <h3 className="font-semibold mb-1">No reviews found</h3>
             <p className="text-sm text-muted-foreground text-center max-w-xs">
               {tab === "received"
                 ? "Complete some trades to start receiving reviews!"
@@ -268,15 +234,95 @@ function ReviewsContent() {
                           {person?.display_name || person?.username || "Unknown"}
                         </span>
                         {renderStars(review.rating)}
+                        <Badge variant="outline" className="text-xs">
+                          {review.review_type}
+                        </Badge>
                         <span className="text-xs text-muted-foreground">
                           {new Date(review.created_at).toLocaleDateString()}
                         </span>
                       </div>
+
+                      {/* Category ratings */}
+                      {(review.communication_rating || review.accuracy_rating || review.shipping_rating || review.condition_rating) && (
+                        <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                          {review.communication_rating && (
+                            <span>Comm: {"★".repeat(review.communication_rating)}</span>
+                          )}
+                          {review.accuracy_rating && (
+                            <span>Accuracy: {"★".repeat(review.accuracy_rating)}</span>
+                          )}
+                          {review.shipping_rating && (
+                            <span>Shipping: {"★".repeat(review.shipping_rating)}</span>
+                          )}
+                          {review.condition_rating && (
+                            <span>Condition: {"★".repeat(review.condition_rating)}</span>
+                          )}
+                        </div>
+                      )}
+
                       {review.comment && (
                         <p className="text-sm text-muted-foreground mt-2 flex items-start gap-1.5">
                           <MessageSquare className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                           {review.comment}
                         </p>
+                      )}
+
+                      {/* Seller Response */}
+                      {review.seller_response && (
+                        <div className="mt-2 ml-4 pl-3 border-l-2 border-blue-200">
+                          <p className="text-xs font-medium text-blue-700">Seller Response:</p>
+                          <p className="text-sm text-muted-foreground">{review.seller_response}</p>
+                        </div>
+                      )}
+
+                      {/* Respond button (only for received reviews without response) */}
+                      {tab === "received" && !review.seller_response && (
+                        <>
+                          {respondingTo === review.id ? (
+                            <div className="mt-2 flex gap-2">
+                              <input
+                                type="text"
+                                value={responseText}
+                                onChange={(e) => setResponseText(e.target.value)}
+                                placeholder="Write your response..."
+                                maxLength={500}
+                                className="flex-1 h-8 rounded-md border border-border bg-input px-3 text-sm text-foreground"
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => handleSubmitResponse(review.id)}
+                                disabled={sendingResponse || !responseText.trim()}
+                                className="gap-1"
+                              >
+                                {sendingResponse ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Send className="h-3 w-3" />
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setRespondingTo(null);
+                                  setResponseText("");
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setRespondingTo(review.id)}
+                              className="mt-1 text-xs gap-1"
+                            >
+                              <MessageSquare className="h-3 w-3" />
+                              Respond
+                            </Button>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -292,12 +338,16 @@ function ReviewsContent() {
 
 export default function ReviewsPage() {
   return (
-    <Suspense fallback={
-      <div className="space-y-6">
-        <div><h1 className="text-2xl font-bold">Reviews</h1></div>
-        <Skeleton className="h-32 w-full" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold">Reviews</h1>
+          </div>
+          <Skeleton className="h-32 w-full" />
+        </div>
+      }
+    >
       <ReviewsContent />
     </Suspense>
   );

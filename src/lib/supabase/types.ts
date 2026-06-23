@@ -376,6 +376,13 @@ export interface Database {
           rating: number;
           comment: string | null;
           review_type: "trade" | "sale";
+          communication_rating: number | null;
+          accuracy_rating: number | null;
+          shipping_rating: number | null;
+          condition_rating: number | null;
+          review_photos: string[];
+          seller_response: string | null;
+          seller_response_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -387,8 +394,65 @@ export interface Database {
           rating: number;
           comment?: string | null;
           review_type: "trade" | "sale";
+          communication_rating?: number | null;
+          accuracy_rating?: number | null;
+          shipping_rating?: number | null;
+          condition_rating?: number | null;
+          review_photos?: string[];
+          seller_response?: string | null;
+          seller_response_at?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["reviews"]["Insert"]>;
+      };
+      trade_events: {
+        Row: {
+          id: string;
+          trade_id: string;
+          event_type: string;
+          actor_id: string;
+          details: Record<string, unknown>;
+          photos: string[];
+          integrity_hash: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          trade_id: string;
+          event_type: string;
+          actor_id: string;
+          details?: Record<string, unknown>;
+          photos?: string[];
+          integrity_hash?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["trade_events"]["Insert"]>;
+      };
+      fraud_flags: {
+        Row: {
+          id: string;
+          listing_id: string | null;
+          trade_id: string | null;
+          user_id: string;
+          risk_score: number;
+          risk_level: string;
+          flags: string[];
+          status: string;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          listing_id?: string | null;
+          trade_id?: string | null;
+          user_id: string;
+          risk_score: number;
+          risk_level: string;
+          flags?: string[];
+          status?: string;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["fraud_flags"]["Insert"]>;
       };
       conversations: {
         Row: {
@@ -632,6 +696,8 @@ export type Listing = Database["public"]["Tables"]["listings"]["Row"];
 export type Order = Database["public"]["Tables"]["orders"]["Row"];
 export type Offer = Database["public"]["Tables"]["offers"]["Row"];
 export type Review = Database["public"]["Tables"]["reviews"]["Row"];
+export type TradeEvent = Database["public"]["Tables"]["trade_events"]["Row"];
+export type FraudFlag = Database["public"]["Tables"]["fraud_flags"]["Row"];
 export type Conversation = Database["public"]["Tables"]["conversations"]["Row"];
 export type Message = Database["public"]["Tables"]["messages"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
