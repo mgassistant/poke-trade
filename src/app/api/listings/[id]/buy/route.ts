@@ -41,6 +41,13 @@ export async function POST(
     .eq("id", user.id)
     .single();
 
+  // Get seller's Connect account
+  const { data: sellerProfile } = await serviceClient
+    .from("profiles")
+    .select("stripe_connect_id, subscription_tier")
+    .eq("id", listing.user_id)
+    .single();
+
   // Get or create Stripe customer
   let customerId = buyerProfile?.stripe_customer_id;
   if (!customerId) {
@@ -55,15 +62,17 @@ export async function POST(
       .eq("id", user.id);
   }
 
-  // Calculate platform fee based on buyer's tier
-  const tier = buyerProfile?.subscription_tier || "free";
-  const feeRate = tier === "free" ? 0.05 : 0.03;
+  // Calculate platform fee based on seller's tier
+  const sellerTier = sellerProfile?.subscription_tier || "free";
+  const feeRate = sellerTier === "free" ? 0.05 : 0.03;
   const totalPrice = Number(listing.price) + Number(listing.shipping_cost || 0);
-  const platformFee = Math.round(totalPrice * feeRate * 100); // in cents
+  const totalCents = Math.round(totalPrice * 100);
+  const platformFeeCents = Math.round(totalPrice * feeRate * 100);
 
   const origin = request.headers.get("origin") || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
-  const session = await stripe.checkout.sessions.create({
+  // Build checkout session options
+  const sessionConfig: any = {
     customer: customerId,
     payment_method_types: ["card"],
     mode: "payment",
@@ -76,7 +85,7 @@ export async function POST(
             description: `Condition: ${listing.condition || "Near Mint"}`,
             metadata: { listing_id: listing.id },
           },
-          unit_amount: Math.round(totalPrice * 100),
+          unit_amount: totalCents,
         },
         quantity: 1,
       },
@@ -87,20 +96,41 @@ export async function POST(
       buyer_id: user.id,
       seller_id: listing.user_id,
       card_id: listing.card_id,
-      platform_fee: String(platformFee),
-      amount: String(Math.round(totalPrice * 100)),
+      platform_fee: String(platformFeeCents),
+      amount: String(totalCents),
     },
-    payment_intent_data: {
+    success_url: `${origin}/dashboard/purchases?success=true&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/dashboard/marketplace?canceled=true`,
+  };
+
+  // If seller has Stripe Connect, use transfer_data for split payment
+  if (sellerProfile?.stripe_connect_id) {
+    sessionConfig.payment_intent_data = {
+      application_fee_amount: platformFeeCents,
+      transfer_data: {
+        destination: sellerProfile.stripe_connect_id,
+      },
       metadata: {
         type: "listing_purchase",
         listing_id: listing.id,
         buyer_id: user.id,
         seller_id: listing.user_id,
       },
-    },
-    success_url: `${origin}/dashboard/purchases?success=true&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/dashboard/marketplace?canceled=true`,
-  });
+    };
+  } else {
+    // Seller hasn't set up Connect - still process payment, funds held on platform
+    sessionConfig.payment_intent_data = {
+      metadata: {
+        type: "listing_purchase",
+        listing_id: listing.id,
+        buyer_id: user.id,
+        seller_id: listing.user_id,
+        connect_pending: "true",
+      },
+    };
+  }
+
+  const session = await stripe.checkout.sessions.create(sessionConfig);
 
   return NextResponse.json({ url: session.url, sessionId: session.id });
 }

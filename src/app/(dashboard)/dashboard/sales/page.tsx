@@ -2,10 +2,12 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Plus, DollarSign, Package, TrendingUp, Loader2, X, Search,
-  Edit2, Trash2, Eye, EyeOff, ChevronLeft, ChevronRight
+  Edit2, Trash2, Eye, EyeOff, ChevronLeft, ChevronRight, Wallet, Camera
 } from "lucide-react";
+import { PhotoUpload } from "@/components/listings/PhotoUpload";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -168,6 +170,24 @@ export default function SalesPage() {
         </Button>
       </div>
 
+      {/* Seller Setup CTA */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Wallet className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">Receive payouts for your sales</p>
+              <p className="text-xs text-muted-foreground">Connect your bank account via Stripe to get paid automatically</p>
+            </div>
+          </div>
+          <Button size="sm" asChild>
+            <Link href="/dashboard/seller-setup">Seller Setup →</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
@@ -264,9 +284,17 @@ export default function SalesPage() {
           {filtered.map((listing) => (
             <Card key={listing.id} className="overflow-hidden">
               <CardContent className="p-0">
-                {/* Card Image */}
+                {/* Card Image - prefer seller photos */}
                 <div className="aspect-[2.5/3.5] relative bg-muted">
-                  {listing.card?.image_url ? (
+                  {listing.photos?.length > 0 ? (
+                    <Image
+                      src={listing.photos[0]}
+                      alt={listing.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    />
+                  ) : listing.card?.image_url ? (
                     <Image
                       src={listing.card.image_url}
                       alt={listing.title}
@@ -277,6 +305,11 @@ export default function SalesPage() {
                   ) : (
                     <div className="h-full w-full flex items-center justify-center">
                       <Package className="h-8 w-8 text-muted-foreground/30" />
+                    </div>
+                  )}
+                  {listing.photos?.length > 1 && (
+                    <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                      <Camera className="h-2.5 w-2.5" /> {listing.photos.length}
                     </div>
                   )}
                   {/* Status Badge */}
@@ -424,6 +457,7 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
   const [price, setPrice] = useState("");
   const [shippingCost, setShippingCost] = useState("0");
   const [acceptsOffers, setAcceptsOffers] = useState(true);
+  const [photos, setPhotos] = useState<string[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -483,6 +517,7 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
           price: parseFloat(price),
           shipping_cost: parseFloat(shippingCost) || 0,
           accepts_offers: acceptsOffers,
+          photos,
         }),
       });
 
@@ -688,6 +723,14 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
                   />
                 </div>
               </div>
+
+              {/* Photo Upload */}
+              <PhotoUpload
+                photos={photos}
+                onChange={setPhotos}
+                maxPhotos={4}
+                required={parseFloat(price) >= 50}
+              />
 
               {/* Listing Type */}
               <div>
