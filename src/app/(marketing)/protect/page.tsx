@@ -189,6 +189,17 @@ export default function ProtectPage() {
         </div>
       </section>
 
+      {/* Insurance Disclaimer */}
+      <section className="py-8">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="bg-gray-100 border border-gray-200 rounded-xl p-5">
+            <p className="text-sm text-gray-600 leading-relaxed">
+              <span className="font-medium">ℹ️ Important:</span> The Trade Protection Program is a platform service, not insurance. Benefits are subject to review and approval under our platform terms. For collection insurance, we recommend consulting a licensed insurance professional.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-20">
         <div className="mx-auto max-w-3xl px-4 text-center">

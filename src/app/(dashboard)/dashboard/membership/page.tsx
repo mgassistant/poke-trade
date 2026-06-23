@@ -53,7 +53,7 @@ const TIERS = [
       { text: "Full marketplace access", included: true, highlight: false },
       { text: "Up to 50 active listings", included: true, highlight: false },
       { text: "Priority support", included: true, highlight: false },
-      { text: "Trade Protection: $50 per trade", included: true, highlight: true },
+      { text: "Trade Protection: Up to $50 eligible reimbursement per trade", included: true, highlight: true },
       { text: "Priority listings", included: true, highlight: false },
       { text: "Advanced analytics", included: true, highlight: false },
       { text: "Verified seller badge", included: false, highlight: false },
@@ -75,7 +75,7 @@ const TIERS = [
       { text: "Full marketplace access", included: true, highlight: false },
       { text: "Unlimited listings", included: true, highlight: false },
       { text: "Priority support", included: true, highlight: false },
-      { text: "Trade Protection: $100 per trade", included: true, highlight: true },
+      { text: "Trade Protection: Up to $100 eligible reimbursement per trade", included: true, highlight: true },
       { text: "Priority listings", included: true, highlight: false },
       { text: "Advanced analytics", included: true, highlight: false },
       { text: "Verified seller badge", included: true, highlight: false },
@@ -360,6 +360,12 @@ export default function MembershipPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Trade Protection Footnote */}
+      <p className="text-xs text-muted-foreground mt-4 text-center">
+        * Trade Protection benefits are subject to review and platform terms. See{" "}
+        <a href="/terms" className="text-primary hover:underline">Terms of Service</a> for details.
+      </p>
     </div>
   );
 }

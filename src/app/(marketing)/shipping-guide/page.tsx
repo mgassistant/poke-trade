@@ -104,7 +104,7 @@ export default function ShippingGuidePage() {
               <li>Tracking is your proof of shipment and delivery</li>
               <li>Without tracking, you cannot win a &quot;not received&quot; dispute</li>
               <li>Upload your tracking number to the trade/order page within 3 business days of confirmation</li>
-              <li>Escrow funds are not released until delivery is confirmed via tracking</li>
+              <li>Payment hold funds are not released until delivery is confirmed via tracking</li>
             </ul>
             <p className="text-muted-foreground leading-relaxed mt-3">
               <strong className="text-foreground">Pro tip:</strong> Always take a photo of the shipping label and receipt. This is your backup proof if tracking information is lost.

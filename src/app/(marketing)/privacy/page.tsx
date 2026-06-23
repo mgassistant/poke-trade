@@ -78,6 +78,14 @@ export default function PrivacyPage() {
           </section>
 
           <section>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Insurance Data Sharing</h2>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              If you opt to receive information about collectible insurance products, we may share your contact information, collection value estimates, and relevant account data with our licensed insurance agency partners. This sharing only occurs with your explicit consent. You may opt out at any time by contacting{" "}
+              <a href="mailto:support@poke-trade.com" className="text-primary hover:underline">support@poke-trade.com</a>.
+            </p>
+          </section>
+
+          <section>
             <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Cookies</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               We use cookies and similar technologies to operate the Platform, remember your preferences, and analyze usage. For detailed information about the cookies we use and how to manage them, please see our{" "}

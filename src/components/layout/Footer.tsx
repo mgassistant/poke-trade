@@ -23,6 +23,7 @@ const footerLinks = {
     { label: "Shipping Guide", href: "/shipping-guide" },
     { label: "Grading Guide", href: "/grading-guide" },
     { label: "Report an Issue", href: "/report" },
+    { label: "Protect My Collection", href: "/protect-my-collection" },
   ],
   Legal: [
     { label: "Terms of Service", href: "/terms" },
@@ -82,6 +83,12 @@ export function Footer() {
           </p>
           <p className="text-xs text-gray-400 max-w-lg text-center sm:text-right">
             Poké-Trade is not affiliated with, endorsed by, or connected to Nintendo, Game Freak, Creatures Inc., or The Pokémon Company. Pokémon and all related marks are trademarks of their respective owners.
+          </p>
+        </div>
+
+        <div className="pb-6 pt-2">
+          <p className="text-[10px] text-gray-400 leading-relaxed text-center max-w-4xl mx-auto">
+            Poké-Trade is a technology platform and marketplace. Poké-Trade is not an insurance company and does not underwrite, bind, or administer insurance coverage. Trade Protection Program benefits are subject to review and platform terms. Insurance products, when available, are offered separately by licensed insurance professionals through approved carrier partners.
           </p>
         </div>
       </div>

@@ -33,6 +33,7 @@ export function calculateSecureTradeFee(tradeValue: number): FeeBreakdown {
 export type MembershipTier = 'free' | 'pro' | 'elite';
 
 export interface ProtectionInfo {
+  /** Maximum eligible reimbursement amount, subject to review */
   guaranteeAmount: number;
   source: 'membership' | 'secure_trade' | 'addon' | 'none';
   addonAvailable: boolean;
@@ -47,7 +48,7 @@ export function getTradeProtection(
   tier: MembershipTier,
   shippingMethod: 'direct' | 'verified'
 ): ProtectionInfo {
-  // Secure Trade always includes $50 guarantee
+  // Secure Trade includes up to $50 eligible reimbursement
   if (shippingMethod === 'verified') {
     return {
       guaranteeAmount: 50,
@@ -79,7 +80,7 @@ export function getTradeProtection(
     };
   }
 
-  // Free tier + Direct Ship = no guarantee
+  // Free tier + Direct Ship = no protection
   return {
     guaranteeAmount: 0,
     source: 'none',

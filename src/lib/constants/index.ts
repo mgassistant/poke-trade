@@ -87,7 +87,7 @@ export const SUBSCRIPTION_TIERS = [
       "Priority drop alerts (30s faster)",
       "Portfolio analytics & investment tracking",
       "Card authentication discount (20% off)",
-      "Poké-Trade Protect (escrow) included",
+      "Poké-Trade Protect (secure payment hold) included",
       "Featured profile placement",
       "Premium market insights & reports",
       "Early access to new features",

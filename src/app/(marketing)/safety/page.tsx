@@ -60,7 +60,7 @@ export default function SafetyPage() {
             <span className="text-success">Confidence</span>
           </h1>
           <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-            7 layers of protection keep you safe from scams, fakes, and fraud. From identity verification to escrow payments — we&apos;ve got you covered.
+            7 layers of protection keep you safe from scams, fakes, and fraud. From identity verification to secure payment holds — we&apos;ve got you covered.
           </p>
         </div>
       </section>
@@ -92,8 +92,8 @@ export default function SafetyPage() {
               {
                 layer: 3,
                 icon: <CreditCard className="h-5 w-5" />,
-                title: "Escrow Payments",
-                desc: "All marketplace payments are held in escrow. Sellers only get paid after the buyer confirms receipt and passes the 48-hour inspection window.",
+                title: "Secure Payment Holds",
+                desc: "All marketplace payments are held in a secure payment hold. Sellers only get paid after the buyer confirms receipt and passes the 48-hour inspection window.",
                 features: ["Stripe holds funds until delivery", "48-hour buyer inspection window", "One-click dispute during inspection", "Automatic release after window"],
               },
               {
@@ -204,15 +204,15 @@ export default function SafetyPage() {
         </div>
       </section>
 
-      {/* Escrow Explainer */}
+      {/* Payment Hold Explainer */}
       <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-12">
-            How <span className="text-primary">Escrow</span> Protects You
+            How <span className="text-primary">Payment Holds</span> Protect You
           </h2>
           <div className="grid md:grid-cols-4 gap-6">
             {[
-              { step: "1", icon: <CreditCard className="h-6 w-6" />, title: "Buyer Pays", desc: "Payment processed securely via Stripe. Funds held — not released to seller." },
+              { step: "1", icon: <CreditCard className="h-6 w-6" />, title: "Buyer Pays", desc: "Payment processed securely via Stripe. Funds held in a secure payment hold — not released to seller." },
               { step: "2", icon: <Truck className="h-6 w-6" />, title: "Seller Ships", desc: "Seller ships with tracking. Both parties see real-time status." },
               { step: "3", icon: <Eye className="h-6 w-6" />, title: "48hr Inspection", desc: "Buyer has 48 hours to inspect the card and confirm it matches the listing." },
               { step: "4", icon: <Check className="h-6 w-6" />, title: "Funds Released", desc: "After approval (or 48hr auto-release), seller receives payment." },
@@ -276,6 +276,17 @@ export default function SafetyPage() {
         </div>
       </section>
 
+      {/* Insurance Disclaimer */}
+      <section className="py-8">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="bg-gray-100 border border-gray-200 rounded-xl p-5">
+            <p className="text-sm text-gray-600 leading-relaxed">
+              <span className="font-medium">ℹ️ Important:</span> The Trade Protection Program is a platform service, not insurance. Benefits are subject to review and approval under our platform terms. For collection insurance, we recommend consulting a licensed insurance professional.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-3xl px-4 text-center">
@@ -283,7 +294,7 @@ export default function SafetyPage() {
             The Safest Place to <span className="text-success">Trade Cards</span>
           </h2>
           <p className="text-muted-foreground mb-8">
-            7 layers of protection. Verified traders. Escrow payments. Join the community that takes trust seriously.
+            7 layers of protection. Verified traders. Secure payment holds. Join the community that takes trust seriously.
           </p>
           <Button size="xl" className="bg-success hover:bg-success/90 text-white" asChild>
             <Link href="/register">

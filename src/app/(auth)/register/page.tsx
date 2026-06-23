@@ -34,6 +34,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [honeypot, setHoneypot] = useState(""); // bot trap
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -73,6 +74,12 @@ export default function RegisterPage() {
 
     if (passwordStrength.score < 2) {
       setError("Password is too weak. Add uppercase letters, numbers, or special characters.");
+      setLoading(false);
+      return;
+    }
+
+    if (!ageConfirmed) {
+      setError("You must be 13 or older to create an account");
       setLoading(false);
       return;
     }
@@ -238,6 +245,20 @@ export default function RegisterPage() {
           </div>
 
           <div className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              id="age-confirm"
+              required
+              className="mt-1 accent-primary"
+              checked={ageConfirmed}
+              onChange={(e) => setAgeConfirmed(e.target.checked)}
+            />
+            <label htmlFor="age-confirm" className="text-xs text-muted-foreground">
+              I confirm I am 13 years of age or older
+            </label>
+          </div>
+
+          <div className="flex items-start gap-2">
             <input type="checkbox" id="terms" required className="mt-1 accent-primary" />
             <label htmlFor="terms" className="text-xs text-muted-foreground">
               I agree to the{" "}
@@ -247,7 +268,7 @@ export default function RegisterPage() {
             </label>
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={loading || !ageConfirmed}>
             {loading ? "Creating Account..." : "Create Account"}
           </Button>
         </form>

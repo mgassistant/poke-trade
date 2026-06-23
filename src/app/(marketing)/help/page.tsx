@@ -72,7 +72,7 @@ const FAQ_SECTIONS = [
       },
       {
         q: "How does buyer protection work?",
-        a: "All marketplace purchases go through escrow. The seller doesn't receive payment until you confirm receipt and the 48-hour inspection window passes. If the card doesn't match the listing, you can open a dispute.",
+        a: "All marketplace purchases go through a secure payment hold. The seller doesn't receive payment until you confirm receipt and the 48-hour inspection window passes. If the card doesn't match the listing, you can open a dispute.",
       },
       {
         q: "Can I make offers on listings?",
@@ -80,7 +80,7 @@ const FAQ_SECTIONS = [
       },
       {
         q: "How do refunds work?",
-        a: "If a dispute is resolved in the buyer's favor, funds are returned from escrow. For accepted returns, the buyer ships the card back and the refund is processed once the seller confirms receipt.",
+        a: "If a dispute is resolved in the buyer's favor, funds are returned from the secure payment hold. For accepted returns, the buyer ships the card back and the refund is processed once the seller confirms receipt.",
       },
     ],
   },

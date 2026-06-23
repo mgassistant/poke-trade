@@ -90,6 +90,34 @@ export default function TermsPage() {
           </section>
 
           <section>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Age Requirement</h2>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              You must be at least 13 years old to use Poké-Trade. If you are between 13 and 18, you must have parental or guardian consent. We reserve the right to terminate accounts that violate this requirement.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Trade Protection Program</h2>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              The Trade Protection Program is a platform service designed to help resolve trade disputes. It is <strong className="text-foreground">NOT</strong> insurance. Benefits under the Trade Protection Program are subject to review, approval, and our platform terms. Poké-Trade reserves the right to deny, modify, or limit Trade Protection Program benefits at its sole discretion. Maximum eligible reimbursement amounts vary by membership tier and are subject to the terms in effect at the time of the trade.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Insurance Referral Disclosure</h2>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              Poké-Trade may, from time to time, provide access to or referrals for collectible insurance products through licensed insurance professionals and approved carrier partners. Poké-Trade is not an insurance company, does not sell insurance, and does not guarantee the availability, terms, or pricing of any insurance product. Any insurance transaction is solely between the user and the licensed insurance provider.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Platform Fee Disclosure</h2>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              Poké-Trade charges platform fees on marketplace transactions (5% for free tier, 3% for Pro and Elite members). Secure Trade verification fees ($5.99 or 3% of trade value, whichever is higher) are split equally between both trading parties. All fees are non-refundable once a transaction is completed.
+            </p>
+          </section>
+
+          <section>
             <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Intellectual Property</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
               Poké-Trade is not affiliated with, endorsed by, or connected to Nintendo, Game Freak, Creatures Inc., or The Pokémon Company. Pokémon and all related marks are trademarks and © of their respective owners. Card images and pricing data are sourced from publicly available APIs for informational purposes.

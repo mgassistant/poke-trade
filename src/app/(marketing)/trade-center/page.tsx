@@ -373,11 +373,11 @@ export default function TradeCenterPage() {
                 <div className="text-center mb-6">
                   <div className="text-4xl mb-3">🛡️</div>
                   <h3 className="text-xl font-bold">Poké-Trade Protect</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Coming Soon — Escrow + Authentication</p>
+                  <p className="text-sm text-muted-foreground mt-1">Coming Soon — Secure Payment Hold + Authentication</p>
                 </div>
                 <div className="space-y-3">
                   {[
-                    "Funds held in escrow until delivery confirmed",
+                    "Funds held in secure payment hold until delivery confirmed",
                     "Cards authenticated before release",
                     "Buyer and seller fully protected",
                     "Dispute resolution with financial backing",
