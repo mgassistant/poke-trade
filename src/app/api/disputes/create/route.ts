@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyDisputeFiled } from "@/lib/email-notifications";
 
 const REASON_CATEGORIES = [
   "Item not received",
@@ -156,6 +157,19 @@ export async function POST(request: NextRequest) {
       });
     }
   }
+
+  // Email notification (fire-and-forget)
+  const { data: disputeProfile } = await supabase
+    .from("profiles")
+    .select("username, display_name")
+    .eq("id", user.id)
+    .single();
+  notifyDisputeFiled(
+    disputeProfile?.display_name || disputeProfile?.username || "User",
+    dispute.id,
+    tradeId || listing_id || "unknown",
+    reason_category
+  );
 
   return NextResponse.json({ dispute });
 }

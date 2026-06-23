@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyInsuranceLead } from "@/lib/email-notifications";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -76,6 +77,9 @@ export async function POST(request: NextRequest) {
       }
     }
   }
+
+  // Email notification (fire-and-forget)
+  notifyInsuranceLead(name, email, estimated_collection_value || 0);
 
   return NextResponse.json({
     success: true,

@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyNewListing } from "@/lib/email-notifications";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -191,6 +192,18 @@ export async function POST(request: NextRequest) {
     data: { card_name: card?.name, price },
     related_id: listing.id,
   });
+
+  // Email notification (fire-and-forget)
+  const { data: sellerProf } = await supabase
+    .from("profiles")
+    .select("username, display_name")
+    .eq("id", user.id)
+    .single();
+  notifyNewListing(
+    card?.name || title,
+    sellerProf?.display_name || sellerProf?.username || "Unknown",
+    price
+  );
 
   return NextResponse.json({ listing, flagged });
 }

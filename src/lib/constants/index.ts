@@ -207,4 +207,5 @@ export const NAV_LINKS = [
   { href: "/compare", label: "Compare" },
   { href: "/drops", label: "Drop Alerts" },
   { href: "/protect", label: "Protect" },
+  { href: "/membership", label: "Membership" },
 ] as const;

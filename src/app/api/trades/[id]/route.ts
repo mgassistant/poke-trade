@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyTradeAccepted } from "@/lib/email-notifications";
 
 export async function GET(
   request: NextRequest,
@@ -117,6 +118,20 @@ export async function POST(
       activity_type: "trade_accepted",
       related_id: id,
     });
+
+    // Email notifications (fire-and-forget)
+    const { data: senderProf } = await supabase.from("profiles").select("username, display_name, email").eq("id", trade.sender_id).single();
+    const { data: receiverProf } = await supabase.from("profiles").select("username, display_name, email").eq("id", trade.receiver_id).single();
+    if (senderProf?.email && receiverProf?.email) {
+      notifyTradeAccepted(
+        senderProf.display_name || senderProf.username || "Trader",
+        receiverProf.display_name || receiverProf.username || "Trader",
+        senderProf.email,
+        receiverProf.email,
+        tradeValue,
+        id
+      );
+    }
 
     return NextResponse.json({ success: true, status: "locked", auto_cancel_at: autoCancelAt.toISOString() });
   }

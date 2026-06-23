@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 import { markEventProcessed } from "@/lib/webhook-idempotency";
+import { notifyPurchase, notifyNewSubscription } from "@/lib/email-notifications";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -65,6 +66,16 @@ export async function POST(request: Request) {
               stripe_customer_id: session.customer as string,
             })
             .eq("id", userId);
+
+          // Email notification for new subscription (fire-and-forget)
+          const { data: subProf } = await supabase.from("profiles").select("username, display_name, email").eq("id", userId).single();
+          if (subProf?.email) {
+            notifyNewSubscription(
+              subProf.display_name || subProf.username || "Member",
+              subProf.email,
+              tier === "elite" ? "Poké-Trade Elite" : "Poké-Trade Pro"
+            );
+          }
         }
 
         // Handle listing purchase checkout
@@ -128,6 +139,20 @@ export async function POST(request: Request) {
               message: `Your purchase of "${listing?.title || "item"}" is confirmed. The seller has been notified to ship.`,
               data: { order_id: order?.id, listing_id: listingId },
             });
+
+            // Email notifications (fire-and-forget)
+            const { data: buyerProf } = await supabase.from("profiles").select("username, display_name, email").eq("id", buyerId).single();
+            const { data: sellerProf } = await supabase.from("profiles").select("username, display_name, email").eq("id", sellerId).single();
+            if (buyerProf?.email && sellerProf?.email) {
+              notifyPurchase(
+                buyerProf.display_name || buyerProf.username || "Buyer",
+                buyerProf.email,
+                sellerProf.display_name || sellerProf.username || "Seller",
+                sellerProf.email,
+                listing?.title || "Pokémon Card",
+                amount
+              );
+            }
           }
         }
         break;

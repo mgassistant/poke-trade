@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { calculateSecureTradeFee, getTradeProtection } from "@/lib/trade-fees";
+import { notifyNewTrade } from "@/lib/email-notifications";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -173,6 +174,27 @@ export async function POST(request: NextRequest) {
     activity_type: "trade_created",
     related_id: trade.id,
   });
+
+  // Email notifications (fire-and-forget)
+  const { data: receiverProfile } = await supabase
+    .from("profiles")
+    .select("username, display_name, email")
+    .eq("id", receiver_id)
+    .single();
+
+  const senderDisplayName = senderProfile?.display_name || senderProfile?.username || "Unknown";
+  const receiverDisplayName = receiverProfile?.display_name || receiverProfile?.username || "Unknown";
+
+  if (receiverProfile?.email && user.email) {
+    notifyNewTrade(
+      senderDisplayName,
+      receiverDisplayName,
+      receiverProfile.email,
+      user.email,
+      tradeValue,
+      trade.id
+    );
+  }
 
   return NextResponse.json({ trade, unevenTradeWarning });
 }
