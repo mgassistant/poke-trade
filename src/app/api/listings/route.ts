@@ -127,6 +127,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Listing limit reached (${limits.max_listings}). Upgrade your plan or verify your account.` }, { status: 429 });
   }
 
+  // Check if card is reserved for a trade
+  if (card_id) {
+    const { data: reservedItems } = await supabase
+      .from("collection_items")
+      .select("id, reserved_for_trade_id")
+      .eq("card_id", card_id)
+      .eq("collection_id", (await supabase.from("collections").select("id").eq("user_id", user.id).limit(1).single()).data?.id || "")
+      .not("reserved_for_trade_id", "is", null)
+      .limit(1);
+
+    if (reservedItems && reservedItems.length > 0) {
+      return NextResponse.json(
+        { error: "This card is reserved for an active trade and cannot be listed" },
+        { status: 400 }
+      );
+    }
+  }
+
   // Check for suspicious pricing
   const { data: card } = await supabase
     .from("cards")

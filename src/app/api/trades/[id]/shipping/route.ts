@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { validateTrackingNumber } from "@/lib/trade-fees";
 
 export async function GET(
   request: NextRequest,
@@ -14,7 +15,7 @@ export async function GET(
   // Verify user is part of this trade
   const { data: trade } = await supabase
     .from("trade_offers")
-    .select("id, sender_id, receiver_id, status, shipping_method, verification_fee_paid")
+    .select("id, sender_id, receiver_id, status, shipping_method, verification_fee_paid, locked_at, auto_cancel_at, fee_amount, fee_per_party, protection_amount, protection_paid, trade_value")
     .eq("id", id)
     .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
     .single();
@@ -46,14 +47,17 @@ export async function POST(
   // Get trade
   const { data: trade } = await supabase
     .from("trade_offers")
-    .select("id, sender_id, receiver_id, status, shipping_method")
+    .select("id, sender_id, receiver_id, status, shipping_method, locked_at, auto_cancel_at")
     .eq("id", id)
     .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
     .single();
 
   if (!trade) return NextResponse.json({ error: "Trade not found" }, { status: 404 });
-  if (trade.status !== "accepted" && trade.status !== "in_transit" && trade.status !== "awaiting_shipment") {
-    return NextResponse.json({ error: "Trade must be accepted before shipping" }, { status: 400 });
+
+  // Allow shipping actions on locked, accepted, in_transit, awaiting_shipment
+  const allowedStatuses = ["locked", "accepted", "in_transit", "awaiting_shipment", "shipped"];
+  if (!allowedStatuses.includes(trade.status)) {
+    return NextResponse.json({ error: "Trade must be locked/accepted before shipping" }, { status: 400 });
   }
 
   const isSender = trade.sender_id === user.id;
@@ -72,7 +76,7 @@ export async function POST(
 
   // ===== UPLOAD PHOTOS =====
   if (action === "upload_photos") {
-    const { photos } = body; // text[] of photo URLs
+    const { photos } = body;
     if (!photos?.length) return NextResponse.json({ error: "No photos provided" }, { status: 400 });
 
     const field = isSender ? "sender_photos" : "receiver_photos";
@@ -89,6 +93,12 @@ export async function POST(
     const { tracking_number, carrier } = body;
     if (!tracking_number) return NextResponse.json({ error: "Tracking number required" }, { status: 400 });
 
+    // Validate tracking number format
+    const validation = validateTrackingNumber(tracking_number, carrier || "other");
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
     const trackingField = isSender ? "sender_tracking" : "receiver_tracking";
     const carrierField = isSender ? "sender_carrier" : "receiver_carrier";
     const shippedField = isSender ? "sender_shipped_at" : "receiver_shipped_at";
@@ -103,22 +113,46 @@ export async function POST(
       })
       .eq("trade_offer_id", id);
 
-    // Update trade status to in_transit
-    await supabase
-      .from("trade_offers")
-      .update({ status: "in_transit", updated_at: new Date().toISOString() })
-      .eq("id", id);
+    // Check if BOTH parties have now submitted tracking
+    const { data: details } = await supabase
+      .from("trade_shipping_details")
+      .select("sender_tracking, receiver_tracking")
+      .eq("trade_offer_id", id)
+      .single();
 
-    // Notify other party
-    await supabase.from("notifications").insert({
-      user_id: otherUserId,
-      notification_type: "trade_shipped",
-      title: "Cards Shipped! 📦",
-      message: `Your trade partner has shipped their cards. Tracking: ${tracking_number}`,
-      data: { trade_id: id },
-    });
+    // After our update, check if both have tracking
+    const senderHasTracking = isSender ? true : !!details?.sender_tracking;
+    const receiverHasTracking = isSender ? !!details?.receiver_tracking : true;
 
-    return NextResponse.json({ success: true });
+    if (senderHasTracking && receiverHasTracking) {
+      // Both parties shipped — transition to in_transit
+      await supabase
+        .from("trade_offers")
+        .update({ status: "in_transit", updated_at: new Date().toISOString() })
+        .eq("id", id);
+
+      // Notify both
+      for (const uid of [trade.sender_id, trade.receiver_id]) {
+        await supabase.from("notifications").insert({
+          user_id: uid,
+          notification_type: "trade_in_transit",
+          title: "📦 Both Packages In Transit!",
+          message: "Both parties have shipped their cards. Packages are on their way!",
+          data: { trade_id: id },
+        });
+      }
+    } else {
+      // Only one party shipped — notify the other
+      await supabase.from("notifications").insert({
+        user_id: otherUserId,
+        notification_type: "trade_shipped",
+        title: "Cards Shipped! 📦",
+        message: `Your trade partner has shipped their cards. Tracking: ${tracking_number}`,
+        data: { trade_id: id },
+      });
+    }
+
+    return NextResponse.json({ success: true, both_shipped: senderHasTracking && receiverHasTracking });
   }
 
   // ===== CONFIRM RECEIPT =====
@@ -142,12 +176,21 @@ export async function POST(
       .eq("trade_offer_id", id)
       .single();
 
-    if (details?.sender_confirmed && details?.receiver_confirmed) {
+    const senderConfirmed = isSender ? true : !!details?.sender_confirmed;
+    const receiverConfirmed = isSender ? !!details?.receiver_confirmed : true;
+
+    if (senderConfirmed && receiverConfirmed) {
       // Both confirmed — complete the trade
       await supabase
         .from("trade_offers")
         .update({ status: "completed", completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("id", id);
+
+      // Free reserved cards
+      await supabase
+        .from("collection_items")
+        .update({ reserved_for_trade_id: null })
+        .eq("reserved_for_trade_id", id);
 
       // Update trade counts
       for (const uid of [trade.sender_id, trade.receiver_id]) {

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft, Search, X, Check, Loader2, User, Package, MessageSquare, Eye,
-  Plus, Shield, Truck
+  Plus, Shield, Truck, Lock
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,7 @@ interface CardItem {
   quantity: number;
   condition: string;
   current_value: number | null;
+  reserved_for_trade_id?: string | null;
   cards: {
     id: string;
     name: string;
@@ -54,23 +55,34 @@ const STEP_LABELS = [
   { num: 5, label: "Review", icon: Eye },
 ];
 
+/* ── Fee Calculation (mirrors server logic) ── */
+function calculateFee(tradeValue: number): { total: number; perParty: number; method: string } {
+  const flat = 5.99;
+  const pct = tradeValue * 0.03;
+  const total = Math.max(flat, pct);
+  return {
+    total: Math.round(total * 100) / 100,
+    perParty: Math.round((total / 2) * 100) / 100,
+    method: pct > flat ? "3%" : "flat $5.99",
+  };
+}
+
 /* ── Balance Scale Component ── */
 function BalanceScale({ offerValue, wantValue }: { offerValue: number; wantValue: number }) {
   const total = offerValue + wantValue;
   const diff = total > 0 ? ((offerValue - wantValue) / Math.max(total, 1)) * 100 : 0;
-  // Clamp angle between -25 and 25 degrees
   const angle = Math.max(-25, Math.min(25, diff * 0.5));
   const absDiff = Math.abs(diff);
 
-  let status: { label: string; color: string; glow: string; emoji: string };
+  let status: { label: string; color: string; glow: string };
   if (total === 0) {
-    status = { label: "Add cards to begin!", color: "#9CA3AF", glow: "none", emoji: "🎴" };
+    status = { label: "Add cards to begin!", color: "#9CA3AF", glow: "none" };
   } else if (absDiff < 10) {
-    status = { label: "Fair Trade! ⚖️", color: "#10B981", glow: "0 0 20px rgba(16,185,129,0.4)", emoji: "" };
+    status = { label: "Fair Trade! ⚖️", color: "#10B981", glow: "0 0 20px rgba(16,185,129,0.4)" };
   } else if (absDiff < 30) {
-    status = { label: "Close enough! 🤝", color: "#F59E0B", glow: "0 0 20px rgba(245,158,11,0.3)", emoji: "" };
+    status = { label: "Close enough! 🤝", color: "#F59E0B", glow: "0 0 20px rgba(245,158,11,0.3)" };
   } else {
-    status = { label: "Uneven trade ⚠️", color: "#EF4444", glow: "0 0 20px rgba(239,68,68,0.3)", emoji: "" };
+    status = { label: "Uneven trade ⚠️", color: "#EF4444", glow: "0 0 20px rgba(239,68,68,0.3)" };
   }
 
   const leftEmoji = diff > 15 ? "😟" : diff > 5 ? "😐" : "😊";
@@ -78,37 +90,27 @@ function BalanceScale({ offerValue, wantValue }: { offerValue: number; wantValue
 
   return (
     <div className="flex flex-col items-center py-4 select-none">
-      {/* Status label */}
       <div
         className="text-sm font-bold mb-3 px-4 py-1.5 rounded-full transition-all duration-500"
         style={{ color: status.color, background: `${status.color}15`, boxShadow: status.glow }}
       >
         {status.label}
       </div>
-
-      {/* Scale visualization */}
       <div className="relative w-full max-w-xs h-36">
-        {/* Fulcrum - Poké Ball */}
         <div className="absolute left-1/2 bottom-2 -translate-x-1/2 z-10">
           <div className="w-10 h-10 rounded-full border-[3px] border-gray-800 bg-white relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1/2 bg-[#E3350D]" />
             <div className="absolute top-1/2 left-0 right-0 h-[3px] bg-gray-800 -translate-y-1/2 z-10" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border-[2px] border-gray-800 bg-white z-20" />
           </div>
-          {/* Stand */}
           <div className="w-2 h-6 bg-gray-400 mx-auto rounded-b" />
           <div className="w-12 h-2 bg-gray-400 rounded-full mx-auto -mt-0.5" />
         </div>
-
-        {/* Beam */}
         <div
           className="absolute left-1/2 -translate-x-1/2 top-10 w-64 origin-center transition-transform duration-700 ease-out"
           style={{ transform: `translateX(-50%) rotate(${angle}deg)` }}
         >
-          {/* The beam bar */}
           <div className="h-2 bg-[#FFCB05] rounded-full shadow-md border border-yellow-600/30" />
-
-          {/* Left pan (Your Offer) */}
           <div className="absolute -left-4 -top-1">
             <div className="w-1 h-8 bg-gray-500 mx-auto" />
             <div className="w-16 h-3 bg-gray-300 rounded-b-lg border border-gray-400 shadow-inner mx-auto -mt-0.5" />
@@ -116,8 +118,6 @@ function BalanceScale({ offerValue, wantValue }: { offerValue: number; wantValue
               <span className="text-lg">{total > 0 ? leftEmoji : "📥"}</span>
             </div>
           </div>
-
-          {/* Right pan (Their Request) */}
           <div className="absolute -right-4 -top-1">
             <div className="w-1 h-8 bg-gray-500 mx-auto" />
             <div className="w-16 h-3 bg-gray-300 rounded-b-lg border border-gray-400 shadow-inner mx-auto -mt-0.5" />
@@ -127,8 +127,6 @@ function BalanceScale({ offerValue, wantValue }: { offerValue: number; wantValue
           </div>
         </div>
       </div>
-
-      {/* Value comparison */}
       <div className="flex items-center gap-6 mt-2">
         <div className="text-center">
           <p className="text-xs text-muted-foreground">Your Offer</p>
@@ -186,7 +184,6 @@ function CardSlotGrid({
               </div>
             )}
           </div>
-          {/* Remove button */}
           <button
             onClick={() => onRemove(item.id)}
             className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md text-xs"
@@ -219,23 +216,24 @@ function CollectionBrowser({
 }) {
   const [search, setSearch] = useState("");
   const filtered = useMemo(() => {
-    if (!search) return items;
+    // Filter out reserved cards
+    const available = items.filter((i) => !i.reserved_for_trade_id);
+    if (!search) return available;
     const q = search.toLowerCase();
-    return items.filter((i) => i.cards?.name?.toLowerCase().includes(q));
+    return available.filter((i) => i.cards?.name?.toLowerCase().includes(q));
   }, [items, search]);
+
+  const reservedCount = items.filter((i) => i.reserved_for_trade_id).length;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="bg-background w-full sm:max-w-lg sm:rounded-xl rounded-t-xl max-h-[85vh] flex flex-col shadow-xl">
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-bold text-lg">{title}</h3>
           <button onClick={onClose} className="p-1 hover:bg-muted rounded-lg transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
-
-        {/* Search */}
         <div className="p-3 border-b">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -247,9 +245,12 @@ function CollectionBrowser({
               autoFocus
             />
           </div>
+          {reservedCount > 0 && (
+            <p className="text-xs text-orange-600 mt-2 flex items-center gap-1">
+              <Lock className="h-3 w-3" /> {reservedCount} card{reservedCount !== 1 ? "s" : ""} reserved for other trades (hidden)
+            </p>
+          )}
         </div>
-
-        {/* Cards grid */}
         <div className="flex-1 overflow-y-auto p-3">
           {loading ? (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -311,8 +312,6 @@ function CollectionBrowser({
             </div>
           )}
         </div>
-
-        {/* Footer */}
         <div className="p-3 border-t bg-muted/30">
           <Button onClick={onClose} className="w-full bg-[#E3350D] hover:bg-[#c72e0b]">
             Done ({selectedIds.size} selected)
@@ -346,8 +345,10 @@ function NewTradeContent() {
   const [selectedWant, setSelectedWant] = useState<CardItem[]>([]);
   const [browsingCollection, setBrowsingCollection] = useState<"mine" | "theirs" | null>(null);
 
-  // Step 3: Shipping
+  // Step 3: Shipping & Protection
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>("direct");
+  const [addProtection, setAddProtection] = useState(false);
+  const [membershipTier, setMembershipTier] = useState<"free" | "pro" | "elite">("free");
 
   // Step 4: Message
   const [notes, setNotes] = useState("");
@@ -362,9 +363,24 @@ function NewTradeContent() {
   const wantValue = selectedWant.reduce(
     (sum, i) => sum + (i.cards?.market_value || i.current_value || 0), 0
   );
+  const totalTradeValue = offerValue + wantValue;
+
+  // Fee calculation
+  const fee = useMemo(() => calculateFee(totalTradeValue), [totalTradeValue]);
 
   const offerIds = useMemo(() => new Set(selectedOffer.map((i) => i.id)), [selectedOffer]);
   const wantIds = useMemo(() => new Set(selectedWant.map((i) => i.id)), [selectedWant]);
+
+  // Fetch membership tier
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/membership");
+        const data = await res.json();
+        if (data.tier) setMembershipTier(data.tier);
+      } catch {}
+    })();
+  }, []);
 
   // Search users
   useEffect(() => {
@@ -432,6 +448,20 @@ function NewTradeContent() {
     });
   };
 
+  // Protection info
+  const protectionInfo = useMemo(() => {
+    if (shippingMethod === "verified") {
+      return { amount: 50, source: "Secure Trade", included: true };
+    }
+    if (membershipTier === "elite") {
+      return { amount: 100, source: "Elite membership", included: true };
+    }
+    if (membershipTier === "pro") {
+      return { amount: 50, source: "Pro membership", included: true };
+    }
+    return { amount: 0, source: "none", included: false };
+  }, [shippingMethod, membershipTier]);
+
   const handleSubmit = async () => {
     if (!selectedUser) return;
     setSubmitting(true);
@@ -448,6 +478,7 @@ function NewTradeContent() {
         })),
         notes: notes || null,
         shipping_method: shippingMethod,
+        add_protection: addProtection,
       };
 
       let res;
@@ -649,21 +680,15 @@ function NewTradeContent() {
       {/* ═══════════ STEP 2: Card Selection with Balance Scale ═══════════ */}
       {step === 2 && (
         <div className="space-y-4">
-          {/* Balance Scale */}
           <Card className="overflow-hidden">
             <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-yellow-100">
               <BalanceScale offerValue={offerValue} wantValue={wantValue} />
             </div>
           </Card>
-
-          {/* Split screen: Your Offer / Their Request */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* LEFT: Your Offer */}
             <Card className="overflow-hidden">
               <div className="bg-[#E3350D] p-3 flex items-center justify-between">
-                <h3 className="text-white font-bold flex items-center gap-2">
-                  📥 Your Offer
-                </h3>
+                <h3 className="text-white font-bold flex items-center gap-2">📥 Your Offer</h3>
                 <span className="text-white/90 text-sm font-medium">${offerValue.toFixed(2)}</span>
               </div>
               <CardContent className="p-4 space-y-3">
@@ -682,13 +707,9 @@ function NewTradeContent() {
                 </Button>
               </CardContent>
             </Card>
-
-            {/* RIGHT: Their Request */}
             <Card className="overflow-hidden">
               <div className="bg-[#3B4CCA] p-3 flex items-center justify-between">
-                <h3 className="text-white font-bold flex items-center gap-2">
-                  📤 You Want
-                </h3>
+                <h3 className="text-white font-bold flex items-center gap-2">📤 You Want</h3>
                 <span className="text-white/90 text-sm font-medium">${wantValue.toFixed(2)}</span>
               </div>
               <CardContent className="p-4 space-y-3">
@@ -708,8 +729,6 @@ function NewTradeContent() {
               </CardContent>
             </Card>
           </div>
-
-          {/* Nav */}
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setStep(1)} className="gap-2">
               <ArrowLeft className="h-4 w-4" /> Back
@@ -722,8 +741,6 @@ function NewTradeContent() {
               Shipping <span className="text-lg">→</span>
             </Button>
           </div>
-
-          {/* Collection Browser Modal */}
           {browsingCollection === "mine" && (
             <CollectionBrowser
               items={myCards}
@@ -747,19 +764,19 @@ function NewTradeContent() {
         </div>
       )}
 
-      {/* ═══════════ STEP 3: Shipping Method ═══════════ */}
+      {/* ═══════════ STEP 3: Shipping Method + Protection ═══════════ */}
       {step === 3 && (
         <Card className="overflow-hidden">
           <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-4">
             <h2 className="text-white font-bold text-lg flex items-center gap-2">
-              <Package className="h-5 w-5" /> Choose Shipping Method
+              <Package className="h-5 w-5" /> Shipping &amp; Protection
             </h2>
-            <p className="text-white/80 text-sm">How should cards be exchanged?</p>
+            <p className="text-white/80 text-sm">Choose shipping method and trade protection</p>
           </div>
           <CardContent className="p-6 space-y-4">
             {/* Direct Ship */}
             <button
-              onClick={() => setShippingMethod("direct")}
+              onClick={() => { setShippingMethod("direct"); setAddProtection(false); }}
               className={`w-full text-left p-5 rounded-xl border-2 transition-all ${
                 shippingMethod === "direct"
                   ? "border-[#E3350D] bg-red-50 shadow-md"
@@ -781,15 +798,10 @@ function NewTradeContent() {
                     Ship directly to each other — fast and free!
                   </p>
                   <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-                    <li className="flex items-center gap-2">
-                      📸 Photo proof required before shipping
-                    </li>
-                    <li className="flex items-center gap-2">
-                      📦 Both traders provide tracking numbers
-                    </li>
-                    <li className="flex items-center gap-2">
-                      ⏰ 48-hour inspection window after receipt
-                    </li>
+                    <li className="flex items-center gap-2">📸 Photo proof required before shipping</li>
+                    <li className="flex items-center gap-2">📦 Both traders provide tracking numbers</li>
+                    <li className="flex items-center gap-2">🔒 Trade locked until both parties ship</li>
+                    <li className="flex items-center gap-2">⏰ 7-day shipping deadline after acceptance</li>
                   </ul>
                 </div>
                 {shippingMethod === "direct" && (
@@ -818,28 +830,33 @@ function NewTradeContent() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-lg">Poké-Trade Verified</h3>
-                    <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">$14.99</Badge>
+                    <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                      ${fee.total.toFixed(2)}
+                    </Badge>
                     <Badge className="bg-blue-100 text-blue-700 border-blue-200">⭐ Recommended</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
                     Maximum protection with authentication guarantee
                   </p>
+                  {/* Dynamic fee breakdown */}
+                  <div className="mt-2 p-3 bg-yellow-100/50 rounded-lg border border-yellow-200">
+                    <p className="text-xs font-semibold text-yellow-800 mb-1">Fee Breakdown</p>
+                    <p className="text-xs text-yellow-700">
+                      Trade value: ${totalTradeValue.toFixed(2)} · Fee: {fee.method} = ${fee.total.toFixed(2)}
+                    </p>
+                    <p className="text-xs text-yellow-700 font-medium mt-0.5">
+                      Your share: ${fee.perParty.toFixed(2)} | Their share: ${fee.perParty.toFixed(2)}
+                    </p>
+                    <p className="text-[10px] text-yellow-600 mt-1">
+                      $5.99 or 3% (whichever is higher) · Split 50/50
+                    </p>
+                  </div>
                   <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-                    <li className="flex items-center gap-2">
-                      🏢 Both ship to Poké-Trade auth center
-                    </li>
-                    <li className="flex items-center gap-2">
-                      🔍 Cards authenticated &amp; condition verified
-                    </li>
-                    <li className="flex items-center gap-2">
-                      📦 Cross-shipped to recipients
-                    </li>
-                    <li className="flex items-center gap-2">
-                      ✅ &ldquo;Verified Trade&rdquo; badge on profiles
-                    </li>
-                    <li className="flex items-center gap-2">
-                      💰 Full money-back guarantee
-                    </li>
+                    <li className="flex items-center gap-2">🏢 Both ship to Poké-Trade auth center</li>
+                    <li className="flex items-center gap-2">🔍 Cards authenticated &amp; condition verified</li>
+                    <li className="flex items-center gap-2">📦 Cross-shipped to recipients</li>
+                    <li className="flex items-center gap-2">✅ &ldquo;Verified Trade&rdquo; badge on profiles</li>
+                    <li className="flex items-center gap-2">🛡️ $50 trade protection guarantee included</li>
                   </ul>
                 </div>
                 {shippingMethod === "verified" && (
@@ -849,6 +866,79 @@ function NewTradeContent() {
                 )}
               </div>
             </button>
+
+            {/* Trade Protection Section */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="font-bold text-base flex items-center gap-2 mb-3">
+                <Shield className="h-5 w-5 text-blue-500" /> Trade Protection
+              </h3>
+
+              {shippingMethod === "verified" ? (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                  <p className="text-sm text-green-800 font-medium flex items-center gap-2">
+                    ✅ $50 guarantee included with Secure Trade
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    Your trade is protected up to $50 if anything goes wrong.
+                  </p>
+                </div>
+              ) : protectionInfo.included ? (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                  <p className="text-sm text-green-800 font-medium flex items-center gap-2">
+                    ✅ ${protectionInfo.amount} guarantee applies ({protectionInfo.source})
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    Your {membershipTier} membership provides ${protectionInfo.amount} trade protection.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                    <p className="text-sm text-orange-800 font-medium">
+                      ⚠️ No trade protection on free tier with Direct Ship
+                    </p>
+                    <p className="text-xs text-orange-600 mt-1">
+                      Upgrade to Pro ($9.99/mo) for $50 protection on all trades, or add protection below.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setAddProtection(!addProtection)}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                      addProtection
+                        ? "border-blue-500 bg-blue-50 shadow-md"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">Add Trade Protection</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          $2.99 per trade · Up to $500 coverage
+                        </p>
+                      </div>
+                      <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-0.5 ${
+                        addProtection ? "bg-blue-500" : "bg-gray-200"
+                      }`}>
+                        <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
+                          addProtection ? "translate-x-4" : "translate-x-0"
+                        }`} />
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Trade Locking Notice */}
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl mt-2">
+              <p className="text-sm text-red-800 font-medium flex items-center gap-2">
+                <Lock className="h-4 w-4" /> Trade Locking
+              </p>
+              <p className="text-xs text-red-600 mt-1">
+                Once both parties accept, the trade is <strong>locked</strong>. Cards are reserved and cannot be used in other trades.
+                Both parties must ship within 7 days or the trade auto-cancels.
+              </p>
+            </div>
 
             {/* Nav */}
             <div className="flex justify-between pt-4">
@@ -883,9 +973,7 @@ function NewTradeContent() {
               className="w-full h-32 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-[#E3350D]/30 focus:border-[#E3350D] transition-all"
               maxLength={500}
             />
-            <p className="text-xs text-muted-foreground text-right">
-              {notes.length}/500 characters
-            </p>
+            <p className="text-xs text-muted-foreground text-right">{notes.length}/500 characters</p>
             <div className="flex justify-between pt-2">
               <Button variant="outline" onClick={() => setStep(3)} className="gap-2">
                 <ArrowLeft className="h-4 w-4" /> Back
@@ -904,16 +992,13 @@ function NewTradeContent() {
       {/* ═══════════ STEP 5: Review & Submit ═══════════ */}
       {step === 5 && (
         <div className="space-y-4">
-          {/* Balance Scale (final look) */}
           <Card className="overflow-hidden">
             <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-yellow-100">
               <BalanceScale offerValue={offerValue} wantValue={wantValue} />
             </div>
           </Card>
 
-          {/* Trade Summary */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Your Offer */}
             <Card className="overflow-hidden">
               <div className="bg-[#E3350D] p-3">
                 <h3 className="text-white font-bold text-sm">📥 Your Offer · ${offerValue.toFixed(2)}</h3>
@@ -941,8 +1026,6 @@ function NewTradeContent() {
                 )}
               </CardContent>
             </Card>
-
-            {/* You Want */}
             <Card className="overflow-hidden">
               <div className="bg-[#3B4CCA] p-3">
                 <h3 className="text-white font-bold text-sm">📤 You Want · ${wantValue.toFixed(2)}</h3>
@@ -975,7 +1058,6 @@ function NewTradeContent() {
           {/* Trade Details Summary */}
           <Card>
             <CardContent className="p-4 space-y-3">
-              {/* Partner */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Trading with</span>
                 <div className="flex items-center gap-2">
@@ -994,7 +1076,6 @@ function NewTradeContent() {
                 </div>
               </div>
 
-              {/* Shipping */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Shipping</span>
                 <Badge variant="outline" className={
@@ -1002,11 +1083,41 @@ function NewTradeContent() {
                     ? "bg-yellow-50 border-yellow-200 text-yellow-800"
                     : "bg-green-50 border-green-200 text-green-700"
                 }>
-                  {shippingMethod === "verified" ? "🛡️ Poké-Trade Verified ($14.99)" : "📦 Direct Ship (Free)"}
+                  {shippingMethod === "verified" ? `🛡️ Poké-Trade Verified ($${fee.total.toFixed(2)})` : "📦 Direct Ship (Free)"}
                 </Badge>
               </div>
 
-              {/* Message */}
+              {shippingMethod === "verified" && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Your fee share</span>
+                  <span className="text-sm font-medium">${fee.perParty.toFixed(2)}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Trade Protection</span>
+                <Badge variant="outline" className={
+                  (protectionInfo.included || addProtection || shippingMethod === "verified")
+                    ? "bg-green-50 border-green-200 text-green-700"
+                    : "bg-red-50 border-red-200 text-red-700"
+                }>
+                  {shippingMethod === "verified"
+                    ? "🛡️ $50 included"
+                    : protectionInfo.included
+                    ? `🛡️ $${protectionInfo.amount} (${protectionInfo.source})`
+                    : addProtection
+                    ? "🛡️ $500 coverage ($2.99)"
+                    : "❌ None"}
+                </Badge>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Trade Locking</span>
+                <Badge variant="outline" className="bg-red-50 border-red-200 text-red-700">
+                  🔒 Locked until both ship
+                </Badge>
+              </div>
+
               {notes && (
                 <div>
                   <span className="text-sm text-muted-foreground">Message</span>

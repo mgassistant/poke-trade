@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import {
   Wallet, Plus, Search, X, Filter, ChevronLeft, ChevronRight,
-  Trash2, Grid, SortAsc, Camera
+  Trash2, Grid, SortAsc, Camera, Lock
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,7 @@ interface CollectionItemData {
   condition: string;
   current_value: number | null;
   created_at: string;
+  reserved_for_trade_id: string | null;
   cards: CardData;
 }
 
@@ -383,55 +384,74 @@ export default function CollectionPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {paginated.map((item) => (
-            <Card key={item.id} className="group relative overflow-hidden">
-              <CardContent className="p-3">
-                {item.cards?.image_url ? (
-                  <div className="aspect-[2.5/3.5] relative mb-2 rounded-md overflow-hidden bg-muted">
-                    <Image
-                      src={item.cards.image_url}
-                      alt={item.cards.name}
-                      fill
-                      className="object-contain"
-                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
-                    />
+          {paginated.map((item) => {
+            const isReserved = !!item.reserved_for_trade_id;
+            return (
+              <Card key={item.id} className={`group relative overflow-hidden ${isReserved ? "ring-1 ring-red-300 bg-red-50/30" : ""}`}>
+                <CardContent className="p-3">
+                  {item.cards?.image_url ? (
+                    <div className="aspect-[2.5/3.5] relative mb-2 rounded-md overflow-hidden bg-muted">
+                      <Image
+                        src={item.cards.image_url}
+                        alt={item.cards.name}
+                        fill
+                        className="object-contain"
+                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
+                      />
+                      {isReserved && (
+                        <div className="absolute inset-0 bg-red-500/10 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full bg-red-500/80 flex items-center justify-center">
+                            <Lock className="h-4 w-4 text-white" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="aspect-[2.5/3.5] bg-muted rounded-md mb-2 flex items-center justify-center">
+                      <Wallet className="h-8 w-8 text-muted-foreground/20" />
+                    </div>
+                  )}
+                  <h3 className="font-medium text-sm truncate">{item.cards?.name || "Unknown"}</h3>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {item.cards?.card_sets?.name || ""} · #{item.cards?.number}
+                  </p>
+                  <div className="flex items-center justify-between mt-2">
+                    {(() => {
+                      const ci = getConditionInfo(item.condition);
+                      return (
+                        <Badge variant="outline" className={`text-[10px] ${ci.color} ${ci.borderColor}`}>
+                          {ci.shortLabel}
+                        </Badge>
+                      );
+                    })()}
+                    <span className="text-xs font-medium">
+                      ${((item.current_value || item.cards?.market_value || 0)).toFixed(2)}
+                    </span>
                   </div>
-                ) : (
-                  <div className="aspect-[2.5/3.5] bg-muted rounded-md mb-2 flex items-center justify-center">
-                    <Wallet className="h-8 w-8 text-muted-foreground/20" />
-                  </div>
-                )}
-                <h3 className="font-medium text-sm truncate">{item.cards?.name || "Unknown"}</h3>
-                <p className="text-xs text-muted-foreground truncate">
-                  {item.cards?.card_sets?.name || ""} · #{item.cards?.number}
-                </p>
-                <div className="flex items-center justify-between mt-2">
-                  {(() => {
-                    const ci = getConditionInfo(item.condition);
-                    return (
-                      <Badge variant="outline" className={`text-[10px] ${ci.color} ${ci.borderColor}`}>
-                        {ci.shortLabel}
+                  {item.quantity > 1 && (
+                    <Badge className="text-[10px] mt-1">×{item.quantity}</Badge>
+                  )}
+                  {isReserved && (
+                    <div className="mt-1" title={`Reserved for trade`}>
+                      <Badge className="text-[10px] bg-red-100 text-red-700 border-red-200">
+                        <Lock className="h-2.5 w-2.5 mr-0.5" /> Reserved for trade
                       </Badge>
-                    );
-                  })()}
-                  <span className="text-xs font-medium">
-                    ${((item.current_value || item.cards?.market_value || 0)).toFixed(2)}
-                  </span>
-                </div>
-                {item.quantity > 1 && (
-                  <Badge className="text-[10px] mt-1">×{item.quantity}</Badge>
-                )}
-                {/* Remove button */}
-                <button
-                  onClick={() => handleRemoveItem(item.id)}
-                  className="absolute top-2 right-2 h-6 w-6 rounded-full bg-destructive/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Remove from collection"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              </CardContent>
-            </Card>
-          ))}
+                    </div>
+                  )}
+                  {/* Remove button — disabled for reserved cards */}
+                  {!isReserved && (
+                    <button
+                      onClick={() => handleRemoveItem(item.id)}
+                      className="absolute top-2 right-2 h-6 w-6 rounded-full bg-destructive/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remove from collection"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 

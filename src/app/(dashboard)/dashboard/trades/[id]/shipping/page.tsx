@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   ArrowLeft, Camera, Package, Truck, CheckCircle, AlertTriangle,
-  Loader2, Shield, ExternalLink, Copy
+  Loader2, Shield, ExternalLink, Copy, Lock, Clock
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,12 @@ interface Trade {
   status: string;
   shipping_method: string;
   verification_fee_paid: boolean;
+  locked_at: string | null;
+  auto_cancel_at: string | null;
+  fee_amount: number | null;
+  fee_per_party: number | null;
+  protection_amount: number | null;
+  trade_value: number | null;
 }
 
 interface ShippingDetails {
@@ -47,17 +53,70 @@ interface ShippingDetails {
   dispute_reason: string | null;
 }
 
-type ShippingStep = 1 | 2 | 3 | 4 | 5;
-
 const CARRIERS = [
-  { value: "usps", label: "USPS" },
-  { value: "ups", label: "UPS" },
-  { value: "fedex", label: "FedEx" },
-  { value: "dhl", label: "DHL" },
-  { value: "other", label: "Other" },
+  { value: "usps", label: "USPS", hint: "20-22 digits or starts with 9" },
+  { value: "ups", label: "UPS", hint: "Starts with 1Z" },
+  { value: "fedex", label: "FedEx", hint: "12-15 digits" },
+  { value: "dhl", label: "DHL", hint: "Any valid tracking" },
+  { value: "other", label: "Other", hint: "Min 5 characters" },
 ];
 
 const AUTH_CENTER_ADDRESS = "Poké-Trade Verification Center\n123 Trade Lane, Suite 200\nPokemon City, CA 90210";
+
+/* Tracking validation (client-side mirror) */
+function isValidTracking(num: string, carrier: string): { valid: boolean; error?: string } {
+  const c = num.replace(/\s/g, "").toUpperCase();
+  switch (carrier) {
+    case "usps":
+      if (/^9\d{15,21}$/.test(c) || /^\d{20,22}$/.test(c)) return { valid: true };
+      return { valid: false, error: "USPS: 20-22 digits or starts with 9" };
+    case "ups":
+      if (/^1Z[A-Z0-9]{16,18}$/.test(c)) return { valid: true };
+      return { valid: false, error: "UPS: must start with 1Z + 16-18 chars" };
+    case "fedex":
+      if (/^\d{12,15}$/.test(c)) return { valid: true };
+      return { valid: false, error: "FedEx: 12-15 digits" };
+    default:
+      if (c.length >= 5) return { valid: true };
+      return { valid: false, error: "Min 5 characters" };
+  }
+}
+
+/* Countdown component */
+function AutoCancelCountdown({ targetDate }: { targetDate: string }) {
+  const [timeLeft, setTimeLeft] = useState("");
+  const [urgent, setUrgent] = useState(false);
+
+  useEffect(() => {
+    const update = () => {
+      const diff = new Date(targetDate).getTime() - Date.now();
+      if (diff <= 0) { setTimeLeft("Deadline passed!"); setUrgent(true); return; }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      setTimeLeft(`${days}d ${hours}h remaining`);
+      setUrgent(days < 2);
+    };
+    update();
+    const i = setInterval(update, 60000);
+    return () => clearInterval(i);
+  }, [targetDate]);
+
+  return (
+    <div className={`p-3 rounded-lg border flex items-center gap-2 ${
+      urgent ? "bg-red-50 border-red-300" : "bg-orange-50 border-orange-200"
+    }`}>
+      <Clock className={`h-4 w-4 ${urgent ? "text-red-500" : "text-orange-500"}`} />
+      <div>
+        <p className={`text-sm font-medium ${urgent ? "text-red-700" : "text-orange-700"}`}>
+          {urgent ? "⚠️ Deadline approaching!" : "⏳ Shipping deadline"}
+        </p>
+        <p className={`text-xs ${urgent ? "text-red-600" : "text-orange-600"}`}>
+          {timeLeft} · Trade auto-cancels if neither party ships
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function ShippingPage() {
   const params = useParams();
@@ -73,7 +132,7 @@ export default function ShippingPage() {
   // Form states
   const [trackingNumber, setTrackingNumber] = useState("");
   const [carrier, setCarrier] = useState("usps");
-  const [disputeReason, setDisputeReason] = useState("");
+  const [trackingError, setTrackingError] = useState("");
 
   const fetchData = useCallback(async () => {
     try {
@@ -96,23 +155,32 @@ export default function ShippingPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const isSender = trade?.sender_id === currentUserId;
+  const isLocked = trade?.status === "locked";
+  const isVerified = trade?.shipping_method === "verified";
 
-  // Determine current shipping step
-  const getShippingStep = (): ShippingStep => {
+  const myTracking = isSender ? shipping?.sender_tracking : shipping?.receiver_tracking;
+  const theirTracking = isSender ? shipping?.receiver_tracking : shipping?.sender_tracking;
+  const myPhotos = isSender ? shipping?.sender_photos || [] : shipping?.receiver_photos || [];
+  const myShippedAt = isSender ? shipping?.sender_shipped_at : shipping?.receiver_shipped_at;
+  const myConfirmed = isSender ? shipping?.sender_confirmed : shipping?.receiver_confirmed;
+  const otherConfirmed = isSender ? shipping?.receiver_confirmed : shipping?.sender_confirmed;
+
+  // Determine step
+  const currentStep = useMemo(() => {
     if (!shipping) return 1;
-    const myPhotos = isSender ? shipping.sender_photos : shipping.receiver_photos;
-    const myTracking = isSender ? shipping.sender_tracking : shipping.receiver_tracking;
-    const myConfirmed = isSender ? shipping.sender_confirmed : shipping.receiver_confirmed;
-    const otherConfirmed = isSender ? shipping.receiver_confirmed : shipping.sender_confirmed;
+    if (!myTracking) return 1;
+    if (myTracking && !theirTracking) return 2;
+    if (myTracking && theirTracking && !myConfirmed) return 3;
+    if (myConfirmed && otherConfirmed) return 4;
+    return 3;
+  }, [shipping, myTracking, theirTracking, myConfirmed, otherConfirmed]);
 
-    if (!myPhotos?.length) return 1;
-    if (!myTracking) return 2;
-    if (!myConfirmed && !otherConfirmed) return 3;
-    if (myConfirmed && otherConfirmed) return 5;
-    return 4;
-  };
-
-  const currentStep = getShippingStep();
+  // Validate tracking on change
+  useEffect(() => {
+    if (!trackingNumber.trim()) { setTrackingError(""); return; }
+    const result = isValidTracking(trackingNumber, carrier);
+    setTrackingError(result.valid ? "" : result.error || "");
+  }, [trackingNumber, carrier]);
 
   const doAction = async (action: string, extraData: Record<string, unknown> = {}) => {
     setActing(true);
@@ -137,13 +205,17 @@ export default function ShippingPage() {
 
   const handleAddTracking = () => {
     if (!trackingNumber.trim()) return;
+    const validation = isValidTracking(trackingNumber, carrier);
+    if (!validation.valid) {
+      setTrackingError(validation.error || "Invalid tracking number");
+      return;
+    }
     doAction("add_tracking", { tracking_number: trackingNumber, carrier });
     setTrackingNumber("");
+    setTrackingError("");
   };
 
   const handleUploadPhotos = () => {
-    // In production, this would open a file picker and upload to storage
-    // For now, we'll use a placeholder URL
     const photoUrl = prompt("Enter photo URL (paste image link):");
     if (photoUrl) {
       const existingPhotos = isSender ? shipping?.sender_photos || [] : shipping?.receiver_photos || [];
@@ -168,28 +240,19 @@ export default function ShippingPage() {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
         <p className="text-muted-foreground">Trade not found</p>
-        <Button variant="outline" onClick={() => router.back()} className="mt-4">
-          Go Back
-        </Button>
+        <Button variant="outline" onClick={() => router.back()} className="mt-4">Go Back</Button>
       </div>
     );
   }
 
-  const isVerified = trade.shipping_method === "verified";
-  const myTracking = isSender ? shipping?.sender_tracking : shipping?.receiver_tracking;
-  const theirTracking = isSender ? shipping?.receiver_tracking : shipping?.sender_tracking;
-  const myPhotos = isSender ? shipping?.sender_photos || [] : shipping?.receiver_photos || [];
-  const myShippedAt = isSender ? shipping?.sender_shipped_at : shipping?.receiver_shipped_at;
-  const myConfirmed = isSender ? shipping?.sender_confirmed : shipping?.receiver_confirmed;
-  const otherConfirmed = isSender ? shipping?.receiver_confirmed : shipping?.sender_confirmed;
-
   const STEPS = [
-    { num: 1, label: "Upload Photos", icon: Camera },
-    { num: 2, label: "Ship Cards", icon: Package },
-    { num: 3, label: "Track", icon: Truck },
-    { num: 4, label: "Confirm", icon: CheckCircle },
-    { num: 5, label: "Complete", icon: CheckCircle },
+    { num: 1, label: "Enter Tracking", icon: Package },
+    { num: 2, label: "Awaiting Partner", icon: Clock },
+    { num: 3, label: "Confirm Receipt", icon: CheckCircle },
+    { num: 4, label: "Complete", icon: CheckCircle },
   ];
+
+  const bothShipped = !!myTracking && !!theirTracking;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-8">
@@ -200,7 +263,7 @@ export default function ShippingPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            📦 Shipping Workflow
+            {isLocked ? "🔒" : "📦"} Shipping Workflow
           </h1>
           <div className="flex items-center gap-2 mt-0.5">
             <Badge variant="outline" className={
@@ -210,12 +273,43 @@ export default function ShippingPage() {
             }>
               {isVerified ? "🛡️ Poké-Trade Verified" : "📦 Direct Ship"}
             </Badge>
-            <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700">
-              {trade.status}
+            <Badge variant="outline" className={
+              isLocked
+                ? "bg-red-50 border-red-200 text-red-700 font-bold"
+                : "bg-blue-50 border-blue-200 text-blue-700"
+            }>
+              {isLocked ? "🔒 LOCKED" : trade.status}
             </Badge>
+            {trade.protection_amount && trade.protection_amount > 0 && (
+              <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700">
+                🛡️ ${trade.protection_amount} protection
+              </Badge>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Auto-cancel countdown */}
+      {trade.auto_cancel_at && (isLocked || trade.status === "locked") && (
+        <AutoCancelCountdown targetDate={trade.auto_cancel_at} />
+      )}
+
+      {/* Locked Trade Banner */}
+      {isLocked && (
+        <Card className="border-red-300 bg-red-50">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Lock className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-bold text-sm text-red-800">⏳ Trade Locked — Upload Shipping Confirmation to Continue</h3>
+                <p className="text-xs text-red-600 mt-1">
+                  Both parties must enter a valid tracking number. Cards are reserved and cannot be used in other trades until completed.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Progress Stepper */}
       <div className="flex items-center gap-1 overflow-x-auto pb-1">
@@ -270,71 +364,32 @@ export default function ShippingPage() {
         </Card>
       )}
 
-      {/* Step 1: Upload Photos */}
+      {/* Step 1: Enter Tracking Number */}
       <Card className={currentStep === 1 ? "ring-2 ring-[#E3350D] shadow-lg" : ""}>
         <CardContent className="p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
               currentStep > 1 ? "bg-green-100 text-green-600" : currentStep === 1 ? "bg-[#E3350D] text-white" : "bg-gray-100 text-gray-400"
             }`}>
-              {currentStep > 1 ? <CheckCircle className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
+              {currentStep > 1 ? <CheckCircle className="h-4 w-4" /> : <Package className="h-4 w-4" />}
             </div>
             <div>
-              <h3 className="font-bold">Upload Card Photos</h3>
-              <p className="text-xs text-muted-foreground">Proof of condition before shipping</p>
+              <h3 className="font-bold">Enter Tracking Number</h3>
+              <p className="text-xs text-muted-foreground">Ship your cards and provide tracking info</p>
             </div>
           </div>
-          {myPhotos.length > 0 && (
-            <div className="flex gap-2 flex-wrap mb-3">
-              {myPhotos.map((url, i) => (
-                <div key={i} className="w-20 h-20 rounded-lg overflow-hidden bg-muted relative border">
-                  <Image src={url} alt={`Photo ${i + 1}`} fill className="object-cover" sizes="80px" />
-                </div>
-              ))}
-            </div>
-          )}
-          {currentStep === 1 && (
-            <Button
-              onClick={handleUploadPhotos}
-              disabled={acting}
-              className="bg-[#E3350D] hover:bg-[#c72e0b] gap-2"
-            >
-              {acting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-              {myPhotos.length > 0 ? "Add More Photos" : "Upload Photos"}
-            </Button>
-          )}
-          {myPhotos.length > 0 && currentStep === 1 && (
-            <p className="text-xs text-muted-foreground mt-2">
-              ✅ {myPhotos.length} photo(s) uploaded. You can proceed to shipping.
-            </p>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Step 2: Ship Cards */}
-      <Card className={currentStep === 2 ? "ring-2 ring-[#E3350D] shadow-lg" : ""}>
-        <CardContent className="p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              currentStep > 2 ? "bg-green-100 text-green-600" : currentStep === 2 ? "bg-[#E3350D] text-white" : "bg-gray-100 text-gray-400"
-            }`}>
-              {currentStep > 2 ? <CheckCircle className="h-4 w-4" /> : <Package className="h-4 w-4" />}
-            </div>
-            <div>
-              <h3 className="font-bold">Ship Your Cards</h3>
-              <p className="text-xs text-muted-foreground">Enter your tracking number after shipping</p>
-            </div>
-          </div>
           {myTracking ? (
             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-              <p className="text-sm text-green-800">
-                <strong>Tracking:</strong> {myTracking}
+              <p className="text-sm text-green-800 flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                <strong>✅ Your shipping confirmed</strong>
               </p>
-              <p className="text-xs text-green-600 mt-1">
-                Shipped {myShippedAt ? new Date(myShippedAt).toLocaleDateString() : ""}
+              <p className="text-xs text-green-700 mt-1">
+                Tracking: {myTracking} · Shipped {myShippedAt ? new Date(myShippedAt).toLocaleDateString() : ""}
               </p>
             </div>
-          ) : currentStep === 2 ? (
+          ) : currentStep === 1 ? (
             <div className="space-y-3">
               <div className="flex gap-2">
                 <select
@@ -350,12 +405,28 @@ export default function ShippingPage() {
                   value={trackingNumber}
                   onChange={(e) => setTrackingNumber(e.target.value)}
                   placeholder="Enter tracking number..."
-                  className="flex-1"
+                  className={`flex-1 ${trackingError ? "border-red-300 focus:ring-red-300" : ""}`}
                 />
               </div>
+              {/* Format hint */}
+              <p className="text-xs text-muted-foreground">
+                {CARRIERS.find((c) => c.value === carrier)?.hint}
+              </p>
+              {/* Validation error */}
+              {trackingError && (
+                <p className="text-xs text-red-500 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" /> {trackingError}
+                </p>
+              )}
+              {/* Validation success */}
+              {trackingNumber.trim() && !trackingError && (
+                <p className="text-xs text-green-600 flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" /> Valid tracking format ✓
+                </p>
+              )}
               <Button
                 onClick={handleAddTracking}
-                disabled={acting || !trackingNumber.trim()}
+                disabled={acting || !trackingNumber.trim() || !!trackingError}
                 className="bg-[#E3350D] hover:bg-[#c72e0b] gap-2"
               >
                 {acting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />}
@@ -366,48 +437,50 @@ export default function ShippingPage() {
         </CardContent>
       </Card>
 
-      {/* Step 3: Track Shipments */}
-      <Card className={currentStep === 3 ? "ring-2 ring-[#E3350D] shadow-lg" : ""}>
+      {/* Step 2: Waiting for other party */}
+      <Card className={currentStep === 2 ? "ring-2 ring-[#E3350D] shadow-lg" : ""}>
         <CardContent className="p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              currentStep > 3 ? "bg-green-100 text-green-600" : currentStep === 3 ? "bg-[#E3350D] text-white" : "bg-gray-100 text-gray-400"
+              currentStep > 2 ? "bg-green-100 text-green-600" : currentStep === 2 ? "bg-[#E3350D] text-white" : "bg-gray-100 text-gray-400"
             }`}>
-              {currentStep > 3 ? <CheckCircle className="h-4 w-4" /> : <Truck className="h-4 w-4" />}
+              {currentStep > 2 ? <CheckCircle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
             </div>
             <div>
-              <h3 className="font-bold">Track Shipments</h3>
-              <p className="text-xs text-muted-foreground">Monitor both packages</p>
+              <h3 className="font-bold">Waiting for Other Party</h3>
+              <p className="text-xs text-muted-foreground">Both parties must submit tracking</p>
             </div>
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
               <div>
-                <p className="text-sm font-medium">Your Package</p>
-                <p className="text-xs text-muted-foreground">
-                  {myTracking || "Not shipped yet"}
-                </p>
+                <p className="text-sm font-medium">Your Shipping</p>
+                <p className="text-xs text-muted-foreground">{myTracking || "Not shipped yet"}</p>
               </div>
-              {myTracking && (
-                <Badge className="bg-blue-100 text-blue-700 border-blue-200">
-                  {myShippedAt ? "Shipped" : "Pending"}
-                </Badge>
+              {myTracking ? (
+                <Badge className="bg-green-100 text-green-700 border-green-200">✅ Confirmed</Badge>
+              ) : (
+                <Badge className="bg-gray-100 text-gray-500 border-gray-200">⏳ Pending</Badge>
               )}
             </div>
             <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
               <div>
-                <p className="text-sm font-medium">Their Package</p>
-                <p className="text-xs text-muted-foreground">
-                  {theirTracking || "Not shipped yet"}
-                </p>
+                <p className="text-sm font-medium">Their Shipping</p>
+                <p className="text-xs text-muted-foreground">{theirTracking || "Not shipped yet"}</p>
               </div>
-              {theirTracking && (
-                <Badge className="bg-blue-100 text-blue-700 border-blue-200">
-                  Shipped
-                </Badge>
+              {theirTracking ? (
+                <Badge className="bg-green-100 text-green-700 border-green-200">✅ Confirmed</Badge>
+              ) : (
+                <Badge className="bg-gray-100 text-gray-500 border-gray-200">⏳ Waiting</Badge>
               )}
             </div>
           </div>
+
+          {bothShipped && (
+            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+              <p className="text-sm font-medium text-green-800">📦 Both packages in transit!</p>
+            </div>
+          )}
 
           {/* Verified trade: auth center status */}
           {isVerified && (
@@ -428,19 +501,10 @@ export default function ShippingPage() {
                 </p>
                 <p>
                   Verification:{" "}
-                  {shipping?.auth_center_verified
-                    ? "✅ Cards Verified!"
-                    : "⏳ Awaiting verification"}
+                  {shipping?.auth_center_verified ? "✅ Cards Verified!" : "⏳ Awaiting verification"}
                 </p>
                 {shipping?.auth_center_notes && (
                   <p className="mt-1 italic">Notes: {shipping.auth_center_notes}</p>
-                )}
-                {shipping?.auth_center_cross_ship_sender_tracking && (
-                  <p className="mt-2">
-                    Cross-ship to you: {isSender
-                      ? shipping.auth_center_cross_ship_sender_tracking
-                      : shipping.auth_center_cross_ship_receiver_tracking}
-                  </p>
                 )}
               </div>
             </div>
@@ -448,14 +512,14 @@ export default function ShippingPage() {
         </CardContent>
       </Card>
 
-      {/* Step 4: Confirm Receipt */}
-      <Card className={currentStep === 4 ? "ring-2 ring-[#E3350D] shadow-lg" : ""}>
+      {/* Step 3: Confirm Receipt */}
+      <Card className={currentStep === 3 ? "ring-2 ring-[#E3350D] shadow-lg" : ""}>
         <CardContent className="p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              currentStep > 4 ? "bg-green-100 text-green-600" : currentStep === 4 ? "bg-[#E3350D] text-white" : "bg-gray-100 text-gray-400"
+              currentStep > 3 ? "bg-green-100 text-green-600" : currentStep === 3 ? "bg-[#E3350D] text-white" : "bg-gray-100 text-gray-400"
             }`}>
-              {currentStep > 4 ? <CheckCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+              {currentStep > 3 ? <CheckCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
             </div>
             <div>
               <h3 className="font-bold">Confirm Receipt</h3>
@@ -480,7 +544,7 @@ export default function ShippingPage() {
               )}
             </div>
           </div>
-          {currentStep === 4 && !myConfirmed && (
+          {currentStep === 3 && !myConfirmed && (
             <div className="flex gap-2 mt-4">
               <Button
                 onClick={() => doAction("confirm_receipt")}
@@ -506,8 +570,8 @@ export default function ShippingPage() {
         </CardContent>
       </Card>
 
-      {/* Step 5: Complete */}
-      {currentStep === 5 && (
+      {/* Step 4: Complete */}
+      {currentStep === 4 && (
         <Card className="ring-2 ring-green-500 shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-center">
             <div className="text-5xl mb-3">🎉</div>

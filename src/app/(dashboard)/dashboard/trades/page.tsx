@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   Repeat, Plus, ChevronDown, ChevronUp, Check, X, ArrowLeftRight,
-  Clock, CheckCircle, XCircle, RefreshCw, Loader2
+  Clock, CheckCircle, XCircle, RefreshCw, Loader2, Lock, Shield
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +46,11 @@ interface Trade {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  locked_at: string | null;
+  auto_cancel_at: string | null;
+  fee_amount: number | null;
+  fee_per_party: number | null;
+  protection_amount: number | null;
   sender: TradeProfile;
   receiver: TradeProfile;
   trade_items: TradeItem[];
@@ -54,7 +59,7 @@ interface Trade {
 type Tab = "active" | "pending" | "completed" | "declined";
 
 const TAB_CONFIG: { key: Tab; label: string; statuses: string[]; icon: React.ElementType }[] = [
-  { key: "active", label: "Active", statuses: ["accepted", "agreed", "in_transit"], icon: RefreshCw },
+  { key: "active", label: "Active", statuses: ["accepted", "agreed", "in_transit", "locked", "shipped", "awaiting_shipment"], icon: RefreshCw },
   { key: "pending", label: "Pending", statuses: ["pending", "countered"], icon: Clock },
   { key: "completed", label: "Completed", statuses: ["completed"], icon: CheckCircle },
   { key: "declined", label: "Declined", statuses: ["declined", "cancelled"], icon: XCircle },
@@ -65,12 +70,81 @@ const STATUS_BADGES: Record<string, { label: string; className: string }> = {
   countered: { label: "Countered", className: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
   accepted: { label: "Accepted", className: "bg-green-500/20 text-green-400 border-green-500/30" },
   agreed: { label: "Agreed", className: "bg-green-500/20 text-green-400 border-green-500/30" },
+  locked: { label: "🔒 LOCKED", className: "bg-red-500/20 text-red-400 border-red-500/30 font-bold" },
+  shipped: { label: "Shipped", className: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
   completed: { label: "Completed", className: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
   declined: { label: "Declined", className: "bg-red-500/20 text-red-400 border-red-500/30" },
   cancelled: { label: "Cancelled", className: "bg-zinc-500/20 text-zinc-400 border-zinc-500/30" },
-  in_transit: { label: "In Transit", className: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
-  disputed: { label: "Disputed", className: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+  in_transit: { label: "📦 In Transit", className: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+  disputed: { label: "⚠️ Disputed", className: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+  awaiting_shipment: { label: "Awaiting Shipment", className: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
 };
+
+/* Countdown timer component */
+function CountdownTimer({ targetDate }: { targetDate: string }) {
+  const [timeLeft, setTimeLeft] = useState("");
+  const [urgent, setUrgent] = useState(false);
+
+  useEffect(() => {
+    const update = () => {
+      const now = new Date().getTime();
+      const target = new Date(targetDate).getTime();
+      const diff = target - now;
+
+      if (diff <= 0) {
+        setTimeLeft("Expired");
+        setUrgent(true);
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+      if (days > 0) {
+        setTimeLeft(`${days}d ${hours}h remaining`);
+      } else if (hours > 0) {
+        setTimeLeft(`${hours}h ${minutes}m remaining`);
+      } else {
+        setTimeLeft(`${minutes}m remaining`);
+      }
+
+      setUrgent(days < 2);
+    };
+
+    update();
+    const interval = setInterval(update, 60000);
+    return () => clearInterval(interval);
+  }, [targetDate]);
+
+  return (
+    <span className={`text-xs font-medium ${urgent ? "text-red-500" : "text-orange-500"}`}>
+      ⏳ Ship within {timeLeft}
+    </span>
+  );
+}
+
+/* Trade progress stepper */
+function TradeProgressBar({ status }: { status: string }) {
+  const steps = ["Accepted", "Locked", "Shipped", "In Transit", "Delivered", "Complete"];
+  const statusMap: Record<string, number> = {
+    accepted: 0, locked: 1, shipped: 2, awaiting_shipment: 2,
+    in_transit: 3, delivered: 4, completed: 5,
+  };
+  const currentStep = statusMap[status] ?? 0;
+
+  return (
+    <div className="flex items-center gap-0.5 w-full">
+      {steps.map((s, idx) => (
+        <div key={s} className="flex items-center flex-1">
+          <div className={`h-1.5 flex-1 rounded-full transition-colors ${
+            idx <= currentStep ? "bg-green-500" : "bg-gray-200"
+          }`} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function TradesPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -85,16 +159,12 @@ export default function TradesPage() {
       const res = await fetch("/api/trades");
       const data = await res.json();
       if (data.trades) setTrades(data.trades);
-      // Extract current user ID from trades
       if (data.trades?.length > 0) {
-        const t = data.trades[0];
-        // We can infer user ID from ownership patterns
         const ids = new Set<string>();
         data.trades.forEach((tr: Trade) => {
           ids.add(tr.sender_id);
           ids.add(tr.receiver_id);
         });
-        // The user appears in every trade
         const allIds = Array.from(ids);
         for (const uid of allIds) {
           if (data.trades.every((tr: Trade) => tr.sender_id === uid || tr.receiver_id === uid)) {
@@ -113,7 +183,6 @@ export default function TradesPage() {
     fetchTrades();
   }, [fetchTrades]);
 
-  // Also fetch user ID directly
   useEffect(() => {
     (async () => {
       try {
@@ -162,6 +231,9 @@ export default function TradesPage() {
   const calcValue = (items: TradeItem[]): number => {
     return items.reduce((sum, i) => sum + (i.cards?.market_value || 0), 0);
   };
+
+  const isLockedStatus = (status: string) =>
+    ["locked", "shipped", "in_transit", "awaiting_shipment"].includes(status);
 
   return (
     <div className="space-y-6">
@@ -252,18 +324,18 @@ export default function TradesPage() {
             const isExpanded = expandedId === trade.id;
             const isSender = trade.sender_id === currentUserId;
             const isPending = trade.status === "pending" || trade.status === "countered";
+            const isLocked = isLockedStatus(trade.status);
             const statusBadge = STATUS_BADGES[trade.status] || STATUS_BADGES.pending;
 
             return (
-              <Card key={trade.id} className="overflow-hidden">
+              <Card key={trade.id} className={`overflow-hidden ${isLocked ? "border-red-300" : ""}`}>
                 <CardContent className="p-0">
-                  {/* Trade Header - clickable */}
+                  {/* Trade Header */}
                   <button
                     onClick={() => setExpandedId(isExpanded ? null : trade.id)}
                     className="w-full p-4 flex items-center gap-4 hover:bg-muted/30 transition-colors text-left"
                   >
-                    {/* Avatar */}
-                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden relative">
                       {other?.avatar_url ? (
                         <Image src={other.avatar_url} alt="" width={40} height={40} className="object-cover" />
                       ) : (
@@ -271,9 +343,13 @@ export default function TradesPage() {
                           {(other?.display_name || other?.username || "?")[0].toUpperCase()}
                         </span>
                       )}
+                      {isLocked && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
+                          <Lock className="h-2.5 w-2.5 text-white" />
+                        </div>
+                      )}
                     </div>
 
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium truncate">
@@ -287,6 +363,11 @@ export default function TradesPage() {
                             Received
                           </Badge>
                         )}
+                        {trade.protection_amount && trade.protection_amount > 0 && (
+                          <Badge className="text-[10px] bg-blue-500/20 text-blue-400 border-blue-500/30">
+                            <Shield className="h-2.5 w-2.5 mr-0.5" /> ${trade.protection_amount}
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                         <span>{myItems.length} card{myItems.length !== 1 ? "s" : ""} offered</span>
@@ -296,6 +377,10 @@ export default function TradesPage() {
                           {new Date(trade.created_at).toLocaleDateString()}
                         </span>
                       </div>
+                      {/* Countdown for locked trades */}
+                      {isLocked && trade.auto_cancel_at && (
+                        <CountdownTimer targetDate={trade.auto_cancel_at} />
+                      )}
                     </div>
 
                     {/* Card Thumbnails */}
@@ -314,15 +399,38 @@ export default function TradesPage() {
                       )}
                     </div>
 
-                    {/* Expand */}
                     {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                   </button>
 
                   {/* Expanded Details */}
                   {isExpanded && (
                     <div className="border-t border-border">
+                      {/* Progress bar for active trades */}
+                      {isLocked && (
+                        <div className="px-4 pt-3">
+                          <TradeProgressBar status={trade.status} />
+                          <div className="flex justify-between text-[9px] text-muted-foreground mt-1 px-1">
+                            <span>Accepted</span>
+                            <span>Locked</span>
+                            <span>Shipped</span>
+                            <span>In Transit</span>
+                            <span>Delivered</span>
+                            <span>Complete</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Reserved cards warning */}
+                      {isLocked && (
+                        <div className="mx-4 mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <p className="text-xs text-red-700 flex items-center gap-1.5">
+                            <Lock className="h-3 w-3" />
+                            <strong>Cards are reserved for this trade</strong> — they cannot be listed or included in other trades
+                          </p>
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-0">
-                        {/* Your Offer */}
                         <div className="p-4 md:border-r border-border">
                           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                             {isSender ? "You Offer" : "They Offer"} · ${calcValue(isSender ? myItems : theirItems).toFixed(2)}
@@ -330,12 +438,17 @@ export default function TradesPage() {
                           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                             {(isSender ? myItems : theirItems).map((item) => (
                               <div key={item.id} className="group">
-                                <div className="aspect-[2.5/3.5] rounded-md overflow-hidden bg-muted relative">
+                                <div className={`aspect-[2.5/3.5] rounded-md overflow-hidden bg-muted relative ${isLocked ? "ring-1 ring-red-300" : ""}`}>
                                   {item.cards?.image_url ? (
                                     <Image src={item.cards.image_url} alt={item.cards.name} fill className="object-contain" sizes="80px" />
                                   ) : (
                                     <div className="h-full w-full flex items-center justify-center">
                                       <Repeat className="h-4 w-4 text-muted-foreground/30" />
+                                    </div>
+                                  )}
+                                  {isLocked && (
+                                    <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500/80 flex items-center justify-center">
+                                      <Lock className="h-2.5 w-2.5 text-white" />
                                     </div>
                                   )}
                                 </div>
@@ -350,8 +463,6 @@ export default function TradesPage() {
                             )}
                           </div>
                         </div>
-
-                        {/* Their Offer */}
                         <div className="p-4 border-t md:border-t-0 border-border">
                           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                             {isSender ? "You Want" : "They Want"} · ${calcValue(isSender ? theirItems : myItems).toFixed(2)}
@@ -359,12 +470,17 @@ export default function TradesPage() {
                           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                             {(isSender ? theirItems : myItems).map((item) => (
                               <div key={item.id} className="group">
-                                <div className="aspect-[2.5/3.5] rounded-md overflow-hidden bg-muted relative">
+                                <div className={`aspect-[2.5/3.5] rounded-md overflow-hidden bg-muted relative ${isLocked ? "ring-1 ring-red-300" : ""}`}>
                                   {item.cards?.image_url ? (
                                     <Image src={item.cards.image_url} alt={item.cards.name} fill className="object-contain" sizes="80px" />
                                   ) : (
                                     <div className="h-full w-full flex items-center justify-center">
                                       <Repeat className="h-4 w-4 text-muted-foreground/30" />
+                                    </div>
+                                  )}
+                                  {isLocked && (
+                                    <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500/80 flex items-center justify-center">
+                                      <Lock className="h-2.5 w-2.5 text-white" />
                                     </div>
                                   )}
                                 </div>
@@ -380,6 +496,22 @@ export default function TradesPage() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Fee & Protection info */}
+                      {(trade.fee_amount || trade.protection_amount) && (
+                        <div className="px-4 pb-3 border-t border-border pt-3 flex flex-wrap gap-3">
+                          {trade.fee_amount && trade.fee_amount > 0 && (
+                            <div className="text-xs text-muted-foreground">
+                              💰 Fee: ${trade.fee_amount.toFixed(2)} (${trade.fee_per_party?.toFixed(2)}/each)
+                            </div>
+                          )}
+                          {trade.protection_amount && trade.protection_amount > 0 && (
+                            <div className="text-xs text-muted-foreground">
+                              🛡️ Protection: ${trade.protection_amount.toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Notes */}
                       {trade.notes && (
@@ -400,7 +532,7 @@ export default function TradesPage() {
                                 className="gap-1"
                               >
                                 {acting === trade.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                                Accept
+                                Accept &amp; Lock 🔒
                               </Button>
                               <Button
                                 size="sm"
@@ -433,28 +565,43 @@ export default function TradesPage() {
                         </div>
                       )}
 
-                      {/* Shipping workflow for accepted/in-transit trades */}
-                      {(trade.status === "accepted" || trade.status === "in_transit" || trade.status === "awaiting_shipment") && (
+                      {/* Locked trade: shipping workflow */}
+                      {isLocked && (
+                        <div className="flex flex-wrap gap-2 px-4 pb-4 border-t border-border pt-3">
+                          <Link href={`/dashboard/trades/${trade.id}/shipping`}>
+                            <Button size="sm" className="gap-1 bg-[#E3350D] hover:bg-[#c72e0b]">
+                              📦 Upload Shipping &amp; Tracking
+                            </Button>
+                          </Link>
+                          <p className="text-xs text-muted-foreground w-full mt-1">
+                            ⏳ Trade Locked — Upload shipping confirmation to continue
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Accepted but not locked (legacy compat) */}
+                      {trade.status === "accepted" && (
                         <div className="flex flex-wrap gap-2 px-4 pb-4 border-t border-border pt-3">
                           <Link href={`/dashboard/trades/${trade.id}/shipping`}>
                             <Button size="sm" className="gap-1 bg-[#E3350D] hover:bg-[#c72e0b]">
                               📦 Shipping Workflow
                             </Button>
                           </Link>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleAction(trade.id, "complete")}
-                            disabled={acting === trade.id}
-                            className="gap-1"
-                          >
-                            {acting === trade.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
-                            Mark Completed
-                          </Button>
                         </div>
                       )}
 
-                      {/* Review prompt for completed trades */}
+                      {/* In transit */}
+                      {trade.status === "in_transit" && (
+                        <div className="flex flex-wrap gap-2 px-4 pb-4 border-t border-border pt-3">
+                          <Link href={`/dashboard/trades/${trade.id}/shipping`}>
+                            <Button size="sm" className="gap-1 bg-[#E3350D] hover:bg-[#c72e0b]">
+                              📦 Track &amp; Confirm Receipt
+                            </Button>
+                          </Link>
+                        </div>
+                      )}
+
+                      {/* Review for completed */}
                       {trade.status === "completed" && (
                         <div className="flex flex-wrap gap-2 px-4 pb-4 border-t border-border pt-3">
                           <Link href={`/dashboard/reviews?trade=${trade.id}`}>

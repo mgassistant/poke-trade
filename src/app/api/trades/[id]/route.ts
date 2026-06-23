@@ -31,6 +31,9 @@ export async function GET(
   return NextResponse.json({ trade });
 }
 
+// Locked and later statuses that block modifications
+const LOCKED_STATUSES = ["locked", "shipped", "in_transit", "delivered", "completed", "awaiting_shipment"];
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -46,7 +49,7 @@ export async function POST(
   // Get trade
   const { data: trade } = await supabase
     .from("trade_offers")
-    .select("*, trade_offer_versions(version_number)")
+    .select("*, trade_offer_versions(version_number), trade_items(*, cards(id, market_value))")
     .eq("id", id)
     .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
     .single();
@@ -61,18 +64,53 @@ export async function POST(
       return NextResponse.json({ error: "Trade cannot be accepted in current state" }, { status: 400 });
     }
 
+    // Calculate trade value for fee calculation
+    let tradeValue = trade.trade_value || 0;
+    if (!tradeValue && trade.trade_items?.length) {
+      tradeValue = trade.trade_items.reduce(
+        (sum: number, item: { cards?: { market_value?: number } }) =>
+          sum + (item.cards?.market_value || 0), 0
+      );
+    }
+
+    const now = new Date();
+    const autoCancelAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    // Lock the trade and reserve cards
     await supabase
       .from("trade_offers")
-      .update({ status: "accepted", updated_at: new Date().toISOString() })
+      .update({
+        status: "locked",
+        locked_at: now.toISOString(),
+        auto_cancel_at: autoCancelAt.toISOString(),
+        updated_at: now.toISOString(),
+      })
       .eq("id", id);
 
-    await supabase.from("notifications").insert({
-      user_id: otherUserId,
-      notification_type: "trade_accepted",
-      title: "Trade Accepted! 🤝",
-      message: "Your trade offer has been accepted.",
-      data: { trade_id: id },
-    });
+    // Reserve all collection items involved in this trade
+    if (trade.trade_items?.length) {
+      const collectionItemIds = trade.trade_items
+        .map((item: { collection_item_id?: string }) => item.collection_item_id)
+        .filter(Boolean);
+
+      if (collectionItemIds.length > 0) {
+        await supabase
+          .from("collection_items")
+          .update({ reserved_for_trade_id: id })
+          .in("id", collectionItemIds);
+      }
+    }
+
+    // Notify both parties about lock
+    for (const uid of [trade.sender_id, trade.receiver_id]) {
+      await supabase.from("notifications").insert({
+        user_id: uid,
+        notification_type: "trade_locked",
+        title: "🔒 Trade Locked",
+        message: "Trade accepted and locked! Both parties must ship within 7 days. Upload your tracking number to continue.",
+        data: { trade_id: id, auto_cancel_at: autoCancelAt.toISOString() },
+      });
+    }
 
     await supabase.from("activity_feed").insert({
       user_id: user.id,
@@ -80,11 +118,14 @@ export async function POST(
       related_id: id,
     });
 
-    return NextResponse.json({ success: true, status: "accepted" });
+    return NextResponse.json({ success: true, status: "locked", auto_cancel_at: autoCancelAt.toISOString() });
   }
 
   // ===== DECLINE =====
   if (action === "decline") {
+    if (LOCKED_STATUSES.includes(trade.status)) {
+      return NextResponse.json({ error: "Cannot decline a locked trade. Use dispute resolution instead." }, { status: 400 });
+    }
     if (trade.status === "completed" || trade.status === "cancelled") {
       return NextResponse.json({ error: "Trade is already closed" }, { status: 400 });
     }
@@ -107,6 +148,14 @@ export async function POST(
 
   // ===== CANCEL =====
   if (action === "cancel") {
+    // Block cancel on locked trades
+    if (LOCKED_STATUSES.includes(trade.status)) {
+      return NextResponse.json(
+        { error: "Cannot cancel a locked trade. Both parties must complete shipping or wait for auto-cancel after 7 days." },
+        { status: 400 }
+      );
+    }
+
     if (trade.sender_id !== user.id) {
       return NextResponse.json({ error: "Only the sender can cancel" }, { status: 403 });
     }
@@ -118,6 +167,12 @@ export async function POST(
       .from("trade_offers")
       .update({ status: "cancelled", updated_at: new Date().toISOString() })
       .eq("id", id);
+
+    // Free any reserved cards
+    await supabase
+      .from("collection_items")
+      .update({ reserved_for_trade_id: null })
+      .eq("reserved_for_trade_id", id);
 
     await supabase.from("notifications").insert({
       user_id: otherUserId,
@@ -132,6 +187,10 @@ export async function POST(
 
   // ===== COUNTER =====
   if (action === "counter") {
+    // Block counter on locked trades
+    if (LOCKED_STATUSES.includes(trade.status)) {
+      return NextResponse.json({ error: "Cannot counter a locked trade" }, { status: 400 });
+    }
     if (trade.status === "completed" || trade.status === "cancelled") {
       return NextResponse.json({ error: "Trade is closed" }, { status: 400 });
     }
@@ -193,14 +252,20 @@ export async function POST(
 
   // ===== COMPLETE =====
   if (action === "complete") {
-    if (trade.status !== "accepted") {
-      return NextResponse.json({ error: "Trade must be accepted first" }, { status: 400 });
+    if (trade.status !== "in_transit" && trade.status !== "accepted" && trade.status !== "locked") {
+      return NextResponse.json({ error: "Trade must be in transit or accepted to complete" }, { status: 400 });
     }
 
     await supabase
       .from("trade_offers")
       .update({ status: "completed", completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
       .eq("id", id);
+
+    // Free reserved cards
+    await supabase
+      .from("collection_items")
+      .update({ reserved_for_trade_id: null })
+      .eq("reserved_for_trade_id", id);
 
     // Update both profiles trade counts
     for (const uid of [trade.sender_id, trade.receiver_id]) {
@@ -225,6 +290,50 @@ export async function POST(
     });
 
     return NextResponse.json({ success: true, status: "completed" });
+  }
+
+  // ===== ADMIN UNLOCK =====
+  if (action === "admin_unlock") {
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.is_admin) {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    }
+
+    // Unlock the trade (revert to accepted)
+    await supabase
+      .from("trade_offers")
+      .update({
+        status: "cancelled",
+        locked_at: null,
+        auto_cancel_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    // Free reserved cards
+    await supabase
+      .from("collection_items")
+      .update({ reserved_for_trade_id: null })
+      .eq("reserved_for_trade_id", id);
+
+    // Notify both parties
+    for (const uid of [trade.sender_id, trade.receiver_id]) {
+      await supabase.from("notifications").insert({
+        user_id: uid,
+        notification_type: "trade_unlocked",
+        title: "🔓 Trade Unlocked by Admin",
+        message: "An admin has unlocked this trade. The trade has been cancelled and your cards are freed.",
+        data: { trade_id: id },
+      });
+    }
+
+    return NextResponse.json({ success: true, status: "cancelled" });
   }
 
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
