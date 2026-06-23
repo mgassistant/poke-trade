@@ -26,6 +26,8 @@ export interface Database {
           subscription_tier: "free" | "pro" | "elite";
           stripe_customer_id: string | null;
           stripe_connect_id: string | null;
+          drop_alerts_active: boolean;
+          drop_alerts_subscription_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -45,6 +47,8 @@ export interface Database {
           subscription_tier?: "free" | "pro" | "elite";
           stripe_customer_id?: string | null;
           stripe_connect_id?: string | null;
+          drop_alerts_active?: boolean;
+          drop_alerts_subscription_id?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
       };

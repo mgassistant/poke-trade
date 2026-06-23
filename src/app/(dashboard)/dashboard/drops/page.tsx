@@ -5,7 +5,8 @@ import Link from "next/link";
 import {
   Bell, BellOff, Trash2, ExternalLink, Zap,
   ShoppingCart, Clock, TrendingDown, Package,
-  Settings, Eye, DollarSign,
+  Settings, Eye, DollarSign, Lock, CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -72,6 +73,17 @@ const ALERT_ICONS: Record<string, string> = {
   low_stock: "⚠️",
 };
 
+const DROP_ALERTS_FEATURES = [
+  { text: "Add to watchlist across 8 retailers", icon: "👁️" },
+  { text: "Instant restock alerts", icon: "🟢" },
+  { text: "Price drop notifications", icon: "💰" },
+  { text: "New release alerts", icon: "🆕" },
+  { text: "Low stock warnings", icon: "⚠️" },
+  { text: "Live alerts ticker", icon: "📡" },
+  { text: "Alert history", icon: "📋" },
+  { text: "Target price alerts", icon: "🎯" },
+];
+
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
@@ -92,7 +104,44 @@ export default function DashboardDropsPage() {
   const [alertsLoading, setAlertsLoading] = useState(true);
   const [removing, setRemoving] = useState<Set<string>>(new Set());
 
+  // Subscription state
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subLoading, setSubLoading] = useState(true);
+  const [subscribing, setSubscribing] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+
+  // Check subscription
+  useEffect(() => {
+    async function checkSub() {
+      try {
+        const res = await fetch("/api/drops/subscribe");
+        const data = await res.json();
+        setIsSubscribed(data.active === true);
+      } catch {
+        // ignore
+      } finally {
+        setSubLoading(false);
+      }
+    }
+    checkSub();
+  }, []);
+
+  // Check for success param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("subscribed") === "true") {
+      setSuccessMsg("Drop Alerts activated! Welcome aboard ⚡");
+      setIsSubscribed(true);
+      // Clean URL
+      window.history.replaceState({}, "", "/dashboard/drops");
+    }
+  }, []);
+
   const fetchWatchlist = useCallback(async () => {
+    if (!isSubscribed) {
+      setLoading(false);
+      return;
+    }
     try {
       const res = await fetch("/api/drops/watchlist");
       const data = await res.json();
@@ -102,9 +151,13 @@ export default function DashboardDropsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isSubscribed]);
 
   const fetchAlerts = useCallback(async () => {
+    if (!isSubscribed) {
+      setAlertsLoading(false);
+      return;
+    }
     try {
       const res = await fetch("/api/drops/alerts?limit=20");
       const data = await res.json();
@@ -114,12 +167,14 @@ export default function DashboardDropsPage() {
     } finally {
       setAlertsLoading(false);
     }
-  }, []);
+  }, [isSubscribed]);
 
   useEffect(() => {
-    fetchWatchlist();
-    fetchAlerts();
-  }, [fetchWatchlist, fetchAlerts]);
+    if (!subLoading) {
+      fetchWatchlist();
+      fetchAlerts();
+    }
+  }, [subLoading, fetchWatchlist, fetchAlerts]);
 
   const removeFromWatchlist = async (productId: string) => {
     setRemoving((prev) => new Set([...prev, productId]));
@@ -137,9 +192,142 @@ export default function DashboardDropsPage() {
     }
   };
 
+  const handleSubscribe = async () => {
+    setSubscribing(true);
+    try {
+      const res = await fetch("/api/drops/subscribe", { method: "POST" });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (data.error) {
+        alert(data.error);
+      }
+    } catch {
+      alert("Failed to start checkout. Please try again.");
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
   const inStockCount = watchlist.filter((w) => w.drop_products?.in_stock).length;
   const totalWatched = watchlist.length;
 
+  // ── Not subscribed: locked state ──
+  if (!subLoading && !isSubscribed) {
+    return (
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Zap className="h-6 w-6 text-amber-500" />
+              Drop Alerts
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Your watchlist and personalized alerts
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/drops">
+              <Eye className="h-4 w-4 mr-1.5" />
+              Browse Products
+            </Link>
+          </Button>
+        </div>
+
+        {/* Locked CTA */}
+        <Card className="border-2 border-amber-200 bg-gradient-to-br from-amber-50/50 via-white to-yellow-50/50">
+          <CardContent className="p-8 md:p-12 text-center">
+            <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-amber-100 mb-6">
+              <Lock className="h-8 w-8 text-amber-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Drop Alerts is a premium add-on
+            </h2>
+            <p className="text-gray-500 mb-2 text-lg">
+              <span className="font-bold text-amber-600">$5.99/mo</span> — works with any membership tier
+            </p>
+            <p className="text-gray-400 text-sm mb-8 max-w-md mx-auto">
+              Get instant alerts when products restock, prices drop, or new releases go live across 8 major retailers.
+            </p>
+
+            {/* Feature grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 max-w-2xl mx-auto">
+              {DROP_ALERTS_FEATURES.map((feature) => (
+                <div
+                  key={feature.text}
+                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-gray-100 shadow-sm"
+                >
+                  <span className="text-xl">{feature.icon}</span>
+                  <span className="text-[11px] text-gray-600 font-medium text-center leading-tight">
+                    {feature.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <Button
+              size="lg"
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold shadow-lg shadow-amber-500/25 px-8"
+              onClick={handleSubscribe}
+              disabled={subscribing}
+            >
+              {subscribing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Zap className="h-4 w-4 mr-2" />
+              )}
+              {subscribing ? "Loading..." : "Subscribe — $5.99/mo"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Blurred preview */}
+        <div className="relative">
+          <div className="filter blur-[6px] pointer-events-none select-none opacity-50">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {["Watching", "In Stock", "Price Drops", "Alerts Today"].map((label) => (
+                <Card key={label}>
+                  <CardContent className="pt-5 pb-4">
+                    <div className="text-2xl font-bold">—</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">My Watchlist</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100">
+                      <div className="h-12 w-12 rounded bg-gray-100" />
+                      <div className="flex-1 space-y-1">
+                        <div className="h-4 w-48 bg-gray-200 rounded" />
+                        <div className="h-3 w-24 bg-gray-100 rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="bg-white/80 backdrop-blur-sm px-6 py-3 rounded-xl shadow-sm border border-amber-200">
+              <p className="text-sm text-gray-600 flex items-center gap-2">
+                <Lock className="h-4 w-4 text-amber-500" />
+                Subscribe to unlock your watchlist and alerts
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Subscribed: full functionality ──
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -148,6 +336,7 @@ export default function DashboardDropsPage() {
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Zap className="h-6 w-6 text-amber-500" />
             Drop Alerts
+            <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[10px]">PRO</Badge>
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Your watchlist and personalized alerts
@@ -160,6 +349,17 @@ export default function DashboardDropsPage() {
           </Link>
         </Button>
       </div>
+
+      {/* Success message */}
+      {successMsg && (
+        <Card>
+          <CardContent className="p-4 bg-green-50 border-green-200">
+            <p className="text-sm text-green-700 flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" /> {successMsg}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

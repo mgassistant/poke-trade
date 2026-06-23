@@ -42,8 +42,21 @@ export async function POST(request: Request) {
         const listingId = session.metadata?.listing_id;
         const purchaseType = session.metadata?.type;
 
+        // Handle Drop Alerts subscription checkout
+        if (purchaseType === "drop_alerts" && userId) {
+          const subscriptionId = session.subscription as string;
+          await supabase
+            .from("profiles")
+            .update({
+              drop_alerts_active: true,
+              drop_alerts_subscription_id: subscriptionId,
+              stripe_customer_id: session.customer as string,
+            })
+            .eq("id", userId);
+        }
+
         // Handle membership subscription checkout
-        if (userId && tier && !listingId) {
+        if (userId && tier && !listingId && purchaseType !== "drop_alerts") {
           await supabase
             .from("profiles")
             .update({
@@ -141,14 +154,27 @@ export async function POST(request: Request) {
       case "customer.subscription.deleted": {
         const subscription = event.data.object;
         const customerId = subscription.customer as string;
+        const subType = subscription.metadata?.type;
 
-        await supabase
-          .from("profiles")
-          .update({
-            subscription_tier: "free",
-            is_premium: false,
-          })
-          .eq("stripe_customer_id", customerId);
+        if (subType === "drop_alerts") {
+          // Cancel drop alerts add-on
+          await supabase
+            .from("profiles")
+            .update({
+              drop_alerts_active: false,
+              drop_alerts_subscription_id: null,
+            })
+            .eq("stripe_customer_id", customerId);
+        } else {
+          // Cancel membership subscription
+          await supabase
+            .from("profiles")
+            .update({
+              subscription_tier: "free",
+              is_premium: false,
+            })
+            .eq("stripe_customer_id", customerId);
+        }
         break;
       }
 

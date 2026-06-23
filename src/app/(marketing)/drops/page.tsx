@@ -6,6 +6,7 @@ import {
   Bell, Zap, ExternalLink, Search, Filter,
   ChevronDown, Eye, Clock, ArrowUpDown,
   TrendingDown, TrendingUp, Package, ShoppingCart,
+  Lock, Shield, CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -107,6 +108,17 @@ const ALERT_COLORS: Record<string, string> = {
   low_stock: "border-l-yellow-500 bg-yellow-50/50",
 };
 
+const DROP_ALERTS_FEATURES = [
+  "Instant restock alerts",
+  "Price drop notifications",
+  "Target price alerts",
+  "Low stock warnings",
+  "Watchlist across 8 retailers",
+  "Live alerts ticker",
+  "Alert history",
+  "New release notifications",
+];
+
 /* ────────── helpers ────────── */
 
 function timeAgo(dateStr: string): string {
@@ -163,6 +175,11 @@ export default function DropsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Subscription state
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subLoading, setSubLoading] = useState(true);
+  const [subscribing, setSubscribing] = useState(false);
+
   // Filters
   const [retailerFilter, setRetailerFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -171,11 +188,24 @@ export default function DropsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
-  // Retailer stats (derived)
-  const [retailerCounts, setRetailerCounts] = useState<Record<string, number>>({});
-
   // Watchlist tracking (local state)
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
+
+  // Check subscription status
+  useEffect(() => {
+    async function checkSubscription() {
+      try {
+        const res = await fetch("/api/drops/subscribe");
+        const data = await res.json();
+        setIsSubscribed(data.active === true);
+      } catch {
+        // Not logged in or error
+      } finally {
+        setSubLoading(false);
+      }
+    }
+    checkSubscription();
+  }, []);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -215,21 +245,6 @@ export default function DropsPage() {
     }
   }, []);
 
-  // Fetch retailer counts once
-  useEffect(() => {
-    async function fetchCounts() {
-      try {
-        const res = await fetch("/api/drops/products?sort=newest&page=1");
-        const data = await res.json();
-        // We don't get per-retailer counts from the API, so compute from total
-        // This is a simplification — in production you'd have a dedicated endpoint
-      } catch {
-        // ignore
-      }
-    }
-    fetchCounts();
-  }, []);
-
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
@@ -238,8 +253,9 @@ export default function DropsPage() {
     fetchAlerts();
   }, [fetchAlerts]);
 
-  // Load watchlist
+  // Load watchlist (only if subscribed)
   useEffect(() => {
+    if (!isSubscribed) return;
     async function loadWatchlist() {
       try {
         const res = await fetch("/api/drops/watchlist");
@@ -252,9 +268,10 @@ export default function DropsPage() {
       }
     }
     loadWatchlist();
-  }, []);
+  }, [isSubscribed]);
 
   const toggleWatch = async (productId: string) => {
+    if (!isSubscribed) return; // gated
     const isWatched = watchedIds.has(productId);
     const newSet = new Set(watchedIds);
 
@@ -271,15 +288,36 @@ export default function DropsPage() {
       newSet.add(productId);
       setWatchedIds(newSet);
       try {
-        await fetch("/api/drops/watchlist", {
+        const res = await fetch("/api/drops/watchlist", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ product_id: productId }),
         });
+        if (!res.ok) {
+          newSet.delete(productId);
+          setWatchedIds(new Set(newSet));
+        }
       } catch {
         newSet.delete(productId);
         setWatchedIds(new Set(newSet));
       }
+    }
+  };
+
+  const handleSubscribe = async () => {
+    setSubscribing(true);
+    try {
+      const res = await fetch("/api/drops/subscribe", { method: "POST" });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (data.error) {
+        alert(data.error);
+      }
+    } catch {
+      alert("Failed to start checkout. Please try again.");
+    } finally {
+      setSubscribing(false);
     }
   };
 
@@ -317,12 +355,24 @@ export default function DropsPage() {
             )}
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg shadow-amber-500/20" asChild>
-              <Link href="/register">
-                <Bell className="h-4 w-4 mr-1.5" />
-                Subscribe to Alerts
-              </Link>
-            </Button>
+            {isSubscribed ? (
+              <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white font-semibold shadow-lg" asChild>
+                <Link href="/dashboard/drops">
+                  <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                  Go to My Alerts
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                className="bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg shadow-amber-500/20"
+                onClick={handleSubscribe}
+                disabled={subscribing}
+              >
+                <Zap className="h-4 w-4 mr-1.5" />
+                {subscribing ? "Loading..." : "Subscribe — $5.99/mo"}
+              </Button>
+            )}
             <Button size="lg" variant="outline" className="border-gray-300" asChild>
               <Link href="/pricing">View Plans</Link>
             </Button>
@@ -338,33 +388,119 @@ export default function DropsPage() {
               <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
               <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Live Alerts</h2>
               <span className="text-xs text-gray-400">Last 24 hours</span>
+              {!isSubscribed && (
+                <Badge variant="outline" className="text-[10px] border-amber-300 text-amber-600 ml-auto">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Subscribers Only
+                </Badge>
+              )}
             </div>
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
-              {alerts.slice(0, 8).map((alert) => (
-                <div
-                  key={alert.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg border-l-4 transition-colors ${ALERT_COLORS[alert.alert_type] ?? "border-l-gray-300 bg-gray-50/50"}`}
-                >
-                  <span className="text-lg shrink-0">{ALERT_ICONS[alert.alert_type] ?? "📢"}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{alert.title}</p>
-                    <p className="text-xs text-gray-500 truncate">{alert.message}</p>
+
+            {isSubscribed ? (
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                {alerts.slice(0, 8).map((alert) => (
+                  <div
+                    key={alert.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border-l-4 transition-colors ${ALERT_COLORS[alert.alert_type] ?? "border-l-gray-300 bg-gray-50/50"}`}
+                  >
+                    <span className="text-lg shrink-0">{ALERT_ICONS[alert.alert_type] ?? "📢"}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{alert.title}</p>
+                      <p className="text-xs text-gray-500 truncate">{alert.message}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs text-gray-400">{timeAgo(alert.created_at)}</p>
+                      {alert.drop_products?.product_url && (
+                        <a
+                          href={alert.drop_products.product_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-amber-600 hover:text-amber-700 font-medium"
+                        >
+                          View →
+                        </a>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs text-gray-400">{timeAgo(alert.created_at)}</p>
-                    {alert.drop_products?.product_url && (
-                      <a
-                        href={alert.drop_products.product_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-amber-600 hover:text-amber-700 font-medium"
-                      >
-                        View →
-                      </a>
-                    )}
+                ))}
+              </div>
+            ) : (
+              /* Blurred preview for non-subscribers */
+              <div className="relative">
+                <div className="space-y-2 max-h-48 overflow-hidden filter blur-[6px] pointer-events-none select-none">
+                  {alerts.slice(0, 4).map((alert) => (
+                    <div
+                      key={alert.id}
+                      className={`flex items-center gap-3 p-3 rounded-lg border-l-4 ${ALERT_COLORS[alert.alert_type] ?? "border-l-gray-300 bg-gray-50/50"}`}
+                    >
+                      <span className="text-lg shrink-0">{ALERT_ICONS[alert.alert_type] ?? "📢"}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{alert.title}</p>
+                        <p className="text-xs text-gray-500 truncate">{alert.message}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-lg">
+                  <div className="text-center">
+                    <Lock className="h-6 w-6 text-amber-500 mx-auto mb-2" />
+                    <p className="text-sm font-semibold text-gray-700">Subscribe to see live alerts</p>
+                    <Button
+                      size="sm"
+                      className="mt-2 bg-amber-500 hover:bg-amber-600 text-black font-semibold"
+                      onClick={handleSubscribe}
+                      disabled={subscribing}
+                    >
+                      {subscribing ? "Loading..." : "Unlock — $5.99/mo"}
+                    </Button>
                   </div>
                 </div>
-              ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ── Drop Alerts Pro Upsell ── */}
+      {!subLoading && !isSubscribed && (
+        <section className="py-12 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-b border-amber-200/50">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div className="bg-white rounded-2xl border-2 border-amber-200 shadow-lg shadow-amber-100/50 p-8 md:p-10">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
+                <div className="flex-1">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold mb-4">
+                    <Zap className="h-3.5 w-3.5" />
+                    DROP ALERTS PRO
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                    Never miss a restock — <span className="text-amber-500">$5.99/mo</span>
+                  </h2>
+                  <p className="text-gray-500 mb-6">
+                    Get instant alerts across {RETAILERS.length} retailers. Available as an add-on to any membership tier.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
+                    {DROP_ALERTS_FEATURES.map((feature) => (
+                      <div key={feature} className="flex items-center gap-2 text-sm text-gray-700">
+                        <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0" />
+                        {feature}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      size="lg"
+                      className="bg-amber-500 hover:bg-amber-600 text-black font-bold shadow-lg shadow-amber-500/25"
+                      onClick={handleSubscribe}
+                      disabled={subscribing}
+                    >
+                      <Zap className="h-4 w-4 mr-1.5" />
+                      {subscribing ? "Loading..." : "Subscribe Now"}
+                    </Button>
+                    <span className="text-xs text-gray-400">Available with any membership tier</span>
+                  </div>
+                </div>
+                <div className="hidden md:block shrink-0 text-8xl opacity-20 select-none">⚡</div>
+              </div>
             </div>
           </div>
         </section>
@@ -535,18 +671,28 @@ export default function DropsPage() {
                         <div className="absolute top-2 left-2">
                           {stockBadge(product.in_stock)}
                         </div>
-                        {/* Watch button */}
-                        <button
-                          onClick={() => toggleWatch(product.id)}
-                          className={`absolute top-2 right-2 p-1.5 rounded-full transition-all ${
-                            isWatched
-                              ? "bg-amber-500 text-white shadow-md"
-                              : "bg-white/80 text-gray-400 hover:text-amber-500 hover:bg-white shadow-sm"
-                          }`}
-                          title={isWatched ? "Remove from watchlist" : "Add to watchlist"}
-                        >
-                          <Bell className="h-3.5 w-3.5" fill={isWatched ? "currentColor" : "none"} />
-                        </button>
+                        {/* Watch button — gated */}
+                        {isSubscribed ? (
+                          <button
+                            onClick={() => toggleWatch(product.id)}
+                            className={`absolute top-2 right-2 p-1.5 rounded-full transition-all ${
+                              isWatched
+                                ? "bg-amber-500 text-white shadow-md"
+                                : "bg-white/80 text-gray-400 hover:text-amber-500 hover:bg-white shadow-sm"
+                            }`}
+                            title={isWatched ? "Remove from watchlist" : "Add to watchlist"}
+                          >
+                            <Bell className="h-3.5 w-3.5" fill={isWatched ? "currentColor" : "none"} />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={handleSubscribe}
+                            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 text-gray-300 hover:text-amber-500 hover:bg-white shadow-sm transition-all group/watch"
+                            title="Subscribe to Watch — $5.99/mo"
+                          >
+                            <Lock className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                         {onSale && (
                           <div className="absolute bottom-2 left-2">
                             <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded">
@@ -701,14 +847,26 @@ export default function DropsPage() {
             Stop Refreshing. Start <span className="text-amber-500">Getting Alerts</span>.
           </h2>
           <p className="text-gray-500 mb-8">
-            Join thousands of collectors who never miss a drop. Free to start.
+            Join thousands of collectors who never miss a drop.
           </p>
-          <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg shadow-amber-500/20" asChild>
-            <Link href="/register">
-              <Bell className="h-4 w-4 mr-1.5" />
-              Enable Drop Alerts
-            </Link>
-          </Button>
+          {isSubscribed ? (
+            <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white font-semibold shadow-lg" asChild>
+              <Link href="/dashboard/drops">
+                <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                Go to My Alerts
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              className="bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg shadow-amber-500/20"
+              onClick={handleSubscribe}
+              disabled={subscribing}
+            >
+              <Zap className="h-4 w-4 mr-1.5" />
+              {subscribing ? "Loading..." : "Subscribe to Drop Alerts — $5.99/mo"}
+            </Button>
+          )}
         </div>
       </section>
     </div>

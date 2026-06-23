@@ -35,7 +35,7 @@ const sidebarLinks = [
     { href: "/dashboard/showcase", label: "Showcase", icon: Sparkles },
   ]},
   { section: "Drops", items: [
-    { href: "/dashboard/drops", label: "Drop Alerts", icon: Bell },
+    { href: "/dashboard/drops", label: "Drop Alerts", icon: Bell, badge: "PRO" },
   ]},
   { section: "Activity", items: [
     { href: "/dashboard/purchases", label: "Purchases", icon: CreditCard },
@@ -85,6 +85,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="space-y-0.5">
                   {section.items.map((item) => {
                     const isActive = pathname === item.href;
+                    const sidebarItem = item as typeof item & { badge?: string };
                     return (
                       <Link
                         key={item.href}
@@ -98,6 +99,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
                         {item.label}
+                        {sidebarItem.badge && !profile?.drop_alerts_active && (
+                          <Badge className="ml-auto text-[8px] bg-amber-100 text-amber-700 border-amber-200 px-1.5 py-0">
+                            {sidebarItem.badge}
+                          </Badge>
+                        )}
                       </Link>
                     );
                   })}
