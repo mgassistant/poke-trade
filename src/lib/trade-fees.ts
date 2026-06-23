@@ -33,12 +33,13 @@ export function calculateSecureTradeFee(tradeValue: number): FeeBreakdown {
 export type MembershipTier = 'free' | 'pro' | 'elite';
 
 export interface ProtectionInfo {
-  /** Maximum eligible reimbursement amount, subject to review */
-  guaranteeAmount: number;
+  /** Maximum eligible discretionary platform credit, subject to review */
+  maxEligibleCredit: number;
   source: 'membership' | 'secure_trade' | 'addon' | 'none';
   addonAvailable: boolean;
   addonCost: number;
-  addonCoverage: number;
+  /** Maximum addon credit amount, subject to review */
+  addonMaxCredit: number;
 }
 
 /**
@@ -48,45 +49,45 @@ export function getTradeProtection(
   tier: MembershipTier,
   shippingMethod: 'direct' | 'verified'
 ): ProtectionInfo {
-  // Secure Trade includes up to $50 eligible reimbursement
+  // Secure Trade includes up to $50 discretionary platform credit, subject to review
   if (shippingMethod === 'verified') {
     return {
-      guaranteeAmount: 50,
+      maxEligibleCredit: 50,
       source: 'secure_trade',
       addonAvailable: true,
       addonCost: 2.99,
-      addonCoverage: 500,
+      addonMaxCredit: 500,
     };
   }
 
   // Direct Ship — depends on membership
   if (tier === 'elite') {
     return {
-      guaranteeAmount: 100,
+      maxEligibleCredit: 100,
       source: 'membership',
       addonAvailable: true,
       addonCost: 2.99,
-      addonCoverage: 500,
+      addonMaxCredit: 500,
     };
   }
 
   if (tier === 'pro') {
     return {
-      guaranteeAmount: 50,
+      maxEligibleCredit: 50,
       source: 'membership',
       addonAvailable: true,
       addonCost: 2.99,
-      addonCoverage: 500,
+      addonMaxCredit: 500,
     };
   }
 
   // Free tier + Direct Ship = no protection
   return {
-    guaranteeAmount: 0,
+    maxEligibleCredit: 0,
     source: 'none',
     addonAvailable: true,
     addonCost: 2.99,
-    addonCoverage: 500,
+    addonMaxCredit: 500,
   };
 }
 

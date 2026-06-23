@@ -14,7 +14,8 @@ export async function GET(
     .select(`
       id, username, display_name, avatar_url, bio, location,
       trade_score, trader_level, total_trades, total_sales,
-      is_verified, is_premium, subscription_tier, created_at
+      is_verified, is_premium, subscription_tier, created_at,
+      trust_score, verification_level
     `)
     .eq("username", username)
     .single();

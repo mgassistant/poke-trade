@@ -836,7 +836,7 @@ function NewTradeContent() {
                     <Badge className="bg-blue-100 text-blue-700 border-blue-200">⭐ Recommended</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Maximum protection with authentication and eligible reimbursement
+                    Maximum protection with authentication and discretionary platform credit
                   </p>
                   {/* Dynamic fee breakdown */}
                   <div className="mt-2 p-3 bg-yellow-100/50 rounded-lg border border-yellow-200">
@@ -856,7 +856,7 @@ function NewTradeContent() {
                     <li className="flex items-center gap-2">🔍 Cards authenticated &amp; condition verified</li>
                     <li className="flex items-center gap-2">📦 Cross-shipped to recipients</li>
                     <li className="flex items-center gap-2">✅ &ldquo;Verified Trade&rdquo; badge on profiles</li>
-                    <li className="flex items-center gap-2">🛡️ Up to $50 eligible reimbursement included</li>
+                    <li className="flex items-center gap-2">🛡️ Up to $50 discretionary platform credit included</li>
                   </ul>
                 </div>
                 {shippingMethod === "verified" && (
@@ -876,19 +876,19 @@ function NewTradeContent() {
               {shippingMethod === "verified" ? (
                 <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
                   <p className="text-sm text-green-800 font-medium flex items-center gap-2">
-                    ✅ Up to $50 eligible reimbursement included with Secure Trade
+                    ✅ Up to $50 discretionary platform credit included with Secure Trade
                   </p>
                   <p className="text-xs text-green-600 mt-1">
-                    Your trade is eligible for up to $50 reimbursement, subject to review.
+                    Your trade is eligible for up to $50 discretionary platform credit, subject to review.
                   </p>
                 </div>
               ) : protectionInfo.included ? (
                 <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
                   <p className="text-sm text-green-800 font-medium flex items-center gap-2">
-                    ✅ Up to ${protectionInfo.amount} eligible reimbursement ({protectionInfo.source})
+                    ✅ Up to ${protectionInfo.amount} discretionary platform credit ({protectionInfo.source})
                   </p>
                   <p className="text-xs text-green-600 mt-1">
-                    Your {membershipTier} membership provides up to ${protectionInfo.amount} eligible reimbursement per trade.
+                    Your {membershipTier} membership provides up to ${protectionInfo.amount} discretionary platform credit per trade.
                   </p>
                 </div>
               ) : (

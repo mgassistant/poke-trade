@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     .from("listings")
     .select(`
       *,
-      user:profiles!listings_user_id_fkey(id, username, display_name, avatar_url, trade_score, trader_level, verification_level),
+      user:profiles!listings_user_id_fkey(id, username, display_name, avatar_url, trade_score, trader_level, verification_level, trust_score),
       card:cards!listings_card_id_fkey(id, name, number, rarity, image_url, market_value, card_sets(name, symbol_url))
     `, { count: "exact" });
 

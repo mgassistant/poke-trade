@@ -126,7 +126,7 @@ export default function PricingPage() {
                     </ul>
                     <DropAlertsSubscribeButton />
                     <p className="text-xs text-muted-foreground mt-3">
-                      Add this to your existing membership for complete coverage.
+                      Add this to your existing membership for enhanced protection features.
                     </p>
                   </div>
                   <div className="hidden md:block text-8xl opacity-15 select-none">⚡</div>

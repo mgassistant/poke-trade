@@ -60,7 +60,7 @@ export default function SafetyPage() {
             <span className="text-success">Confidence</span>
           </h1>
           <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-            7 layers of protection keep you safe from scams, fakes, and fraud. From identity verification to secure payment holds — we&apos;ve got you covered.
+            7 layers of protection keep you safe from scams, fakes, and fraud. From identity verification to secure payment holds — we provide the tools you need to trade with confidence.
           </p>
         </div>
       </section>

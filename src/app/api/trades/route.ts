@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
     .from("trade_offers")
     .select(`
       *,
-      sender:profiles!trade_offers_sender_id_fkey(id, username, display_name, avatar_url, trade_score, trader_level, verification_level),
-      receiver:profiles!trade_offers_receiver_id_fkey(id, username, display_name, avatar_url, trade_score, trader_level, verification_level),
+      sender:profiles!trade_offers_sender_id_fkey(id, username, display_name, avatar_url, trade_score, trader_level, verification_level, trust_score),
+      receiver:profiles!trade_offers_receiver_id_fkey(id, username, display_name, avatar_url, trade_score, trader_level, verification_level, trust_score),
       trade_items(*, cards(id, name, number, image_url, market_value, card_sets(name))),
       trade_offer_versions(*, proposed_by)
     `)

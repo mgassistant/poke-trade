@@ -19,6 +19,8 @@ interface TradeProfile {
   avatar_url: string | null;
   trade_score: number;
   trader_level: number;
+  trust_score: number | null;
+  verification_level: number | null;
 }
 
 interface TradeCard {

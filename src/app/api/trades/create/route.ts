@@ -95,11 +95,11 @@ export async function POST(request: NextRequest) {
 
   const membershipTier = senderProfile?.subscription_tier || "free";
   const protection = getTradeProtection(membershipTier, shipping_method || "direct");
-  let protectionAmount = protection.guaranteeAmount;
+  let protectionAmount = protection.maxEligibleCredit;
   let protectionPaid = false;
 
   if (add_protection && protection.addonAvailable) {
-    protectionAmount = protection.addonCoverage;
+    protectionAmount = protection.addonMaxCredit;
     protectionPaid = true;
   }
 

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { TrustScoreBadge } from "@/components/TrustScoreBadge";
 
 interface CardData {
   id: string;
@@ -29,7 +30,8 @@ interface SellerInfo {
   avatar_url: string | null;
   trade_score: number;
   trader_level: number;
-  verification_level: string | null;
+  verification_level: number | null;
+  trust_score: number | null;
 }
 
 interface Listing {
@@ -95,6 +97,7 @@ export default function MarketplacePage() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [minTrustScore, setMinTrustScore] = useState("");
 
   // Modals
   const [buyingId, setBuyingId] = useState<string | null>(null);
@@ -129,10 +132,14 @@ export default function MarketplacePage() {
       const res = await fetch(`/api/listings?${params.toString()}`);
       const data = await res.json();
       if (data.listings) {
-        // Filter out own listings client-side
-        const filtered = currentUserId
+        // Filter out own listings and apply trust score filter client-side
+        let filtered = currentUserId
           ? data.listings.filter((l: Listing) => l.user_id !== currentUserId)
           : data.listings;
+        if (minTrustScore) {
+          const minTs = Number(minTrustScore);
+          filtered = filtered.filter((l: Listing) => (l.user?.trust_score ?? 0) >= minTs);
+        }
         setListings(filtered);
         setTotal(data.pagination?.total || 0);
         setTotalPages(data.pagination?.totalPages || 1);
@@ -141,7 +148,7 @@ export default function MarketplacePage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, condition, sort, minPrice, maxPrice, currentUserId]);
+  }, [page, search, condition, sort, minPrice, maxPrice, minTrustScore, currentUserId]);
 
   useEffect(() => {
     fetchListings();
@@ -289,8 +296,28 @@ export default function MarketplacePage() {
                 </div>
               </div>
 
+              {/* Min Trust Score */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Min Trust Score</label>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {[{ value: "", label: "Any" }, { value: "300", label: "300+" }, { value: "500", label: "500+" }, { value: "700", label: "700+" }].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => { setMinTrustScore(opt.value); setPage(1); }}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                        minTrustScore === opt.value
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Clear */}
-              {(condition || minPrice || maxPrice || search) && (
+              {(condition || minPrice || maxPrice || search || minTrustScore) && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -298,6 +325,7 @@ export default function MarketplacePage() {
                     setCondition("");
                     setMinPrice("");
                     setMaxPrice("");
+                    setMinTrustScore("");
                     setSearch("");
                     setSearchInput("");
                     setPage(1);
@@ -423,6 +451,9 @@ export default function MarketplacePage() {
                           <Star className="h-2.5 w-2.5 fill-yellow-400" />
                           {Number(listing.user.trade_score).toFixed(1)}
                         </span>
+                      )}
+                      {listing.user?.trust_score != null && (
+                        <TrustScoreBadge score={listing.user.trust_score} compact />
                       )}
                     </div>
 

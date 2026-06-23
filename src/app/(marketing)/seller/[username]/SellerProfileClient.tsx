@@ -13,6 +13,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PhotoGallery } from "@/components/listings/PhotoGallery";
 import { CONDITION_BY_VALUE, getConditionInfo } from "@/lib/constants/conditions";
+import { TrustScoreBadge } from "@/components/TrustScoreBadge";
+import { VerificationBadge } from "@/components/VerificationBadge";
 
 interface SellerProfileClientProps {
   username: string;
@@ -34,6 +36,8 @@ interface SellerData {
     is_premium: boolean;
     subscription_tier: string;
     created_at: string;
+    trust_score: number;
+    verification_level: number;
   };
   listings: any[];
   reviews: any[];
@@ -146,6 +150,8 @@ export function SellerProfileClient({ username }: SellerProfileClientProps) {
                   <ShieldCheck className="h-3 w-3" /> Verified
                 </Badge>
               )}
+              <VerificationBadge level={profile.verification_level ?? 0} />
+              <TrustScoreBadge score={profile.trust_score ?? 100} compact />
             </div>
             <p className="text-sm text-muted-foreground mt-1">@{profile.username}</p>
             {profile.bio && <p className="text-sm mt-2">{profile.bio}</p>}
