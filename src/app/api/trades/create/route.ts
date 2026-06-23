@@ -27,6 +27,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Cannot trade with this user" }, { status: 403 });
   }
 
+  // Calculate trade value balance for uneven trade warning
+  let unevenTradeWarning = false;
+  if (items_offered?.length && items_wanted?.length) {
+    const offerCardIds = items_offered.map((i: { card_id: string }) => i.card_id);
+    const wantCardIds = items_wanted.map((i: { card_id: string }) => i.card_id);
+    const allCardIds = [...offerCardIds, ...wantCardIds];
+
+    const { data: cardValues } = await supabase
+      .from("cards")
+      .select("id, market_value")
+      .in("id", allCardIds);
+
+    if (cardValues) {
+      const valueMap = new Map(cardValues.map(c => [c.id, Number(c.market_value) || 0]));
+      const offerTotal = offerCardIds.reduce((sum: number, id: string) => sum + (valueMap.get(id) || 0), 0);
+      const wantTotal = wantCardIds.reduce((sum: number, id: string) => sum + (valueMap.get(id) || 0), 0);
+
+      if (offerTotal > 0 && wantTotal > 0) {
+        if (offerTotal > wantTotal * 2 || wantTotal > offerTotal * 2) {
+          unevenTradeWarning = true;
+        }
+      }
+    }
+  }
+
   // Create trade offer
   const { data: trade, error: tradeError } = await supabase
     .from("trade_offers")
@@ -35,7 +60,7 @@ export async function POST(request: NextRequest) {
       receiver_id,
       status: "pending",
       cash_amount: cash_amount || null,
-      notes: notes || null,
+      notes: unevenTradeWarning ? `⚠️ Uneven Trade Warning: Value difference exceeds 2x.${notes ? '\n' + notes : ''}` : (notes || null),
       shipping_method: shipping_method || 'direct',
     })
     .select()
@@ -99,5 +124,5 @@ export async function POST(request: NextRequest) {
     related_id: trade.id,
   });
 
-  return NextResponse.json({ trade });
+  return NextResponse.json({ trade, unevenTradeWarning });
 }

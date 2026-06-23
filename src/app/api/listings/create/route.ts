@@ -86,6 +86,17 @@ export async function POST(request: NextRequest) {
     .eq("id", card_id)
     .single();
 
+  // Anti-scalper price cap: max 2x market value
+  if (card?.market_value && card.market_value > 0) {
+    const maxPrice = card.market_value * 2;
+    if (price > maxPrice) {
+      return NextResponse.json(
+        { error: `Price exceeds fair market limit (max 2x market value of $${maxPrice.toFixed(2)})` },
+        { status: 400 }
+      );
+    }
+  }
+
   let flagged = false;
   if (card?.market_value && price < card.market_value * 0.3) {
     flagged = true;

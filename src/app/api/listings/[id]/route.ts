@@ -63,6 +63,26 @@ export async function PATCH(
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }
 
+  // Anti-scalper price cap on updates
+  if (updates.price !== undefined) {
+    const { data: listingWithCard } = await supabase
+      .from("listings")
+      .select("card_id, cards!listings_card_id_fkey(market_value)")
+      .eq("id", id)
+      .single();
+
+    const cardData = listingWithCard?.cards as { market_value: number | null } | null;
+    if (cardData?.market_value && cardData.market_value > 0) {
+      const maxPrice = cardData.market_value * 2;
+      if (Number(updates.price) > maxPrice) {
+        return NextResponse.json(
+          { error: `Price exceeds fair market limit (max 2x market value of $${maxPrice.toFixed(2)})` },
+          { status: 400 }
+        );
+      }
+    }
+  }
+
   // Can't reactivate sold listings
   if (updates.status === "active" && listing.status === "sold") {
     return NextResponse.json({ error: "Cannot reactivate a sold listing" }, { status: 400 });

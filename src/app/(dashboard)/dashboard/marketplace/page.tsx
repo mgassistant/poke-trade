@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import {
   ShoppingBag, Search, Filter, ChevronLeft, ChevronRight, Loader2, X,
-  Package, Tag, Star, ShieldCheck
+  Package, Tag, Star, ShieldCheck, Shield, Flag, AlertTriangle
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -178,6 +178,17 @@ export default function MarketplacePage() {
           <p className="text-muted-foreground text-sm mt-1">
             Browse {total > 0 ? `${total} listings` : "cards"} for sale
           </p>
+        </div>
+      </div>
+
+      {/* Price Protection Banner */}
+      <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3">
+        <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+          <Shield className="h-4 w-4 text-green-600" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-green-800">Price Protection Active</p>
+          <p className="text-xs text-green-600">All listings capped at 2x market value — no scalping allowed</p>
         </div>
       </div>
 
@@ -376,19 +387,22 @@ export default function MarketplacePage() {
                       )}
                     </div>
 
-                    {/* Market value comparison */}
-                    {listing.card?.market_value && listing.card.market_value > 0 && (
-                      <p className={`text-[10px] mt-0.5 ${
-                        Number(listing.price) < listing.card.market_value
-                          ? "text-green-400"
-                          : Number(listing.price) > listing.card.market_value * 1.1
-                          ? "text-red-400"
-                          : "text-muted-foreground"
-                      }`}>
-                        Market: ${listing.card.market_value.toFixed(2)}
-                        {Number(listing.price) < listing.card.market_value && " — Great Deal!"}
-                      </p>
-                    )}
+                    {/* Market value comparison + Price Protection */}
+                    {listing.card?.market_value && listing.card.market_value > 0 && (() => {
+                      const ratio = Number(listing.price) / listing.card.market_value;
+                      return (
+                        <div className="mt-0.5 space-y-0.5">
+                          <p className="text-[10px] text-muted-foreground">Market: ${listing.card.market_value.toFixed(2)}</p>
+                          {ratio <= 1 ? (
+                            <Badge className="text-[8px] h-4 bg-green-100 text-green-700 border-green-200">✓ Fair Price</Badge>
+                          ) : ratio <= 1.5 ? (
+                            <Badge className="text-[8px] h-4 bg-yellow-100 text-yellow-700 border-yellow-200">Premium · {ratio.toFixed(1)}x</Badge>
+                          ) : (
+                            <Badge className="text-[8px] h-4 bg-orange-100 text-orange-700 border-orange-200">⚠ Above Market · {ratio.toFixed(1)}x</Badge>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Seller */}
                     <div className="flex items-center gap-1.5 mt-2">
@@ -438,6 +452,23 @@ export default function MarketplacePage() {
                         </Button>
                       )}
                     </div>
+                    {/* Report Price Gouging */}
+                    {listing.card?.market_value && Number(listing.price) > listing.card.market_value * 1.5 && (
+                      <button
+                        onClick={async () => {
+                          if (!confirm("Report this listing for price gouging?")) return;
+                          await fetch("/api/reports", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ listing_id: listing.id, report_type: "price_gouging", reason: `Listed at $${Number(listing.price).toFixed(2)}, market value $${listing.card!.market_value!.toFixed(2)}` }),
+                          });
+                          alert("Report submitted. Thank you!");
+                        }}
+                        className="flex items-center gap-1 mt-1.5 text-[10px] text-orange-500 hover:text-orange-600 transition-colors"
+                      >
+                        <Flag className="h-3 w-3" /> Report Price Gouging
+                      </button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

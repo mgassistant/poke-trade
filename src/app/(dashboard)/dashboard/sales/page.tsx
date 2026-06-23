@@ -302,6 +302,19 @@ export default function SalesPage() {
                       <span className="text-xs text-muted-foreground">+${Number(listing.shipping_cost).toFixed(2)} ship</span>
                     )}
                   </div>
+                  {/* Price Protection Badge */}
+                  {listing.card?.market_value && listing.card.market_value > 0 && (() => {
+                    const ratio = Number(listing.price) / listing.card.market_value;
+                    if (ratio <= 1) return (
+                      <Badge className="text-[9px] mt-1 bg-green-100 text-green-700 border-green-200">✓ Fair Price</Badge>
+                    );
+                    if (ratio <= 1.5) return (
+                      <Badge className="text-[9px] mt-1 bg-yellow-100 text-yellow-700 border-yellow-200">Premium</Badge>
+                    );
+                    return (
+                      <Badge className="text-[9px] mt-1 bg-orange-100 text-orange-700 border-orange-200">High</Badge>
+                    );
+                  })()}
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant="outline" className="text-[10px]">
                       {CONDITION_LABELS[listing.condition] || listing.condition}
@@ -645,8 +658,22 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="0.00"
-                    className="mt-1"
+                    className={`mt-1 ${selectedCard?.cards?.market_value && parseFloat(price) > selectedCard.cards.market_value * 2 ? "border-red-400 focus:ring-red-400" : ""}`}
                   />
+                  {selectedCard?.cards?.market_value && selectedCard.cards.market_value > 0 && (
+                    <div className="mt-1 space-y-0.5">
+                      <p className="text-[10px] text-muted-foreground">
+                        Max price: ${(selectedCard.cards.market_value * 2).toFixed(2)} (2x market value)
+                      </p>
+                      {price && parseFloat(price) > 0 && (() => {
+                        const ratio = parseFloat(price) / selectedCard.cards.market_value!;
+                        if (ratio > 2) return <p className="text-[10px] text-red-500 font-medium">⛔ Price exceeds 2x market value limit</p>;
+                        if (ratio > 1.5) return <p className="text-[10px] text-orange-500">🔶 High — {(ratio).toFixed(1)}x market value</p>;
+                        if (ratio > 1) return <p className="text-[10px] text-yellow-600">🔸 Premium — {(ratio).toFixed(1)}x market value</p>;
+                        return <p className="text-[10px] text-green-600">✅ Fair Price</p>;
+                      })()}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Shipping ($)</label>
@@ -706,7 +733,7 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
             </Button>
             <Button
               onClick={handleCreate}
-              disabled={creating || !title || !price}
+              disabled={creating || !title || !price || (selectedCard?.cards?.market_value ? parseFloat(price) > selectedCard.cards.market_value * 2 : false)}
               className="flex-1 gap-2"
             >
               {creating && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -731,6 +758,9 @@ function EditListingModal({ listing, onClose, onUpdated }: { listing: Listing; o
   const [acceptsOffers, setAcceptsOffers] = useState(listing.accepts_offers);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const maxAllowedPrice = listing.card?.market_value ? listing.card.market_value * 2 : null;
+  const isPriceOverLimit = maxAllowedPrice !== null && parseFloat(price) > maxAllowedPrice;
 
   const handleSave = async () => {
     setSaving(true);
@@ -807,7 +837,12 @@ function EditListingModal({ listing, onClose, onUpdated }: { listing: Listing; o
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground">Price ($)</label>
-              <Input type="number" step="0.01" min="0.01" value={price} onChange={(e) => setPrice(e.target.value)} className="mt-1" />
+              <Input type="number" step="0.01" min="0.01" value={price} onChange={(e) => setPrice(e.target.value)} className={`mt-1 ${isPriceOverLimit ? "border-red-400" : ""}`} />
+              {maxAllowedPrice !== null && (
+                <p className={`text-[10px] mt-0.5 ${isPriceOverLimit ? "text-red-500 font-medium" : "text-muted-foreground"}`}>
+                  {isPriceOverLimit ? `\u26d4 Exceeds max price of $${maxAllowedPrice.toFixed(2)}` : `Max: $${maxAllowedPrice.toFixed(2)} (2x market value)`}
+                </p>
+              )}
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">Shipping ($)</label>
@@ -844,7 +879,7 @@ function EditListingModal({ listing, onClose, onUpdated }: { listing: Listing; o
 
         <div className="p-4 border-t border-border flex gap-2">
           <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
-          <Button onClick={handleSave} disabled={saving || !title || !price} className="flex-1 gap-2">
+          <Button onClick={handleSave} disabled={saving || !title || !price || isPriceOverLimit} className="flex-1 gap-2">
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             Save Changes
           </Button>

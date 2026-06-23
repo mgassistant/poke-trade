@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Wallet, ShoppingBag, Repeat, Heart,
   BarChart3, MessageSquare, Bell, Settings, Shield,
   Star, History, CreditCard, LogOut, Menu, X,
-  Package, Gavel
+  Package, Gavel, Store, BookOpen, Sparkles
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -23,11 +23,16 @@ const sidebarLinks = [
     { href: "/dashboard/trades", label: "My Trades", icon: Repeat },
     { href: "/dashboard/offers", label: "Trade Offers", icon: Package },
     { href: "/dashboard/marketplace", label: "My Listings", icon: ShoppingBag },
+    { href: "/dashboard/trade-floor", label: "Trade Floor", icon: Store },
   ]},
   { section: "Collection", items: [
     { href: "/dashboard/collection", label: "My Collection", icon: Wallet },
+    { href: "/dashboard/collection/binder", label: "My Binder", icon: BookOpen },
     { href: "/dashboard/portfolio", label: "Portfolio", icon: BarChart3 },
     { href: "/dashboard/want-list", label: "Want List", icon: Heart },
+  ]},
+  { section: "Community", items: [
+    { href: "/dashboard/showcase", label: "Showcase", icon: Sparkles },
   ]},
   { section: "Drops", items: [
     { href: "/dashboard/drops", label: "Drop Alerts", icon: Bell },
