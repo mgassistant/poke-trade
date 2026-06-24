@@ -3,104 +3,195 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Shield, Gem, Users, ArrowRight } from "lucide-react";
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-[88vh] flex items-center justify-center overflow-hidden">
-      {/* Background gradient — Pokémon brand red to blue */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-red-600 via-red-500 to-blue-700" />
-        {/* Subtle Poké Ball pattern */}
+    <section className="relative min-h-screen flex items-center overflow-hidden -mt-24 pt-24">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#131c33] to-[#1e293b]" />
+
+      {/* Subtle grid pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: "60px 60px",
+        }}
+      />
+
+      {/* Ambient glow orbs */}
+      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-red-600/5 blur-[120px] animate-pulse-glow" />
+      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-blue-500/5 blur-[100px] animate-pulse-glow" style={{ animationDelay: "2s" }} />
+
+      {/* Sparkle dots */}
+      {[...Array(6)].map((_, i) => (
         <div
-          className="absolute inset-0 opacity-[0.06]"
+          key={i}
+          className="absolute w-1 h-1 bg-white rounded-full animate-sparkle"
           style={{
-            backgroundImage: `radial-gradient(circle at 50% 50%, transparent 30%, rgba(255,255,255,0.3) 30%, rgba(255,255,255,0.3) 32%, transparent 32%), radial-gradient(circle at 50% 50%, rgba(255,255,255,0.15) 12%, transparent 12%)`,
-            backgroundSize: "120px 120px",
+            top: `${15 + i * 14}%`,
+            left: `${10 + i * 15}%`,
+            animationDelay: `${i * 0.8}s`,
           }}
         />
-        {/* Soft overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20" />
-      </div>
+      ))}
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center py-20">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-        >
-          {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="mb-8"
-          >
-            <Image
-              src="/logo.png"
-              alt="Poké-Trade"
-              width={600}
-              height={180}
-              className="h-40 sm:h-48 md:h-56 lg:h-64 w-auto mx-auto drop-shadow-lg"
-              priority
-            />
-          </motion.div>
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full py-16 lg:py-24">
+        <div className="grid lg:grid-cols-5 gap-12 lg:gap-16 items-center">
+          {/* LEFT: Text content (60%) */}
+          <div className="lg:col-span-3">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+            >
+              {/* Logo */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="mb-10"
+              >
+                <Image
+                  src="/logo.png"
+                  alt="Poké-Trade"
+                  width={280}
+                  height={84}
+                  className="h-16 sm:h-20 w-auto"
+                  priority
+                />
+              </motion.div>
 
-          <Badge className="mb-6 px-4 py-1.5 text-sm bg-white/20 text-white border-white/30 backdrop-blur-sm">
-            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-            The Premier Pokémon Card Trading Platform
-          </Badge>
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] text-white">
+                The Better Way
+                <br />
+                <span className="text-white">to Trade.</span>
+              </h1>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] text-white">
-            Trade. Buy. Sell.
-            <br />
-            <span className="text-yellow-300">Collect.</span>
-          </h1>
+              <p className="mt-6 text-lg sm:text-xl text-slate-300 max-w-xl leading-relaxed">
+                Join a community of collectors. Trade securely. Buy, sell, and
+                grow your collection.
+              </p>
 
-          <p className="mt-6 text-lg sm:text-xl text-white/85 max-w-2xl mx-auto leading-relaxed">
-            The safest, smartest Pokémon card marketplace.
-            Trusted trading, verified cards, and fees as low as <span className="text-yellow-300 font-semibold">3%</span>.
-          </p>
+              {/* Trust badges */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="mt-8 flex flex-wrap gap-4"
+              >
+                {[
+                  { icon: <Shield className="h-4 w-4 text-blue-400" />, label: "Secure Trades" },
+                  { icon: <Gem className="h-4 w-4 text-blue-400" />, label: "Fair Prices" },
+                  { icon: <Users className="h-4 w-4 text-blue-400" />, label: "Trusted Community" },
+                ].map((badge) => (
+                  <div
+                    key={badge.label}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-slate-300"
+                  >
+                    {badge.icon}
+                    <span>{badge.label}</span>
+                  </div>
+                ))}
+              </motion.div>
 
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="xl" className="text-base px-10 bg-white text-red-600 hover:bg-gray-100 font-semibold shadow-lg" asChild>
-              <Link href="/register">
-                Start Trading
-                <ArrowRight className="h-4 w-4 ml-1" />
-              </Link>
-            </Button>
-            <Button size="xl" className="text-base bg-white/20 text-white border-2 border-white hover:bg-white hover:text-red-600 font-semibold backdrop-blur-sm" asChild>
-              <Link href="/marketplace">Browse Cards</Link>
-            </Button>
+              {/* CTAs */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="mt-10 flex flex-col sm:flex-row gap-4"
+              >
+                <Link
+                  href="/register"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-red-600/25 text-base"
+                >
+                  Start Trading
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/register"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 border border-white/20 text-white hover:bg-white/5 font-semibold rounded-lg transition-all duration-200 text-base"
+                >
+                  Create Free Account
+                </Link>
+              </motion.div>
+            </motion.div>
           </div>
 
-          {/* Stats row */}
+          {/* RIGHT: Hero image placeholder (40%) */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="mt-20 grid grid-cols-2 sm:grid-cols-4 gap-8 max-w-3xl mx-auto"
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="lg:col-span-2 relative"
           >
+            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden">
+              {/* Glow behind image */}
+              <div className="absolute -inset-4 bg-gradient-to-br from-red-600/20 via-transparent to-blue-500/20 rounded-3xl blur-2xl" />
+
+              {/* Image container */}
+              <div className="relative h-full rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br from-slate-800 via-slate-800/80 to-slate-900">
+                {/* Placeholder content — card collage feel */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#1a2744] to-[#0f172a]" />
+
+                {/* Decorative card shapes */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="grid grid-cols-2 gap-3 p-6 transform rotate-3">
+                    {[
+                      "from-yellow-500/30 to-amber-600/20",
+                      "from-blue-500/30 to-indigo-600/20",
+                      "from-red-500/30 to-rose-600/20",
+                      "from-purple-500/30 to-violet-600/20",
+                    ].map((gradient, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
+                        className={`aspect-[2.5/3.5] rounded-xl bg-gradient-to-br ${gradient} border border-white/10 shadow-xl`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Overlay text */}
+                <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black/60 to-transparent">
+                  <p className="text-white/80 text-sm font-medium">Trade with confidence</p>
+                  <p className="text-white/50 text-xs mt-1">Verified collectors · Secure transactions</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Stats row */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="mt-20 pt-10 border-t border-white/5"
+        >
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
             {[
-              { label: "Cards in Database", value: "100K+" },
-              { label: "Active Traders", value: "2,500+" },
-              { label: "Trades Completed", value: "12K+" },
-              { label: "Marketplace Fee", value: "3-5%" },
+              { value: "19,000+", label: "Cards Listed" },
+              { value: "Verified", label: "Trusted Traders" },
+              { value: "3%", label: "Low Fees" },
+              { value: "Secure", label: "Every Trade" },
             ].map((stat, i) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 + i * 0.1 }}
+                transition={{ delay: 0.8 + i * 0.1 }}
                 className="text-center"
               >
                 <div className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</div>
-                <div className="text-xs sm:text-sm text-white/70 mt-1">{stat.label}</div>
+                <div className="text-xs sm:text-sm text-slate-500 mt-1">{stat.label}</div>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         </motion.div>
       </div>
     </section>

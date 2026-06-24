@@ -1,58 +1,54 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 export function CTASection() {
   return (
-    <section className="py-24 bg-gray-50 border-t border-gray-100">
+    <section className="py-24 bg-gradient-to-b from-[#131c33] to-[#0f172a]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, scale: 0.97 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative rounded-3xl overflow-hidden"
+          className="relative rounded-2xl overflow-hidden"
         >
           {/* Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-red-600 via-red-500 to-blue-700" />
-          <div className="absolute inset-0 opacity-[0.06]"
-            style={{
-              backgroundImage: `radial-gradient(circle at 50% 50%, transparent 30%, rgba(255,255,255,0.3) 30%, rgba(255,255,255,0.3) 32%, transparent 32%)`,
-              backgroundSize: "80px 80px",
-            }}
-          />
+          <div className="absolute inset-0 bg-gradient-to-br from-red-600/20 via-[#1e293b] to-blue-600/10" />
+          <div className="absolute inset-0 bg-white/[0.02]" />
+
+          {/* Ambient glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-red-600/10 rounded-full blur-[100px]" />
 
           <div className="relative z-10 text-center py-20 px-6">
-            <Image
-              src="/logo.png"
-              alt="Poké-Trade"
-              width={200}
-              height={60}
-              className="h-16 w-auto mx-auto mb-8 drop-shadow-lg"
-            />
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
               Ready to Start{" "}
-              <span className="text-yellow-300">Trading</span>?
+              <span className="text-red-500">Trading</span>?
             </h2>
-            <p className="mt-4 text-white/85 max-w-lg mx-auto text-lg">
-              Join thousands of Pokémon card collectors. Create your free account in 30 seconds.
+            <p className="mt-4 text-slate-300 max-w-lg mx-auto text-lg">
+              Join thousands of collectors on Poké-Trade. Create your free
+              account in 30 seconds.
             </p>
+
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="xl" className="text-base px-10 bg-white text-red-600 hover:bg-gray-100 font-semibold shadow-lg" asChild>
-                <Link href="/register">
-                  Create Free Account
-                  <ArrowRight className="h-4 w-4 ml-1" />
-                </Link>
-              </Button>
-              <Button size="xl" variant="outline" className="text-base border-white/40 text-white hover:bg-white/10 hover:text-white" asChild>
-                <Link href="/marketplace">Explore Marketplace</Link>
-              </Button>
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 px-8 py-3.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-red-600/25 text-base"
+              >
+                Start Trading
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/marketplace"
+                className="inline-flex items-center gap-2 px-8 py-3.5 border border-white/15 text-white hover:bg-white/5 font-semibold rounded-lg transition-all duration-200 text-base"
+              >
+                Browse Marketplace
+              </Link>
             </div>
-            <p className="mt-6 text-xs text-white/60">
+
+            <p className="mt-6 text-xs text-slate-500">
               No credit card required · Free forever plan · Cancel anytime
             </p>
           </div>

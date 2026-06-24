@@ -1,34 +1,35 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Search, Scale, CheckCircle, ArrowRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Search, Handshake, ShieldCheck } from "lucide-react";
 
 const steps = [
   {
     step: "01",
-    icon: <Search className="h-6 w-6 text-red-600" />,
-    title: "Browse & Collect",
-    description: "Add cards you own and mark which ones are available for trade. Build your want list of cards you're looking for.",
+    icon: <Search className="h-6 w-6" />,
+    title: "Find Cards You Want",
+    description:
+      "Browse thousands of listings or let our matching engine find cards on your want list automatically.",
   },
   {
     step: "02",
-    icon: <Scale className="h-6 w-6 text-red-600" />,
-    title: "Propose a Trade",
-    description: "Our engine scans thousands of collections to find mutual trade opportunities — users who have what you want and want what you have.",
+    icon: <Handshake className="h-6 w-6" />,
+    title: "Make an Offer",
+    description:
+      "Propose a trade, negotiate fair value, or buy outright. Our pricing engine ensures both sides get a great deal.",
   },
   {
     step: "03",
-    icon: <CheckCircle className="h-6 w-6 text-red-600" />,
-    title: "Ship & Verify",
-    description: "Send offers, negotiate fair trades, ship cards with tracking, and earn reputation with every successful trade.",
+    icon: <ShieldCheck className="h-6 w-6" />,
+    title: "Trade with Confidence",
+    description:
+      "Ship with tracking, verify on arrival, and earn reputation. Every trade is protected by our Trust system.",
   },
 ];
 
 export function TradeMatchSection() {
   return (
-    <section className="py-24 bg-gray-50 border-t border-gray-100">
+    <section className="py-24 bg-gradient-to-b from-[#0f172a] to-[#131c33]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -37,18 +38,22 @@ export function TradeMatchSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <Badge className="mb-4 px-4 py-1.5 bg-red-50 text-red-600 border-red-200">
+          <p className="text-sm font-medium text-red-500 uppercase tracking-wider mb-3">
             How It Works
-          </Badge>
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-            Find Your Perfect Trade in <span className="text-red-600">Seconds</span>
+          </p>
+          <h2 className="text-3xl sm:text-4xl font-bold text-white">
+            Start Trading in <span className="text-red-500">Three Steps</span>
           </h2>
-          <p className="mt-4 text-gray-500 max-w-xl mx-auto">
-            Stop scrolling through forums. Our smart matching engine finds mutual trade opportunities automatically.
+          <p className="mt-4 text-slate-400 max-w-xl mx-auto">
+            No forums, no DMs, no risk. Our platform handles everything from
+            discovery to delivery.
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-6 relative">
+          {/* Connecting line (desktop) */}
+          <div className="hidden md:block absolute top-1/2 left-[20%] right-[20%] h-px bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-y-1/2" />
+
           {steps.map((item, i) => (
             <motion.div
               key={item.step}
@@ -56,30 +61,27 @@ export function TradeMatchSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.15 }}
+              className="relative"
             >
-              <Card className="relative h-full hover:border-red-200 transition-all duration-300 group hover:-translate-y-1 hover:shadow-md">
-                <CardContent className="pt-8 pb-6">
-                  <span className="text-6xl font-bold text-gray-100 absolute top-4 right-5 group-hover:text-red-50 transition-colors">
-                    {item.step}
-                  </span>
-                  <div className="h-12 w-12 rounded-xl bg-red-50 flex items-center justify-center mb-5 group-hover:bg-red-100 transition-colors">
-                    {item.icon}
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-gray-500 text-sm leading-relaxed">{item.description}</p>
-                </CardContent>
-              </Card>
+              <div className="glass-card rounded-xl p-8 h-full hover:bg-white/[0.07] transition-all duration-300 hover:-translate-y-1 group">
+                {/* Step number */}
+                <span className="absolute top-6 right-6 text-5xl font-bold text-white/[0.04] group-hover:text-white/[0.08] transition-colors">
+                  {item.step}
+                </span>
+
+                <div className="h-12 w-12 rounded-xl bg-red-600/10 flex items-center justify-center mb-6 text-red-500 group-hover:bg-red-600/20 transition-colors">
+                  {item.icon}
+                </div>
+
+                <h3 className="text-lg font-semibold text-white mb-3">
+                  {item.title}
+                </h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
             </motion.div>
           ))}
-        </div>
-
-        {/* Connection arrows */}
-        <div className="hidden md:flex justify-center mt-8 gap-4 items-center text-gray-300">
-          <div className="h-px w-20 bg-gradient-to-r from-transparent to-red-200" />
-          <ArrowRight className="h-4 w-4 text-red-300" />
-          <div className="h-px w-20 bg-red-200" />
-          <ArrowRight className="h-4 w-4 text-red-300" />
-          <div className="h-px w-20 bg-gradient-to-r from-red-200 to-transparent" />
         </div>
       </div>
     </section>

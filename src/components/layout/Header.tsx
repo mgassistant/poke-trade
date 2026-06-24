@@ -2,17 +2,30 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NAV_LINKS } from "@/lib/constants";
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? "bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/5 shadow-lg shadow-black/10"
+          : "bg-transparent"
+      }`}
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 sm:h-20 items-center justify-between">
           {/* Logo */}
@@ -22,7 +35,7 @@ export function Header() {
               alt="Poké-Trade"
               width={300}
               height={90}
-              className="h-16 sm:h-20 w-auto"
+              className="h-14 sm:h-16 w-auto"
               priority
             />
           </Link>
@@ -33,7 +46,7 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors rounded-md hover:bg-gray-50"
+                className="px-3 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors rounded-md hover:bg-white/5"
               >
                 {link.label}
               </Link>
@@ -42,24 +55,27 @@ export function Header() {
 
           {/* Right side */}
           <div className="flex items-center gap-3">
-            {/* Search */}
-            <button className="hidden sm:flex h-9 w-9 items-center justify-center rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors">
-              <Search className="h-4 w-4" />
-            </button>
-
-            {/* Auth buttons */}
             <div className="hidden sm:flex items-center gap-2">
-              <Button variant="ghost" size="sm" asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-slate-300 hover:text-white hover:bg-white/5"
+                asChild
+              >
                 <Link href="/login">Sign In</Link>
               </Button>
-              <Button size="sm" asChild>
+              <Button
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white"
+                asChild
+              >
                 <Link href="/register">Get Started</Link>
               </Button>
             </div>
 
             {/* Mobile menu button */}
             <button
-              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
             >
@@ -76,24 +92,33 @@ export function Header() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-white border-t border-gray-200"
+            className="lg:hidden bg-[#0f172a]/95 backdrop-blur-xl border-t border-white/5"
           >
             <div className="px-4 py-4 space-y-1">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="block px-3 py-2 text-sm text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-50 transition-colors"
+                  className="block px-3 py-2 text-sm text-slate-300 hover:text-white rounded-md hover:bg-white/5 transition-colors"
                   onClick={() => setMobileOpen(false)}
                 >
                   {link.label}
                 </Link>
               ))}
               <div className="pt-3 flex flex-col gap-2">
-                <Button variant="ghost" size="sm" asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-300 hover:text-white hover:bg-white/5"
+                  asChild
+                >
                   <Link href="/login">Sign In</Link>
                 </Button>
-                <Button size="sm" asChild>
+                <Button
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  asChild
+                >
                   <Link href="/register">Get Started</Link>
                 </Button>
               </div>

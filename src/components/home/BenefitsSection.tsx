@@ -1,51 +1,50 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { TrendingUp, Repeat, Shield, BarChart3, Users, Zap } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Shield, UserCheck, Lock, AlertTriangle, BarChart3, FileCheck } from "lucide-react";
 
 const benefits = [
   {
-    icon: <TrendingUp className="h-5 w-5" />,
-    title: "Lowest Fees",
-    description: "3-5% marketplace fee vs 12-15% elsewhere. Keep more money in your collection.",
-    color: "text-red-600 bg-red-50",
-  },
-  {
-    icon: <Repeat className="h-5 w-5" />,
-    title: "Trade-First Platform",
-    description: "Built for trading, not just selling. Smart matching finds mutual swaps instantly.",
-    color: "text-blue-700 bg-blue-50",
-  },
-  {
     icon: <Shield className="h-5 w-5" />,
-    title: "Trusted & Verified",
-    description: "Reputation system, verified traders, buyer protection, and dispute resolution.",
-    color: "text-green-600 bg-green-50",
+    title: "Trust Score System",
+    description:
+      "Every trader earns a reputation score. See ratings, trade history, and verification status before you trade.",
+  },
+  {
+    icon: <UserCheck className="h-5 w-5" />,
+    title: "Identity Verification",
+    description:
+      "Verified traders go through ID checks. Know who you're trading with — no anonymous accounts.",
+  },
+  {
+    icon: <Lock className="h-5 w-5" />,
+    title: "Trade Protection",
+    description:
+      "Secure payment holds, shipping verification, and dispute resolution protect every transaction.",
+  },
+  {
+    icon: <AlertTriangle className="h-5 w-5" />,
+    title: "Fraud Prevention",
+    description:
+      "AI-powered fraud detection, counterfeit screening, and community reporting keep the platform safe.",
   },
   {
     icon: <BarChart3 className="h-5 w-5" />,
-    title: "Live Market Data",
-    description: "Real-time pricing from TCGPlayer. Track collection value, spot trends, and invest smart.",
-    color: "text-red-600 bg-red-50",
+    title: "Collection Tracker",
+    description:
+      "Track your entire collection with real-time market pricing, portfolio analytics, and set completion.",
   },
   {
-    icon: <Users className="h-5 w-5" />,
-    title: "Collector Community",
-    description: "Share pulls, showcase collections, follow traders, and connect with fellow collectors.",
-    color: "text-blue-700 bg-blue-50",
-  },
-  {
-    icon: <Zap className="h-5 w-5" />,
-    title: "Lightning Fast",
-    description: "Modern tech stack built for speed. Search, list, trade, and track in seconds.",
-    color: "text-amber-600 bg-amber-50",
+    icon: <FileCheck className="h-5 w-5" />,
+    title: "Insurance Referral",
+    description:
+      "Protect high-value collections with insurance referrals through our licensed partner network.",
   },
 ];
 
 export function BenefitsSection() {
   return (
-    <section className="py-24 bg-gray-50 border-t border-gray-100">
+    <section className="py-24 bg-[#0f172a]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -54,15 +53,16 @@ export function BenefitsSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-            Why Collectors Choose <span className="text-red-600">Poké-Trade</span>
+          <h2 className="text-3xl sm:text-4xl font-bold text-white">
+            Why <span className="text-red-500">Poké-Trade</span>?
           </h2>
-          <p className="mt-4 text-gray-500 max-w-lg mx-auto">
-            Everything you need to trade, sell, and grow your Pokémon card collection — in one place.
+          <p className="mt-4 text-slate-400 max-w-lg mx-auto">
+            Built from the ground up for security, transparency, and the
+            collector community.
           </p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {benefits.map((benefit, i) => (
             <motion.div
               key={benefit.title}
@@ -71,15 +71,17 @@ export function BenefitsSection() {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.08 }}
             >
-              <Card className="h-full hover:border-red-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
-                <CardContent className="pt-6">
-                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center mb-4 ${benefit.color}`}>
-                    {benefit.icon}
-                  </div>
-                  <h3 className="font-semibold text-base text-gray-900 mb-2">{benefit.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{benefit.description}</p>
-                </CardContent>
-              </Card>
+              <div className="glass-card rounded-xl p-6 h-full hover:bg-white/[0.07] transition-all duration-300 hover:-translate-y-1 group">
+                <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 text-blue-400 group-hover:text-blue-300 group-hover:border-blue-500/30 transition-all">
+                  {benefit.icon}
+                </div>
+                <h3 className="font-semibold text-base text-white mb-2">
+                  {benefit.title}
+                </h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  {benefit.description}
+                </p>
+              </div>
             </motion.div>
           ))}
         </div>
