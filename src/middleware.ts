@@ -81,14 +81,17 @@ export async function middleware(request: NextRequest) {
     // Skip rate limiting for webhooks (they have their own verification)
     if (!pathname.startsWith("/api/webhooks/")) {
       // Determine tier based on route
-      let limit = 30;  // default: api tier
+      let limit = 100;  // default: 100 requests/min for API routes
       let windowMs = 60_000;
 
       if (pathname.startsWith("/api/auth/")) {
+        limit = 20;      // 20/min for auth routes
+        windowMs = 60_000;
+      } else if (pathname.startsWith("/api/checkout") || pathname.startsWith("/api/connect/onboard")) {
         limit = 5;
         windowMs = 60_000;
-      } else if (pathname.startsWith("/api/checkout")) {
-        limit = 3;
+      } else if (pathname.startsWith("/api/admin/")) {
+        limit = 60;      // 60/min for admin routes
         windowMs = 60_000;
       }
 
@@ -162,6 +165,14 @@ export async function middleware(request: NextRequest) {
     "camera=(), microphone=(), geolocation=(), payment=(self)"
   );
   response.headers.set("X-DNS-Prefetch-Control", "on");
+  response.headers.set(
+    "Strict-Transport-Security",
+    "max-age=63072000; includeSubDomains; preload"
+  );
+  response.headers.set(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://us.posthog.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co https://images.pokemontcg.io; frame-src https://js.stripe.com https://hooks.stripe.com; connect-src 'self' https://*.supabase.co https://api.stripe.com https://us.posthog.com wss://*.supabase.co; font-src 'self' data:;"
+  );
 
   return response;
 }
