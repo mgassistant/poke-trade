@@ -1,10 +1,11 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, TrendingUp, Check } from "lucide-react";
 
-export function CollectionSection() {
+export const CollectionSection = memo(function CollectionSection() {
   return (
     <section className="py-24 bg-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -142,4 +143,4 @@ export function CollectionSection() {
       </div>
     </section>
   );
-}
+});

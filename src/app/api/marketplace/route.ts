@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 const PAGE_SIZE = 40;
 
 export async function GET(req: NextRequest) {
+  // Create client per-request to avoid shared state in serverless
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   const { searchParams } = req.nextUrl;
   const search = searchParams.get("q") || "";
   const rarity = searchParams.get("rarity") || "";
@@ -97,11 +98,18 @@ export async function GET(req: NextRequest) {
       : undefined,
   }));
 
-  return NextResponse.json({
-    cards,
-    total: count || 0,
-    page,
-    pageSize: PAGE_SIZE,
-    totalPages: Math.ceil((count || 0) / PAGE_SIZE),
-  });
+  return NextResponse.json(
+    {
+      cards,
+      total: count || 0,
+      page,
+      pageSize: PAGE_SIZE,
+      totalPages: Math.ceil((count || 0) / PAGE_SIZE),
+    },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    }
+  );
 }

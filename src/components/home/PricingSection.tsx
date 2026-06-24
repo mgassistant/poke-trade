@@ -1,11 +1,12 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Check, ArrowRight } from "lucide-react";
 import { SUBSCRIPTION_TIERS } from "@/lib/constants";
 
-export function PricingSection() {
+export const PricingSection = memo(function PricingSection() {
   return (
     <section className="py-24 bg-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -107,4 +108,4 @@ export function PricingSection() {
       </div>
     </section>
   );
-}
+});

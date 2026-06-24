@@ -105,15 +105,32 @@ export default function MessagesPage() {
     }
   }, [activeConvId, fetchMessages]);
 
-  // Poll for new messages every 10s
+  // Poll for new messages every 10s (pause when tab is hidden)
   useEffect(() => {
-    if (activeConvId) {
+    if (!activeConvId) return;
+
+    const startPolling = () => {
+      if (pollRef.current) clearInterval(pollRef.current);
       pollRef.current = setInterval(() => {
-        fetchMessages();
+        if (!document.hidden) fetchMessages();
       }, 10000);
-    }
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        if (pollRef.current) clearInterval(pollRef.current);
+      } else {
+        fetchMessages(); // Fetch immediately on return
+        startPolling();
+      }
+    };
+
+    startPolling();
+    document.addEventListener("visibilitychange", handleVisibility);
+
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [activeConvId, fetchMessages]);
 

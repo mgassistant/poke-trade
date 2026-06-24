@@ -77,10 +77,14 @@ export async function GET(request: NextRequest) {
       japanese: card.japaneseData || null,
     }));
 
-    return NextResponse.json({
-      data: enriched,
-      metadata: data.metadata,
-    });
+    return NextResponse.json(
+      { data: enriched, metadata: data.metadata },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      }
+    );
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch prices" }, { status: 500 });
   }

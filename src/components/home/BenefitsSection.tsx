@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { Shield, UserCheck, Lock, AlertTriangle, BarChart3, FileCheck } from "lucide-react";
 
@@ -42,7 +43,7 @@ const benefits = [
   },
 ];
 
-export function BenefitsSection() {
+export const BenefitsSection = memo(function BenefitsSection() {
   return (
     <section className="py-24 bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -88,4 +89,4 @@ export function BenefitsSection() {
       </div>
     </section>
   );
-}
+});

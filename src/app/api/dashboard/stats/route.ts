@@ -10,14 +10,22 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Get collections for this user
-  const { data: collections } = await supabase
-    .from("collections")
-    .select("id")
-    .eq("user_id", user.id);
+  // Parallel: fetch collections + trades + offers + activity at once
+  const [collectionsRes, activeTradesRes, pendingOffersRes, activityRes] = await Promise.all([
+    supabase.from("collections").select("id").eq("user_id", user.id),
+    supabase.from("trade_offers").select("id", { count: "exact", head: true })
+      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+      .in("status", ["pending", "accepted"]),
+    supabase.from("offers").select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+    supabase.from("activity_feed")
+      .select("id, activity_type, data, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(8),
+  ]);
 
-  const collectionIds = (collections || []).map((c) => c.id);
-
+  const collectionIds = (collectionsRes.data || []).map((c) => c.id);
   let totalCards = 0;
   let totalValue = 0;
 
@@ -35,26 +43,9 @@ export async function GET() {
     }
   }
 
-  // Active trades
-  const { count: activeTrades } = await supabase
-    .from("trade_offers")
-    .select("id", { count: "exact", head: true })
-    .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-    .in("status", ["pending", "accepted"]);
-
-  // Pending offers
-  const { count: pendingOffers } = await supabase
-    .from("offers")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "pending");
-
-  // Recent activity
-  const { data: activity } = await supabase
-    .from("activity_feed")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(10);
+  const activeTrades = activeTradesRes.count;
+  const pendingOffers = pendingOffersRes.count;
+  const activity = activityRes.data;
 
   return NextResponse.json({
     stats: {

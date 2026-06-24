@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { Search, Handshake, ShieldCheck } from "lucide-react";
 
@@ -27,7 +28,7 @@ const steps = [
   },
 ];
 
-export function TradeMatchSection() {
+export const TradeMatchSection = memo(function TradeMatchSection() {
   return (
     <section className="py-24 bg-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -86,4 +87,4 @@ export function TradeMatchSection() {
       </div>
     </section>
   );
-}
+});

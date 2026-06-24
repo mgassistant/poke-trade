@@ -50,13 +50,21 @@ const BLOCKED_UA_PATTERNS = [
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // ── Fast path: skip all checks for non-API routes ──
+  // Only run rate limiting, UA checks, and CSRF on API routes.
+  // Supabase session update still runs for all routes.
+  if (!pathname.startsWith("/api/")) {
+    return updateSession(request);
+  }
+
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
     || request.headers.get("x-real-ip")
     || "unknown";
   const userAgent = request.headers.get("user-agent") || "";
 
   // ── Block suspicious user agents on API routes ──
-  if (pathname.startsWith("/api/") && !pathname.startsWith("/api/webhooks/")) {
+  if (!pathname.startsWith("/api/webhooks/")) {
     // Allow empty UA check — block bots with no UA
     if (!userAgent) {
       return NextResponse.json(
@@ -77,8 +85,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Rate limiting for API routes ──
-  if (pathname.startsWith("/api/")) {
-    // Skip rate limiting for webhooks (they have their own verification)
+  {
     if (!pathname.startsWith("/api/webhooks/")) {
       // Determine tier based on route
       let limit = 100;  // default: 100 requests/min for API routes
@@ -110,7 +117,6 @@ export async function middleware(request: NextRequest) {
 
   // ── CSRF protection for state-changing API requests ──
   if (
-    pathname.startsWith("/api/") &&
     !pathname.startsWith("/api/webhooks/") &&
     !pathname.startsWith("/api/auth/callback") &&
     ["POST", "PUT", "PATCH", "DELETE"].includes(request.method)
@@ -139,7 +145,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Request size limit check (Content-Length header) ──
-  if (pathname.startsWith("/api/") && !pathname.startsWith("/api/webhooks/")) {
+  if (!pathname.startsWith("/api/webhooks/")) {
     const contentLength = request.headers.get("content-length");
     if (contentLength) {
       const size = parseInt(contentLength);

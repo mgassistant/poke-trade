@@ -126,3 +126,17 @@ body {
   background: rgba(220, 38, 38, 0.15);
   color: #111827;
 }
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .animate-sparkle,
+  .animate-float,
+  .animate-pulse-glow {
+    animation: none;
+  }
+
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

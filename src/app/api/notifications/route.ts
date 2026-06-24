@@ -13,7 +13,7 @@ export async function GET() {
 
   const { data: notifications, error } = await supabase
     .from("notifications")
-    .select("*")
+    .select("id, notification_type, title, message, data, read_at, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -24,7 +24,14 @@ export async function GET() {
 
   const unreadCount = (notifications || []).filter((n) => !n.read_at).length;
 
-  return NextResponse.json({ notifications: notifications || [], unreadCount });
+  return NextResponse.json(
+    { notifications: notifications || [], unreadCount },
+    {
+      headers: {
+        "Cache-Control": "private, no-cache, max-age=0",
+      },
+    }
+  );
 }
 
 // POST /api/notifications — Mark as read

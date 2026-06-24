@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
@@ -14,7 +15,7 @@ const tierColors = [
   "border-yellow-400 text-yellow-600",
 ];
 
-export function ReputationSection() {
+export const ReputationSection = memo(function ReputationSection() {
   return (
     <section className="py-24 bg-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -98,4 +99,4 @@ export function ReputationSection() {
       </div>
     </section>
   );
-}
+});

@@ -127,48 +127,36 @@ export function HeroSection() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="lg:col-span-2 relative"
           >
-            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden">
+            <div className="relative rounded-2xl">
               {/* Glow behind image */}
               <div className="absolute -inset-4 bg-gradient-to-br from-red-200/40 via-transparent to-blue-200/30 rounded-3xl blur-2xl" />
 
-              {/* Image container */}
-              <div className="relative h-full rounded-2xl overflow-hidden border border-gray-200 bg-gradient-to-br from-gray-50 to-white shadow-xl">
-                {/* Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-blue-50" />
-
-                {/* Real Pokémon card images */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="grid grid-cols-2 gap-3 p-6 transform rotate-3">
-                    {[
-                      { src: "https://images.pokemontcg.io/sv3pt5/207_hires.png", alt: "Charizard ex" },
-                      { src: "https://images.pokemontcg.io/sv4/233_hires.png", alt: "Pikachu ex" },
-                      { src: "https://images.pokemontcg.io/sv3pt5/198_hires.png", alt: "Mew ex" },
-                      { src: "https://images.pokemontcg.io/sv4/227_hires.png", alt: "Umbreon ex" },
-                    ].map((card, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
-                        className="aspect-[2.5/3.5] rounded-xl overflow-hidden border border-white/60 shadow-lg relative"
-                      >
-                        <Image
-                          src={card.src}
-                          alt={card.alt}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 120px, 160px"
-                        />
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Overlay text */}
-                <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-white/90 to-transparent">
-                  <p className="text-gray-700 text-sm font-medium">Trade with confidence</p>
-                  <p className="text-gray-500 text-xs mt-1">Verified collectors · Secure transactions</p>
-                </div>
+              {/* Card grid */}
+              <div className="relative grid grid-cols-2 gap-3 p-2 transform rotate-2">
+                {[
+                  { src: "https://images.pokemontcg.io/sv3pt5/207_hires.png", alt: "Charizard ex" },
+                  { src: "https://images.pokemontcg.io/sv4/233_hires.png", alt: "Pikachu ex" },
+                  { src: "https://images.pokemontcg.io/sv3pt5/198_hires.png", alt: "Mew ex" },
+                  { src: "https://images.pokemontcg.io/sv4/227_hires.png", alt: "Umbreon ex" },
+                ].map((card, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.4 + i * 0.1 }}
+                    className="relative aspect-[2.5/3.5] rounded-xl overflow-hidden shadow-xl border border-white/80 hover:scale-105 transition-transform duration-300"
+                  >
+                    <Image
+                      src={card.src}
+                      alt={card.alt}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 40vw, 180px"
+                      priority={i < 2}
+                      loading={i < 2 ? undefined : "lazy"}
+                    />
+                  </motion.div>
+                ))}
               </div>
             </div>
           </motion.div>
