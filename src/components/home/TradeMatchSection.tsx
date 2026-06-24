@@ -29,7 +29,7 @@ const steps = [
 
 export function TradeMatchSection() {
   return (
-    <section className="py-24 bg-gradient-to-b from-[#0f172a] to-[#131c33]">
+    <section className="py-24 bg-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -38,13 +38,13 @@ export function TradeMatchSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <p className="text-sm font-medium text-red-500 uppercase tracking-wider mb-3">
+          <p className="text-sm font-medium text-red-600 uppercase tracking-wider mb-3">
             How It Works
           </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white">
-            Start Trading in <span className="text-red-500">Three Steps</span>
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+            Start Trading in <span className="text-red-600">Three Steps</span>
           </h2>
-          <p className="mt-4 text-slate-400 max-w-xl mx-auto">
+          <p className="mt-4 text-gray-500 max-w-xl mx-auto">
             No forums, no DMs, no risk. Our platform handles everything from
             discovery to delivery.
           </p>
@@ -52,7 +52,7 @@ export function TradeMatchSection() {
 
         <div className="grid md:grid-cols-3 gap-6 relative">
           {/* Connecting line (desktop) */}
-          <div className="hidden md:block absolute top-1/2 left-[20%] right-[20%] h-px bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-y-1/2" />
+          <div className="hidden md:block absolute top-1/2 left-[20%] right-[20%] h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent -translate-y-1/2" />
 
           {steps.map((item, i) => (
             <motion.div
@@ -63,20 +63,20 @@ export function TradeMatchSection() {
               transition={{ duration: 0.5, delay: i * 0.15 }}
               className="relative"
             >
-              <div className="glass-card rounded-xl p-8 h-full hover:bg-white/[0.07] transition-all duration-300 hover:-translate-y-1 group">
+              <div className="glass-card rounded-xl p-8 h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
                 {/* Step number */}
-                <span className="absolute top-6 right-6 text-5xl font-bold text-white/[0.04] group-hover:text-white/[0.08] transition-colors">
+                <span className="absolute top-6 right-6 text-5xl font-bold text-gray-100 group-hover:text-gray-200 transition-colors">
                   {item.step}
                 </span>
 
-                <div className="h-12 w-12 rounded-xl bg-red-600/10 flex items-center justify-center mb-6 text-red-500 group-hover:bg-red-600/20 transition-colors">
+                <div className="h-12 w-12 rounded-xl bg-red-50 flex items-center justify-center mb-6 text-red-600 group-hover:bg-red-100 transition-colors">
                   {item.icon}
                 </div>
 
-                <h3 className="text-lg font-semibold text-white mb-3">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
                   {item.title}
                 </h3>
-                <p className="text-sm text-slate-400 leading-relaxed">
+                <p className="text-sm text-gray-500 leading-relaxed">
                   {item.description}
                 </p>
               </div>

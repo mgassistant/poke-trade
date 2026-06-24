@@ -6,17 +6,17 @@ import { ArrowRight } from "lucide-react";
 import { TRADER_LEVELS } from "@/lib/constants";
 
 const tierColors = [
-  "border-slate-600 text-slate-400",
-  "border-blue-500/50 text-blue-400",
-  "border-purple-500/50 text-purple-400",
-  "border-amber-500/50 text-amber-400",
-  "border-red-500/50 text-red-400",
-  "border-yellow-400/50 text-yellow-300",
+  "border-gray-300 text-gray-500",
+  "border-blue-300 text-blue-600",
+  "border-purple-300 text-purple-600",
+  "border-amber-300 text-amber-600",
+  "border-red-300 text-red-600",
+  "border-yellow-400 text-yellow-600",
 ];
 
 export function ReputationSection() {
   return (
-    <section className="py-24 bg-[#0f172a]">
+    <section className="py-24 bg-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -25,13 +25,13 @@ export function ReputationSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <p className="text-sm font-medium text-yellow-500 uppercase tracking-wider mb-3">
+          <p className="text-sm font-medium text-yellow-600 uppercase tracking-wider mb-3">
             Trusted Trader Program
           </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white">
-            Build Your <span className="text-blue-400">Reputation</span>
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+            Build Your <span className="text-blue-600">Reputation</span>
           </h2>
-          <p className="mt-4 text-slate-400 max-w-xl mx-auto">
+          <p className="mt-4 text-gray-500 max-w-xl mx-auto">
             Earn badges, unlock perks, and rise through the ranks with every
             successful trade.
           </p>
@@ -48,11 +48,11 @@ export function ReputationSection() {
               transition={{ duration: 0.4, delay: i * 0.08 }}
             >
               <div
-                className={`text-center h-full rounded-xl bg-white/[0.03] border ${tierColors[i] || "border-white/10"} p-5 hover:bg-white/[0.06] transition-all duration-300 hover:-translate-y-1`}
+                className={`text-center h-full rounded-xl bg-white border ${tierColors[i] || "border-gray-200"} p-5 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 shadow-sm`}
               >
                 <div className="text-4xl mb-3">{level.icon}</div>
-                <h3 className="font-semibold text-sm text-white">{level.name}</h3>
-                <p className="text-xs text-slate-500 mt-1.5">
+                <h3 className="font-semibold text-sm text-gray-900">{level.name}</h3>
+                <p className="text-xs text-gray-500 mt-1.5">
                   {level.minTrades}+ trades
                 </p>
               </div>
@@ -70,19 +70,19 @@ export function ReputationSection() {
         >
           <div className="glass-card rounded-xl p-6">
             <div className="flex items-center justify-between text-sm mb-3">
-              <span className="text-slate-400">Your Progress</span>
-              <span className="text-white font-medium">Rookie → Pokémon Trainer</span>
+              <span className="text-gray-500">Your Progress</span>
+              <span className="text-gray-900 font-medium">Rookie → Pokémon Trainer</span>
             </div>
-            <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 whileInView={{ width: "40%" }}
                 viewport={{ once: true }}
                 transition={{ duration: 1, delay: 0.5 }}
-                className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full"
+                className="h-full bg-gradient-to-r from-blue-600 to-blue-500 rounded-full"
               />
             </div>
-            <p className="text-xs text-slate-500 mt-2">2 of 5 trades completed</p>
+            <p className="text-xs text-gray-500 mt-2">2 of 5 trades completed</p>
           </div>
         </motion.div>
 

@@ -10,11 +10,87 @@ interface FeaturedListingsProps {
   cards: TCGCard[];
 }
 
+// Fallback cards when API returns empty
+const FALLBACK_CARDS: TCGCard[] = [
+  {
+    id: "swsh4-25",
+    name: "Charizard VMAX",
+    supertype: "Pokémon",
+    number: "25",
+    rarity: "Rare Holo",
+    images: { small: "https://images.pokemontcg.io/swsh4/25.png", large: "https://images.pokemontcg.io/swsh4/25_hires.png" },
+    set: { id: "swsh4", name: "Vivid Voltage", series: "Sword & Shield", printedTotal: 185, total: 203, releaseDate: "2020/11/13", images: { symbol: "", logo: "" } },
+  },
+  {
+    id: "swsh7-203",
+    name: "Umbreon VMAX",
+    supertype: "Pokémon",
+    number: "203",
+    rarity: "Rare Secret",
+    images: { small: "https://images.pokemontcg.io/swsh7/203.png", large: "https://images.pokemontcg.io/swsh7/203_hires.png" },
+    set: { id: "swsh7", name: "Evolving Skies", series: "Sword & Shield", printedTotal: 203, total: 237, releaseDate: "2021/08/27", images: { symbol: "", logo: "" } },
+  },
+  {
+    id: "sm35-1",
+    name: "Charizard GX",
+    supertype: "Pokémon",
+    number: "1",
+    rarity: "Rare Holo GX",
+    images: { small: "https://images.pokemontcg.io/sm35/1.png", large: "https://images.pokemontcg.io/sm35/1_hires.png" },
+    set: { id: "sm35", name: "Shining Legends", series: "Sun & Moon", printedTotal: 73, total: 78, releaseDate: "2017/10/06", images: { symbol: "", logo: "" } },
+  },
+  {
+    id: "swsh35-44",
+    name: "Pikachu VMAX",
+    supertype: "Pokémon",
+    number: "44",
+    rarity: "Rare VMAX",
+    images: { small: "https://images.pokemontcg.io/swsh35/44.png", large: "https://images.pokemontcg.io/swsh35/44_hires.png" },
+    set: { id: "swsh35", name: "Champion's Path", series: "Sword & Shield", printedTotal: 73, total: 80, releaseDate: "2020/09/25", images: { symbol: "", logo: "" } },
+  },
+  {
+    id: "swsh12pt5-160",
+    name: "Lugia V",
+    supertype: "Pokémon",
+    number: "160",
+    rarity: "Rare Ultra",
+    images: { small: "https://images.pokemontcg.io/swsh12pt5/160.png", large: "https://images.pokemontcg.io/swsh12pt5/160_hires.png" },
+    set: { id: "swsh12pt5", name: "Crown Zenith", series: "Sword & Shield", printedTotal: 159, total: 230, releaseDate: "2023/01/20", images: { symbol: "", logo: "" } },
+  },
+  {
+    id: "swsh9-166",
+    name: "Arceus VSTAR",
+    supertype: "Pokémon",
+    number: "166",
+    rarity: "Rare Secret",
+    images: { small: "https://images.pokemontcg.io/swsh9/166.png", large: "https://images.pokemontcg.io/swsh9/166_hires.png" },
+    set: { id: "swsh9", name: "Brilliant Stars", series: "Sword & Shield", printedTotal: 172, total: 186, releaseDate: "2022/02/25", images: { symbol: "", logo: "" } },
+  },
+  {
+    id: "swsh11-174",
+    name: "Giratina VSTAR",
+    supertype: "Pokémon",
+    number: "174",
+    rarity: "Rare Secret",
+    images: { small: "https://images.pokemontcg.io/swsh11/174.png", large: "https://images.pokemontcg.io/swsh11/174_hires.png" },
+    set: { id: "swsh11", name: "Lost Origin", series: "Sword & Shield", printedTotal: 196, total: 217, releaseDate: "2022/09/09", images: { symbol: "", logo: "" } },
+  },
+  {
+    id: "sv3pt5-171",
+    name: "Mew ex",
+    supertype: "Pokémon",
+    number: "171",
+    rarity: "Rare Ultra",
+    images: { small: "https://images.pokemontcg.io/sv3pt5/171.png", large: "https://images.pokemontcg.io/sv3pt5/171_hires.png" },
+    set: { id: "sv3pt5", name: "151", series: "Scarlet & Violet", printedTotal: 165, total: 207, releaseDate: "2023/09/22", images: { symbol: "", logo: "" } },
+  },
+];
+
 export function FeaturedListings({ cards }: FeaturedListingsProps) {
-  if (cards.length === 0) return null;
+  const displayCards = cards.length > 0 ? cards : FALLBACK_CARDS;
 
   return (
-    <section className="py-24 bg-[#0f172a]">
+    <section className="py-24 bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -24,16 +100,16 @@ export function FeaturedListings({ cards }: FeaturedListingsProps) {
           className="flex items-end justify-between mb-12"
         >
           <div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white">
-              Trending <span className="text-red-500">Cards</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+              Trending <span className="text-red-600">Cards</span>
             </h2>
-            <p className="mt-2 text-slate-400">
+            <p className="mt-2 text-gray-500">
               Real-time data from the Pokémon TCG market
             </p>
           </div>
           <Link
             href="/marketplace"
-            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-white transition-colors"
+            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
           >
             View All
             <ArrowRight className="h-4 w-4" />
@@ -41,7 +117,7 @@ export function FeaturedListings({ cards }: FeaturedListingsProps) {
         </motion.div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {cards.slice(0, 8).map((card, i) => (
+          {displayCards.slice(0, 8).map((card, i) => (
             <motion.div
               key={card.id}
               initial={{ opacity: 0, y: 20 }}
@@ -51,10 +127,10 @@ export function FeaturedListings({ cards }: FeaturedListingsProps) {
             >
               <Link
                 href={`/card/${card.id}`}
-                className="group block rounded-xl bg-white/5 border border-white/10 overflow-hidden hover:border-white/20 hover:bg-white/[0.07] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20"
+                className="group block rounded-xl bg-white border border-gray-200 overflow-hidden hover:border-gray-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
               >
                 {/* Card Image */}
-                <div className="relative aspect-[2.5/3.5] bg-gradient-to-br from-slate-800 to-slate-900 p-3">
+                <div className="relative aspect-[2.5/3.5] bg-gradient-to-br from-gray-50 to-gray-100 p-3">
                   {card.images?.small ? (
                     <Image
                       src={card.images.small}
@@ -64,14 +140,14 @@ export function FeaturedListings({ cards }: FeaturedListingsProps) {
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     />
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-slate-600 text-sm">
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
                       No Image
                     </div>
                   )}
 
-                  {/* Grade badge (PSA-style) */}
+                  {/* Grade badge */}
                   {card.rarity && (
-                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-blue-500/90 text-[10px] font-bold text-white uppercase tracking-wider">
+                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-blue-600 text-[10px] font-bold text-white uppercase tracking-wider">
                       {card.rarity.includes("Rare") ? "RARE" : card.rarity.slice(0, 6)}
                     </div>
                   )}
@@ -79,21 +155,21 @@ export function FeaturedListings({ cards }: FeaturedListingsProps) {
 
                 {/* Card Info */}
                 <div className="p-3">
-                  <h3 className="text-sm font-semibold text-white truncate group-hover:text-red-400 transition-colors">
+                  <h3 className="text-sm font-semibold text-gray-900 truncate group-hover:text-red-600 transition-colors">
                     {card.name}
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5 truncate">
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">
                     {card.set?.name}
                   </p>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-sm font-bold text-white">
+                    <span className="text-sm font-bold text-gray-900">
                       {card.cardmarket?.prices?.averageSellPrice
-                        ? `$${card.cardmarket.prices.averageSellPrice.toFixed(2)}`
+                        ? `$${(card.cardmarket.prices.averageSellPrice as number).toFixed(2)}`
                         : card.tcgplayer?.prices?.holofoil?.market
                           ? `$${card.tcgplayer.prices.holofoil.market.toFixed(2)}`
                           : "—"}
                     </span>
-                    <span className="text-[10px] text-slate-500 bg-white/5 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
                       NM
                     </span>
                   </div>
@@ -106,7 +182,7 @@ export function FeaturedListings({ cards }: FeaturedListingsProps) {
         <div className="mt-10 text-center sm:hidden">
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
           >
             View All Listings
             <ArrowRight className="h-4 w-4" />

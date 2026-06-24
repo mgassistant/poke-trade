@@ -22,7 +22,7 @@ export function Header() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/5 shadow-lg shadow-black/10"
+          ? "bg-white/80 backdrop-blur-xl border-b border-gray-200 shadow-sm"
           : "bg-transparent"
       }`}
     >
@@ -46,7 +46,7 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="px-3 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors rounded-md hover:bg-white/5"
+                className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors rounded-md hover:bg-gray-100"
               >
                 {link.label}
               </Link>
@@ -59,7 +59,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-slate-300 hover:text-white hover:bg-white/5"
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                 asChild
               >
                 <Link href="/login">Sign In</Link>
@@ -75,7 +75,7 @@ export function Header() {
 
             {/* Mobile menu button */}
             <button
-              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
             >
@@ -92,14 +92,14 @@ export function Header() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-[#0f172a]/95 backdrop-blur-xl border-t border-white/5"
+            className="lg:hidden bg-white/95 backdrop-blur-xl border-t border-gray-200"
           >
             <div className="px-4 py-4 space-y-1">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="block px-3 py-2 text-sm text-slate-300 hover:text-white rounded-md hover:bg-white/5 transition-colors"
+                  className="block px-3 py-2 text-sm text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-100 transition-colors"
                   onClick={() => setMobileOpen(false)}
                 >
                   {link.label}
@@ -109,7 +109,7 @@ export function Header() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-slate-300 hover:text-white hover:bg-white/5"
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                   asChild
                 >
                   <Link href="/login">Sign In</Link>

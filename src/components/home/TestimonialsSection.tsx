@@ -32,7 +32,7 @@ const testimonials = [
 
 export function TestimonialsSection() {
   return (
-    <section className="py-24 bg-gradient-to-b from-[#0f172a] to-[#131c33]">
+    <section className="py-24 bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -41,10 +41,10 @@ export function TestimonialsSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold text-white">
-            Trusted by <span className="text-red-500">Collectors</span>
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+            Trusted by <span className="text-red-600">Collectors</span>
           </h2>
-          <p className="mt-4 text-slate-400">
+          <p className="mt-4 text-gray-500">
             Hear from real traders on the platform
           </p>
         </motion.div>
@@ -58,7 +58,7 @@ export function TestimonialsSection() {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.1 }}
             >
-              <div className="glass-card rounded-xl p-6 h-full hover:bg-white/[0.07] transition-all duration-300">
+              <div className="glass-card rounded-xl p-6 h-full hover:shadow-lg transition-all duration-300">
                 {/* Stars */}
                 <div className="flex gap-0.5 mb-4">
                   {Array.from({ length: t.rating }).map((_, j) => (
@@ -69,19 +69,19 @@ export function TestimonialsSection() {
                   ))}
                 </div>
 
-                <p className="text-sm text-slate-300 leading-relaxed mb-6">
+                <p className="text-sm text-gray-600 leading-relaxed mb-6">
                   &ldquo;{t.review}&rdquo;
                 </p>
 
-                <div className="flex items-center gap-3 pt-4 border-t border-white/5">
-                  <div className="h-10 w-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-lg">
+                <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
+                  <div className="h-10 w-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-lg">
                     {t.avatar}
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-white">
+                    <div className="text-sm font-semibold text-gray-900">
                       {t.name}
                     </div>
-                    <div className="text-xs text-slate-500">{t.role}</div>
+                    <div className="text-xs text-gray-500">{t.role}</div>
                   </div>
                 </div>
               </div>
