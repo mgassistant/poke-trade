@@ -136,22 +136,30 @@ export function HeroSection() {
                 {/* Background */}
                 <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-blue-50" />
 
-                {/* Decorative card shapes */}
+                {/* Real Pokémon card images */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="grid grid-cols-2 gap-3 p-6 transform rotate-3">
                     {[
-                      "from-yellow-400/40 to-amber-500/30",
-                      "from-blue-400/40 to-indigo-500/30",
-                      "from-red-400/40 to-rose-500/30",
-                      "from-purple-400/40 to-violet-500/30",
-                    ].map((gradient, i) => (
+                      { src: "https://images.pokemontcg.io/sv3pt5/207_hires.png", alt: "Charizard ex" },
+                      { src: "https://images.pokemontcg.io/sv4/233_hires.png", alt: "Pikachu ex" },
+                      { src: "https://images.pokemontcg.io/sv3pt5/198_hires.png", alt: "Mew ex" },
+                      { src: "https://images.pokemontcg.io/sv4/227_hires.png", alt: "Umbreon ex" },
+                    ].map((card, i) => (
                       <motion.div
                         key={i}
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
-                        className={`aspect-[2.5/3.5] rounded-xl bg-gradient-to-br ${gradient} border border-white/60 shadow-lg`}
-                      />
+                        className="aspect-[2.5/3.5] rounded-xl overflow-hidden border border-white/60 shadow-lg relative"
+                      >
+                        <Image
+                          src={card.src}
+                          alt={card.alt}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 120px, 160px"
+                        />
+                      </motion.div>
                     ))}
                   </div>
                 </div>
