@@ -30,7 +30,6 @@ export async function POST(request: Request) {
 
   // Idempotency check — prevent replay attacks
   if (!markEventProcessed(event.id)) {
-    console.log(`Duplicate webhook event ignored: ${event.id}`);
     return NextResponse.json({ received: true, duplicate: true });
   }
 
@@ -203,18 +202,12 @@ export async function POST(request: Request) {
         break;
       }
 
-      case "invoice.payment_succeeded": {
-        console.log("Payment succeeded:", event.data.object.id);
+      case "invoice.payment_succeeded":
+      case "invoice.payment_failed":
         break;
-      }
-
-      case "invoice.payment_failed": {
-        console.log("Payment failed:", event.data.object.id);
-        break;
-      }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        break;
     }
   } catch (err) {
     console.error("Webhook handler error:", err);

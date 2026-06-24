@@ -44,7 +44,8 @@ export async function GET() {
         created: new Date(p.created * 1000).toISOString(),
       })),
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to fetch payout data" }, { status: 500 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to fetch payout data";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

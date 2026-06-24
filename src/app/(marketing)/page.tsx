@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { getFeaturedCards } from "@/lib/pokemon-tcg";
 import { HeroSection } from "@/components/home/HeroSection";
 import { FeaturedListings } from "@/components/home/FeaturedListings";
@@ -9,7 +8,6 @@ import { ReputationSection } from "@/components/home/ReputationSection";
 import { PricingSection } from "@/components/home/PricingSection";
 import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { CTASection } from "@/components/home/CTASection";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export default async function HomePage() {
   let featuredCards: Awaited<ReturnType<typeof getFeaturedCards>> = [];

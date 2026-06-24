@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { CONDITIONS, getConditionValue } from "@/lib/constants/conditions";
 
 interface SubgradeOption {

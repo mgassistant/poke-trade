@@ -56,9 +56,6 @@ export async function POST(request: Request) {
           })
           .eq("stripe_connect_id", account.id);
 
-        console.log(
-          `[stripe-connect] account.updated: ${account.id} payouts=${account.payouts_enabled} onboarded=${account.details_submitted}`
-        );
         break;
       }
 
@@ -76,7 +73,6 @@ export async function POST(request: Request) {
           });
         }
 
-        console.log(`[stripe-connect] payout.paid: ${payout.id} amount=${payout.amount}`);
         break;
       }
 
@@ -108,12 +104,11 @@ export async function POST(request: Request) {
           }
         }
 
-        console.log(`[stripe-connect] payout.failed: ${payout.id}`);
         break;
       }
 
       default:
-        console.log(`[stripe-connect] Unhandled event: ${event.type}`);
+        break;
     }
   } catch (err) {
     console.error(`[stripe-connect] Error processing ${event.type}:`, err);

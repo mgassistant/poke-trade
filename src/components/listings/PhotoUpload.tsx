@@ -3,7 +3,6 @@
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { Upload, X, Camera, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
 interface PhotoUploadProps {
