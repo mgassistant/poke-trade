@@ -1,10 +1,11 @@
-import { getFeaturedCards } from "@/lib/pokemon-tcg";
 import dynamic from "next/dynamic";
 import { HeroSection } from "@/components/home/HeroSection";
 import { FeaturedListings } from "@/components/home/FeaturedListings";
+import { FEATURED_CARDS } from "@/lib/featured-cards";
 
-// ISR: revalidate homepage every hour
-export const revalidate = 3600;
+// Fully static — no external API calls at build/render time
+export const dynamic_config = "force-static";
+
 // Lazy load below-fold sections
 const TradeMatchSection = dynamic(() => import("@/components/home/TradeMatchSection").then(m => ({ default: m.TradeMatchSection })));
 const CollectionSection = dynamic(() => import("@/components/home/CollectionSection").then(m => ({ default: m.CollectionSection })));
@@ -14,18 +15,11 @@ const PricingSection = dynamic(() => import("@/components/home/PricingSection").
 const TestimonialsSection = dynamic(() => import("@/components/home/TestimonialsSection").then(m => ({ default: m.TestimonialsSection })));
 const CTASection = dynamic(() => import("@/components/home/CTASection").then(m => ({ default: m.CTASection })));
 
-export default async function HomePage() {
-  let featuredCards: Awaited<ReturnType<typeof getFeaturedCards>> = [];
-  try {
-    featuredCards = await getFeaturedCards();
-  } catch {
-    featuredCards = [];
-  }
-
+export default function HomePage() {
   return (
     <div className="relative overflow-hidden">
       <HeroSection />
-      <FeaturedListings cards={featuredCards} />
+      <FeaturedListings cards={FEATURED_CARDS} />
       <TradeMatchSection />
       <CollectionSection />
       <BenefitsSection />
