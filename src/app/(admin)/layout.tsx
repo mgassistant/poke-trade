@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, Repeat, ShoppingBag, Shield,
   Bell, FileWarning, Package, Settings, ArrowLeft,
-  Menu, X, CheckCircle, BarChart3
+  Menu, X, CheckCircle, BarChart3, Headphones
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,10 @@ const adminLinks = [
     { href: "/admin/listings", label: "Listings", icon: ShoppingBag },
   ]},
   { section: "Operations", items: [
+    { href: "/admin/shop", label: "Shop", icon: ShoppingBag },
     { href: "/admin/verification", label: "Verification", icon: CheckCircle },
     { href: "/admin/disputes", label: "Disputes", icon: FileWarning },
+    { href: "/admin/support", label: "Support", icon: Headphones },
     { href: "/admin/drops", label: "Drop Products", icon: Package },
     { href: "/admin/insurance", label: "Insurance Leads", icon: Shield },
     { href: "/admin/reports", label: "Reports", icon: FileWarning },

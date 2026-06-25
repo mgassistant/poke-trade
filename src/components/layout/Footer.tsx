@@ -18,9 +18,12 @@ const footerLinks = {
   ],
   Resources: [
     { label: "Help Center", href: "/help" },
+    { label: "Support Center", href: "/support" },
+    { label: "Contact Us", href: "/contact" },
     { label: "Trust & Safety", href: "/safety" },
     { label: "Shipping Guide", href: "/shipping-guide" },
     { label: "Grading Guide", href: "/grading-guide" },
+    { label: "Feedback", href: "/feedback" },
     { label: "Report an Issue", href: "/report" },
   ],
   Legal: [
