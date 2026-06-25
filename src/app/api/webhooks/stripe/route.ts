@@ -77,6 +77,72 @@ export async function POST(request: Request) {
           }
         }
 
+        // Handle shop purchase checkout
+        if (purchaseType === "shop_purchase") {
+          const orderId = session.metadata?.order_id;
+          if (orderId) {
+            // Update order status
+            await supabase
+              .from("shop_orders")
+              .update({
+                status: "paid",
+                stripe_payment_intent_id: session.payment_intent as string,
+                shipping_address: session.shipping_details?.address ?? null,
+                shipping_name: session.shipping_details?.name ?? null,
+              })
+              .eq("id", orderId);
+
+            // Get order items and decrement inventory
+            const { data: orderItems } = await supabase
+              .from("shop_order_items")
+              .select("product_id, quantity")
+              .eq("order_id", orderId);
+
+            for (const item of orderItems ?? []) {
+              const { data: product } = await supabase
+                .from("shop_products")
+                .select("inventory_count, reserved_count, sold_count")
+                .eq("id", item.product_id)
+                .single();
+
+              if (product) {
+                const newInventory = Math.max(0, product.inventory_count - item.quantity);
+                const newReserved = Math.max(0, product.reserved_count - item.quantity);
+                const newSold = product.sold_count + item.quantity;
+
+                await supabase
+                  .from("shop_products")
+                  .update({
+                    inventory_count: newInventory,
+                    reserved_count: newReserved,
+                    sold_count: newSold,
+                    status: newInventory <= 0 ? "sold_out" : undefined,
+                  })
+                  .eq("id", item.product_id);
+
+                // Log inventory event
+                await supabase.from("shop_inventory_events").insert({
+                  product_id: item.product_id,
+                  event_type: "sold",
+                  quantity: -item.quantity,
+                  previous_inventory: product.inventory_count,
+                  new_inventory: newInventory,
+                  note: `Order ${orderId}`,
+                });
+              }
+            }
+
+            // Clear user's cart
+            const shopUserId = session.metadata?.user_id;
+            if (shopUserId) {
+              await supabase
+                .from("shop_cart_items")
+                .delete()
+                .eq("user_id", shopUserId);
+            }
+          }
+        }
+
         // Handle listing purchase checkout
         if (purchaseType === "listing_purchase" && listingId) {
           const buyerId = session.metadata?.buyer_id;
