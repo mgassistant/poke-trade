@@ -1,8 +1,8 @@
 "use client";
 
 import { memo } from "react";
-import { motion } from "framer-motion";
 import { Search, Handshake, ShieldCheck } from "lucide-react";
+import { useReveal } from "@/hooks/useReveal";
 
 const steps = [
   {
@@ -29,16 +29,12 @@ const steps = [
 ];
 
 export const TradeMatchSection = memo(function TradeMatchSection() {
+  const ref = useReveal();
+
   return (
-    <section className="py-24 bg-white">
+    <section ref={ref} className="py-24 bg-white reveal">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16">
           <p className="text-sm font-medium text-red-600 uppercase tracking-wider mb-3">
             How It Works
           </p>
@@ -49,21 +45,14 @@ export const TradeMatchSection = memo(function TradeMatchSection() {
             No forums, no DMs, no risk. Our platform handles everything from
             discovery to delivery.
           </p>
-        </motion.div>
+        </div>
 
         <div className="grid md:grid-cols-3 gap-6 relative">
           {/* Connecting line (desktop) */}
           <div className="hidden md:block absolute top-1/2 left-[20%] right-[20%] h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent -translate-y-1/2" />
 
-          {steps.map((item, i) => (
-            <motion.div
-              key={item.step}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.15 }}
-              className="relative"
-            >
+          {steps.map((item) => (
+            <div key={item.step} className="relative">
               <div className="glass-card rounded-xl p-8 h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
                 {/* Step number */}
                 <span className="absolute top-6 right-6 text-5xl font-bold text-gray-100 group-hover:text-gray-200 transition-colors">
@@ -81,7 +70,7 @@ export const TradeMatchSection = memo(function TradeMatchSection() {
                   {item.description}
                 </p>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

@@ -2,20 +2,16 @@
 
 import { memo } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useReveal } from "@/hooks/useReveal";
 
 export const CTASection = memo(function CTASection() {
+  const ref = useReveal();
+
   return (
-    <section className="py-24 bg-white">
+    <section ref={ref} className="py-24 bg-white reveal">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.97 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="relative rounded-2xl overflow-hidden"
-        >
+        <div className="relative rounded-2xl overflow-hidden">
           {/* Background — red gradient accent */}
           <div className="absolute inset-0 bg-gradient-to-br from-red-600 via-red-700 to-red-800" />
 
@@ -52,7 +48,7 @@ export const CTASection = memo(function CTASection() {
               No credit card required · Free forever plan · Cancel anytime
             </p>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

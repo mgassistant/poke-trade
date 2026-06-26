@@ -1,8 +1,8 @@
 "use client";
 
 import { memo } from "react";
-import { motion } from "framer-motion";
 import { Shield, UserCheck, Lock, AlertTriangle, BarChart3, FileCheck } from "lucide-react";
+import { useReveal } from "@/hooks/useReveal";
 
 const benefits = [
   {
@@ -44,16 +44,12 @@ const benefits = [
 ];
 
 export const BenefitsSection = memo(function BenefitsSection() {
+  const ref = useReveal();
+
   return (
-    <section className="py-24 bg-gray-50">
+    <section ref={ref} className="py-24 bg-gray-50 reveal">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
             Why <span className="text-red-600">Poké-Trade</span>?
           </h2>
@@ -61,17 +57,11 @@ export const BenefitsSection = memo(function BenefitsSection() {
             Built from the ground up for security, transparency, and the
             collector community.
           </p>
-        </motion.div>
+        </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {benefits.map((benefit, i) => (
-            <motion.div
-              key={benefit.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
-            >
+          {benefits.map((benefit) => (
+            <div key={benefit.title}>
               <div className="glass-card rounded-xl p-6 h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
                 <div className="h-10 w-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-4 text-blue-600 group-hover:bg-blue-100 transition-all">
                   {benefit.icon}
@@ -83,7 +73,7 @@ export const BenefitsSection = memo(function BenefitsSection() {
                   {benefit.description}
                 </p>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

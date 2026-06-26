@@ -2,22 +2,18 @@
 
 import { memo } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight, TrendingUp, Check } from "lucide-react";
+import { useReveal } from "@/hooks/useReveal";
 
 export const CollectionSection = memo(function CollectionSection() {
+  const ref = useReveal();
+
   return (
-    <section className="py-24 bg-white">
+    <section ref={ref} className="py-24 bg-white reveal">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* LEFT: Dashboard mockup */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="order-2 lg:order-1"
-          >
+          <div className="order-2 lg:order-1">
             <div className="glass-card rounded-2xl p-6 sm:p-8">
               <div className="space-y-6">
                 {/* Header */}
@@ -35,13 +31,10 @@ export const CollectionSection = memo(function CollectionSection() {
                 {/* Chart */}
                 <div className="h-32 bg-gray-50 rounded-xl flex items-end justify-around p-4 gap-1 border border-gray-100">
                   {[35, 42, 38, 55, 48, 62, 58, 72, 68, 78, 82, 90].map((h, i) => (
-                    <motion.div
+                    <div
                       key={i}
-                      initial={{ height: 0 }}
-                      whileInView={{ height: `${h}%` }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: 0.3 + i * 0.04 }}
-                      className="bg-gradient-to-t from-red-500 to-red-400 rounded-t w-full"
+                      className="bg-gradient-to-t from-red-500 to-red-400 rounded-t w-full transition-all duration-500"
+                      style={{ height: `${h}%` }}
                     />
                   ))}
                 </div>
@@ -90,16 +83,10 @@ export const CollectionSection = memo(function CollectionSection() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* RIGHT: Text */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="order-1 lg:order-2"
-          >
+          <div className="order-1 lg:order-2">
             <p className="text-sm font-medium text-blue-600 uppercase tracking-wider mb-3">
               Portfolio Tracker
             </p>
@@ -138,7 +125,7 @@ export const CollectionSection = memo(function CollectionSection() {
               Start Tracking Free
               <ArrowRight className="h-4 w-4" />
             </Link>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

@@ -2,8 +2,8 @@
 
 import { memo } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useReveal } from "@/hooks/useReveal";
 import { TRADER_LEVELS } from "@/lib/constants";
 
 const tierColors = [
@@ -16,16 +16,12 @@ const tierColors = [
 ];
 
 export const ReputationSection = memo(function ReputationSection() {
+  const ref = useReveal();
+
   return (
-    <section className="py-24 bg-white">
+    <section ref={ref} className="py-24 bg-white reveal">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16">
           <p className="text-sm font-medium text-yellow-600 uppercase tracking-wider mb-3">
             Trusted Trader Program
           </p>
@@ -36,18 +32,12 @@ export const ReputationSection = memo(function ReputationSection() {
             Earn badges, unlock perks, and rise through the ranks with every
             successful trade.
           </p>
-        </motion.div>
+        </div>
 
         {/* Tier cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {TRADER_LEVELS.map((level, i) => (
-            <motion.div
-              key={level.name}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
-            >
+            <div key={level.name}>
               <div
                 className={`text-center h-full rounded-xl bg-white border ${tierColors[i] || "border-gray-200"} p-5 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 shadow-sm`}
               >
@@ -57,35 +47,26 @@ export const ReputationSection = memo(function ReputationSection() {
                   {level.minTrades}+ trades
                 </p>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Progress visualization */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="mt-12 max-w-2xl mx-auto"
-        >
+        <div className="mt-12 max-w-2xl mx-auto">
           <div className="glass-card rounded-xl p-6">
             <div className="flex items-center justify-between text-sm mb-3">
               <span className="text-gray-500">Your Progress</span>
               <span className="text-gray-900 font-medium">Rookie → Pokémon Trainer</span>
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                whileInView={{ width: "40%" }}
-                viewport={{ once: true }}
-                transition={{ duration: 1, delay: 0.5 }}
-                className="h-full bg-gradient-to-r from-blue-600 to-blue-500 rounded-full"
+              <div
+                className="h-full bg-gradient-to-r from-blue-600 to-blue-500 rounded-full transition-all duration-1000"
+                style={{ width: "40%" }}
               />
             </div>
             <p className="text-xs text-gray-500 mt-2">2 of 5 trades completed</p>
           </div>
-        </motion.div>
+        </div>
 
         <div className="mt-10 text-center">
           <Link

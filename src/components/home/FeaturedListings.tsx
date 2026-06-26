@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { useReveal } from "@/hooks/useReveal";
 import type { TCGCard } from "@/lib/pokemon-tcg";
 
 interface FeaturedListingsProps {
@@ -88,17 +88,12 @@ const FALLBACK_CARDS: TCGCard[] = [
 
 export function FeaturedListings({ cards }: FeaturedListingsProps) {
   const displayCards = cards.length > 0 ? cards : FALLBACK_CARDS;
+  const ref = useReveal();
 
   return (
-    <section className="py-24 bg-gray-50">
+    <section ref={ref} className="py-24 bg-gray-50 reveal">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="flex items-end justify-between mb-12"
-        >
+        <div className="flex items-end justify-between mb-12">
           <div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
               Trending <span className="text-red-600">Cards</span>
@@ -114,17 +109,11 @@ export function FeaturedListings({ cards }: FeaturedListingsProps) {
             View All
             <ArrowRight className="h-4 w-4" />
           </Link>
-        </motion.div>
+        </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {displayCards.slice(0, 8).map((card, i) => (
-            <motion.div
-              key={card.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.05 }}
-            >
+          {displayCards.slice(0, 8).map((card) => (
+            <div key={card.id}>
               <Link
                 href={`/card/${card.id}`}
                 className="group block rounded-xl bg-white border border-gray-200 overflow-hidden hover:border-gray-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
@@ -175,7 +164,7 @@ export function FeaturedListings({ cards }: FeaturedListingsProps) {
                   </div>
                 </div>
               </Link>
-            </motion.div>
+            </div>
           ))}
         </div>
 

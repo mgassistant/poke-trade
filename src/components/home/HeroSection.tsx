@@ -1,8 +1,5 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { Shield, Gem, Users, ArrowRight } from "lucide-react";
 
 export function HeroSection() {
@@ -41,11 +38,7 @@ export function HeroSection() {
         <div className="grid lg:grid-cols-5 gap-12 lg:gap-16 items-center">
           {/* LEFT: Text content (60%) */}
           <div className="lg:col-span-3">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: "easeOut" }}
-            >
+            <div className="animate-fade-in-up">
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] text-gray-900">
                 The Better Way
                 <br />
@@ -58,12 +51,7 @@ export function HeroSection() {
               </p>
 
               {/* Trust badges */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="mt-8 flex flex-wrap gap-4"
-              >
+              <div className="mt-8 flex flex-wrap gap-4 animate-fade-in-up delay-300">
                 {[
                   { icon: <Shield className="h-4 w-4 text-blue-600" />, label: "Secure Trades" },
                   { icon: <Gem className="h-4 w-4 text-blue-600" />, label: "Fair Prices" },
@@ -77,15 +65,10 @@ export function HeroSection() {
                     <span>{badge.label}</span>
                   </div>
                 ))}
-              </motion.div>
+              </div>
 
               {/* CTAs */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="mt-10 flex flex-col sm:flex-row gap-4"
-              >
+              <div className="mt-10 flex flex-col sm:flex-row gap-4 animate-fade-in-up delay-400">
                 <Link
                   href="/register"
                   className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-red-600/25 text-base"
@@ -99,17 +82,12 @@ export function HeroSection() {
                 >
                   Create Free Account
                 </Link>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
           </div>
 
           {/* RIGHT: Hero image placeholder (40%) */}
-          <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="lg:col-span-2 relative"
-          >
+          <div className="lg:col-span-2 relative animate-slide-in-right delay-200">
             <div className="relative rounded-2xl">
               {/* Glow behind image */}
               <div className="absolute -inset-4 bg-gradient-to-br from-red-200/40 via-transparent to-blue-200/30 rounded-3xl blur-2xl" />
@@ -122,12 +100,10 @@ export function HeroSection() {
                   { src: "https://images.pokemontcg.io/sv3pt5/198_hires.png", alt: "Mew ex" },
                   { src: "https://images.pokemontcg.io/sv4/227_hires.png", alt: "Umbreon ex" },
                 ].map((card, i) => (
-                  <motion.div
+                  <div
                     key={i}
-                    initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.4 + i * 0.1 }}
-                    className="relative aspect-[2.5/3.5] rounded-xl overflow-hidden shadow-xl border border-white/80 hover:scale-105 transition-transform duration-300"
+                    className="relative aspect-[2.5/3.5] rounded-xl overflow-hidden shadow-xl border border-white/80 hover:scale-105 transition-transform duration-300 animate-scale-in"
+                    style={{ animationDelay: `${0.4 + i * 0.1}s` }}
                   >
                     <Image
                       src={card.src}
@@ -138,40 +114,29 @@ export function HeroSection() {
                       priority={i < 2}
                       loading={i < 2 ? undefined : "lazy"}
                     />
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Stats row */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="mt-20 pt-10 border-t border-gray-200"
-        >
+        <div className="mt-20 pt-10 border-t border-gray-200 animate-fade-in-up delay-600">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
             {[
               { value: "19,000+", label: "Cards Listed" },
               { value: "Verified", label: "Trusted Traders" },
               { value: "3%", label: "Low Fees" },
               { value: "Secure", label: "Every Trade" },
-            ].map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 + i * 0.1 }}
-                className="text-center"
-              >
+            ].map((stat) => (
+              <div key={stat.label} className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-gray-900">{stat.value}</div>
                 <div className="text-xs sm:text-sm text-gray-500 mt-1">{stat.label}</div>
-              </motion.div>
+              </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

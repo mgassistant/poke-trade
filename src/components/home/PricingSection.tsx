@@ -2,21 +2,17 @@
 
 import { memo } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { Check, ArrowRight } from "lucide-react";
+import { useReveal } from "@/hooks/useReveal";
 import { SUBSCRIPTION_TIERS } from "@/lib/constants";
 
 export const PricingSection = memo(function PricingSection() {
+  const ref = useReveal();
+
   return (
-    <section className="py-24 bg-white">
+    <section ref={ref} className="py-24 bg-white reveal">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16">
           <p className="text-sm font-medium text-yellow-600 uppercase tracking-wider mb-3">
             Premium Plans
           </p>
@@ -27,18 +23,14 @@ export const PricingSection = memo(function PricingSection() {
           <p className="mt-4 text-gray-500">
             Start free. Upgrade when you&apos;re ready.
           </p>
-        </motion.div>
+        </div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {SUBSCRIPTION_TIERS.map((tier, i) => {
+          {SUBSCRIPTION_TIERS.map((tier) => {
             const isPopular = tier.id === "pro";
             return (
-              <motion.div
+              <div
                 key={tier.id}
-                initial={{ opacity: 0, y: 25 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.12 }}
                 className={isPopular ? "md:-mt-4 md:mb-0" : ""}
               >
                 <div
@@ -91,7 +83,7 @@ export const PricingSection = memo(function PricingSection() {
                     {tier.price === 0 ? "Get Started Free" : "Start Pro Trial"}
                   </Link>
                 </div>
-              </motion.div>
+              </div>
             );
           })}
         </div>
