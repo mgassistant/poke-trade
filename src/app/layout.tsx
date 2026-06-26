@@ -63,6 +63,9 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  other: {
+    "impact-site-verification": "28ad154a-5b53-498b-9876-582c3810ccef",
+  },
 };
 
 export default function RootLayout({
