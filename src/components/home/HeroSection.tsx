@@ -46,23 +46,6 @@ export function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: "easeOut" }}
             >
-              {/* Logo */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="mb-10"
-              >
-                <Image
-                  src="/logo.png"
-                  alt="Poké-Trade"
-                  width={280}
-                  height={84}
-                  className="h-16 sm:h-20 w-auto"
-                  priority
-                />
-              </motion.div>
-
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] text-gray-900">
                 The Better Way
                 <br />
