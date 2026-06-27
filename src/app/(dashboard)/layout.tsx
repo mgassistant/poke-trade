@@ -42,6 +42,7 @@ const sidebarLinks = [
     { href: "/dashboard/purchases", label: "Purchases", icon: CreditCard },
     { href: "/dashboard/sales", label: "Sales", icon: History },
     { href: "/dashboard/reviews", label: "Reviews", icon: Star },
+    { href: "/dashboard/trust-score", label: "Trust Score", icon: Shield },
     { href: "/dashboard/disputes", label: "Disputes", icon: Gavel },
   ]},
   { section: "Account", items: [

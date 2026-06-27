@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { calculateProtectionFee, getTradeProtection, getEffectiveTier } from "@/lib/trade-fees";
 import type { MembershipTier, ShippingMethod } from "@/lib/trade-fees";
 import { notifyNewTrade } from "@/lib/email-notifications";
+import { getMaxTradeValue, getTraderLevel } from "@/lib/constants";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -52,6 +53,17 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Fetch sender profile for trade limit check
+  const { data: senderProfileForLimit } = await supabase
+    .from("profiles")
+    .select("total_trades")
+    .eq("id", user.id)
+    .single();
+
+  const senderTotalTrades = senderProfileForLimit?.total_trades || 0;
+  const senderMaxTradeValue = getMaxTradeValue(senderTotalTrades);
+  const senderLevel = getTraderLevel(senderTotalTrades);
+
   // Calculate trade value
   let tradeValue = 0;
   let unevenTradeWarning = false;
@@ -77,6 +89,16 @@ export async function POST(request: NextRequest) {
         }
       }
     }
+  }
+
+  // Enforce trade value limit
+  if (senderMaxTradeValue !== Infinity && tradeValue > senderMaxTradeValue) {
+    return NextResponse.json(
+      {
+        error: `Your trader level (${senderLevel.name}) limits trades to $${senderMaxTradeValue} max. Complete more trades to increase your limit!`,
+      },
+      { status: 400 }
+    );
   }
 
   // Calculate fee for protected shipping

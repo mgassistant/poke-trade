@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PROTECTION_DISCLAIMER } from "@/lib/protection-program";
+import { getTraderLevel, getMaxTradeValue } from "@/lib/constants";
 
 /* ── Types ── */
 interface UserProfile {
@@ -373,6 +374,11 @@ function NewTradeContent() {
   // Step 5: Submit
   const [submitting, setSubmitting] = useState(false);
 
+  // Trade limits
+  const [userTotalTrades, setUserTotalTrades] = useState(0);
+  const [userTraderLevel, setUserTraderLevel] = useState(getTraderLevel(0));
+  const [maxTradeValue, setMaxTradeValue] = useState(25);
+
   // Values
   const offerCardsValue = selectedOffer.reduce(
     (sum, i) => sum + (i.cards?.market_value || i.current_value || 0), 0
@@ -390,7 +396,7 @@ function NewTradeContent() {
   const offerIds = useMemo(() => new Set(selectedOffer.map((i) => i.id)), [selectedOffer]);
   const wantIds = useMemo(() => new Set(selectedWant.map((i) => i.id)), [selectedWant]);
 
-  // Fetch membership tier
+  // Fetch membership tier and user profile for trade limits
   useEffect(() => {
     (async () => {
       try {
@@ -399,7 +405,21 @@ function NewTradeContent() {
         if (data.tier) setMembershipTier(data.tier);
       } catch {}
     })();
+    (async () => {
+      try {
+        const res = await fetch("/api/settings");
+        const data = await res.json();
+        const totalTrades = data.profile?.total_trades || 0;
+        setUserTotalTrades(totalTrades);
+        const level = getTraderLevel(totalTrades);
+        setUserTraderLevel(level);
+        setMaxTradeValue(getMaxTradeValue(totalTrades));
+      } catch {}
+    })();
   }, []);
+
+  const isOverTradeLimit = maxTradeValue !== Infinity && totalTradeValue > maxTradeValue;
+  const isPokemonMaster = maxTradeValue === Infinity;
 
   // Search users
   useEffect(() => {
@@ -703,6 +723,29 @@ function NewTradeContent() {
           <Card className="overflow-hidden">
             <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-yellow-100">
               <BalanceScale offerValue={offerValue} wantValue={wantValue} />
+              {/* Trade Limit Badge */}
+              <div className="flex justify-center pb-3">
+                {isPokemonMaster ? (
+                  <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-sm px-4 py-1">
+                    👑 No limit ✨
+                  </Badge>
+                ) : (
+                  <Badge className={`text-sm px-4 py-1 ${
+                    isOverTradeLimit
+                      ? "bg-red-100 text-red-700 border-red-300"
+                      : "bg-blue-100 text-blue-700 border-blue-200"
+                  }`}>
+                    {userTraderLevel.icon} Trade Limit: ${maxTradeValue}
+                  </Badge>
+                )}
+              </div>
+              {isOverTradeLimit && (
+                <div className="mx-4 mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 font-medium text-center">
+                    ⚠️ Your trader level ({userTraderLevel.name}) limits trades to ${maxTradeValue} max. Complete more trades to increase your limit!
+                  </p>
+                </div>
+              )}
             </div>
           </Card>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1167,7 +1210,7 @@ function NewTradeContent() {
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={submitting || (selectedOffer.length === 0 && selectedWant.length === 0)}
+              disabled={submitting || (selectedOffer.length === 0 && selectedWant.length === 0) || isOverTradeLimit}
               className="bg-[#E3350D] hover:bg-[#c72e0b] gap-2 px-8 py-3 text-base font-bold shadow-lg hover:shadow-xl transition-all"
             >
               {submitting ? (

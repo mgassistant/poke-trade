@@ -296,13 +296,16 @@ export async function POST(
       }
     }
 
-    await supabase.from("notifications").insert({
-      user_id: otherUserId,
-      notification_type: "trade_completed",
-      title: "Trade Completed! ✅",
-      message: "Your trade has been marked as completed.",
-      data: { trade_id: id },
-    });
+    // Notify BOTH users to rate their trading partner
+    for (const uid of [trade.sender_id, trade.receiver_id]) {
+      await supabase.from("notifications").insert({
+        user_id: uid,
+        notification_type: "trade_completed",
+        title: "Trade Completed! ✅",
+        message: "Trade completed! Please rate your trading partner.",
+        data: { trade_id: id, link: `/dashboard/trades/${id}` },
+      });
+    }
 
     return NextResponse.json({ success: true, status: "completed" });
   }

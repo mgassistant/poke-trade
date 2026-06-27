@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { calculateTrustScore, type TrustScoreProfile } from "@/lib/trust-score";
 
 export async function POST(
   request: NextRequest,
@@ -103,6 +104,71 @@ export async function POST(
       .from("profiles")
       .update({ trade_score: Math.round(avg * 100) / 100 })
       .eq("id", revieweeId);
+  }
+
+  // Recalculate and update the reviewed user's trust_score
+  try {
+    const { data: revieweeProfile } = await supabase
+      .from("profiles")
+      .select("created_at, verification_level, total_trades, total_sales")
+      .eq("id", revieweeId)
+      .single();
+
+    if (revieweeProfile) {
+      const avgRating = allReviews && allReviews.length > 0
+        ? allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length
+        : 0;
+
+      const { count: deliveryCount } = await supabase
+        .from("trade_offers")
+        .select("id", { count: "exact", head: true })
+        .or(`sender_id.eq.${revieweeId},receiver_id.eq.${revieweeId}`)
+        .eq("status", "completed")
+        .not("tracking_number", "is", null);
+
+      const { count: chargebackCount } = await supabase
+        .from("disputes")
+        .select("id", { count: "exact", head: true })
+        .eq("respondent_id", revieweeId)
+        .eq("resolution", "chargeback");
+
+      const { count: lostDisputeCount } = await supabase
+        .from("disputes")
+        .select("id", { count: "exact", head: true })
+        .eq("respondent_id", revieweeId)
+        .eq("resolution", "resolved_against");
+
+      const { count: reportCount } = await supabase
+        .from("reports")
+        .select("id", { count: "exact", head: true })
+        .eq("reported_id", revieweeId)
+        .eq("status", "confirmed");
+
+      const trustProfile: TrustScoreProfile = {
+        created_at: revieweeProfile.created_at,
+        verification_level: revieweeProfile.verification_level ?? 0,
+        total_trades: revieweeProfile.total_trades ?? 0,
+        total_sales: revieweeProfile.total_sales ?? 0,
+        average_rating: avgRating,
+        successful_deliveries: deliveryCount ?? 0,
+        chargebacks: chargebackCount ?? 0,
+        lost_disputes: lostDisputeCount ?? 0,
+        community_reports: reportCount ?? 0,
+      };
+
+      const breakdown = calculateTrustScore(trustProfile);
+
+      await supabase
+        .from("profiles")
+        .update({
+          trust_score: breakdown.score,
+          trust_score_updated_at: new Date().toISOString(),
+        })
+        .eq("id", revieweeId);
+    }
+  } catch (e) {
+    // Trust score update is non-critical, don't fail the review
+    console.error("Failed to update trust score:", e);
   }
 
   // Log trade event

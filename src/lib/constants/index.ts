@@ -1,11 +1,27 @@
 export const TRADER_LEVELS = [
-  { level: 1, name: "Rookie Trainer", minTrades: 0, icon: "🌱" },
-  { level: 2, name: "Pokémon Trainer", minTrades: 5, icon: "⚡" },
-  { level: 3, name: "Gym Trainer", minTrades: 15, icon: "🏋️" },
-  { level: 4, name: "Gym Leader", minTrades: 50, icon: "🏅" },
-  { level: 5, name: "Elite Four", minTrades: 100, icon: "💎" },
-  { level: 6, name: "Pokémon Master", minTrades: 250, icon: "👑" },
+  { level: 1, name: "Rookie Trainer", minTrades: 0, icon: "🌱", maxTradeValue: 25 },
+  { level: 2, name: "Pokémon Trainer", minTrades: 5, icon: "⚡", maxTradeValue: 50 },
+  { level: 3, name: "Gym Trainer", minTrades: 15, icon: "🏋️", maxTradeValue: 75 },
+  { level: 4, name: "Gym Leader", minTrades: 50, icon: "🏅", maxTradeValue: 100 },
+  { level: 5, name: "Elite Four", minTrades: 100, icon: "💎", maxTradeValue: 125 },
+  { level: 6, name: "Pokémon Master", minTrades: 250, icon: "👑", maxTradeValue: Infinity },
 ] as const;
+
+/**
+ * Get the trader level object for a user based on their total trades.
+ * Returns the highest level the user qualifies for.
+ */
+export function getTraderLevel(totalTrades: number) {
+  const sorted = [...TRADER_LEVELS].sort((a, b) => b.minTrades - a.minTrades);
+  return sorted.find((l) => totalTrades >= l.minTrades) || TRADER_LEVELS[0];
+}
+
+/**
+ * Get the maximum trade value allowed for a user based on their total trades.
+ */
+export function getMaxTradeValue(totalTrades: number): number {
+  return getTraderLevel(totalTrades).maxTradeValue;
+}
 
 export const CARD_CONDITIONS = [
   { value: "gem_mint", label: "Gem Mint (GM)" },
