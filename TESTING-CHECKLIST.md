@@ -1,392 +1,433 @@
-# Poké-Trade Testing Checklist
-**Date:** June 24, 2026
-**URL:** https://www.poke-trade.com
+# Poké-Trade Go-Live Testing Checklist
+*Created: June 27, 2026*
+
+Use ✅ / ❌ / ⚠️ to mark each item as you test.
+Test on desktop AND mobile. Use admin@poke-trade.com for admin tests, free@poke-trade.com for consumer tests.
 
 ---
 
-## 🔑 Test Accounts
+## PART 1: PUBLIC PAGES (No Login Required)
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@poke-trade.com | PokeTrade2026! |
-| Admin | assistantmg06@gmail.com | PokeTrade2026! |
-| Free User | free@poke-trade.com | PokeTrade2026! |
-| Pro User | pro@poke-trade.com | PokeTrade2026! |
-| Elite User | elite@poke-trade.com | PokeTrade2026! |
-
----
-
-## 1. PUBLIC PAGES (No Login Required)
-
-### Homepage (/)
+### Homepage (poke-trade.com)
 - [ ] Page loads without errors
-- [ ] Logo displays correctly
-- [ ] Hero section — 4 Pokémon card images visible (Charizard, Pikachu, Mew, Umbreon)
-- [ ] "Start Trading" button → goes to /register
-- [ ] "Create Free Account" button → goes to /register
-- [ ] Trending Cards section — 8 cards display with images
-- [ ] Card prices show (or "—" if no market data)
-- [ ] Trade Match section renders (3 steps)
-- [ ] Collection section renders (portfolio preview)
-- [ ] Benefits section renders (6 benefit cards)
-- [ ] Reputation section renders (trust levels)
-- [ ] Pricing section renders (Free/Pro/Elite tiers)
-- [ ] Testimonials section renders
-- [ ] CTA section renders
-- [ ] Footer renders with legal text
-- [ ] Mobile responsive — check on phone
+- [ ] Hero section displays with card images
+- [ ] All 9 sections render and animate on scroll
+- [ ] "Get Started" / signup CTAs work
+- [ ] Featured cards show real images (not broken)
+- [ ] Pricing section shows 3 tiers correctly
+- [ ] Footer links all work (no 404s)
+- [ ] Mobile responsive — no horizontal scroll
 
-### Card Detail (/card/[id])
-- [ ] Click a card from Trending → card detail page loads
-- [ ] Card image displays (large)
-- [ ] Card name, set, rarity show
-- [ ] Price data displays
-- [ ] "Buy Now" / "Make Offer" buttons present
-
-### Marketplace (/marketplace)
-- [ ] Page loads
-- [ ] Search bar works
-- [ ] Filter options display
-- [ ] Cards/listings render
-
-### Price Guide (/price-guide)
-- [ ] Page loads with price data from API
-
-### Other Marketing Pages
+### Navigation & Footer Links
 - [ ] /about — loads
-- [ ] /pricing — loads with 3 tiers
-- [ ] /trade-center — loads
-- [ ] /collection — loads
-- [ ] /drops — loads
-- [ ] /compare — loads
-- [ ] /community — loads
-- [ ] /grading-guide — loads
-- [ ] /shipping-guide — loads
 - [ ] /help — loads
-- [ ] /news — loads
+- [ ] /contact — form submits
+- [ ] /feedback — form submits
+- [ ] /support — loads
+- [ ] /pricing — displays 3 tiers
+- [ ] /membership — displays plans
+- [ ] /privacy — loads
+- [ ] /terms — loads
+- [ ] /cookies — loads
+- [ ] /acceptable-use — loads
+- [ ] /dmca — loads
+- [ ] /shipping-guide — loads
+- [ ] /grading-guide — loads
 - [ ] /safety — loads
-- [ ] /protect — loads
+- [ ] /report — form works
 - [ ] /verify — loads
 
-### Legal Pages
-- [ ] /terms — loads
-- [ ] /privacy — loads
-- [ ] /acceptable-use — loads
-- [ ] /cookies — loads
-- [ ] /dmca — loads
+### Marketplace (Public)
+- [ ] /marketplace — loads card grid
+- [ ] Search by card name works
+- [ ] Filter by rarity works
+- [ ] Filter by set works
+- [ ] Sort by price works
+- [ ] Pagination loads more cards
+- [ ] Card images display correctly
+- [ ] Click card → /card/[id] detail page loads
+
+### Card Detail Page
+- [ ] Card image displays
+- [ ] Market price shows
+- [ ] Card info (set, rarity, type) correct
+- [ ] "Add to Collection" button (redirects to login if not signed in)
+- [ ] Seller listings section (if any exist)
+
+### Shop (Public)
+- [ ] /shop — loads product grid
+- [ ] /shop/drops — loads drop products
+- [ ] Click product → /shop/[slug] detail page loads
+- [ ] Product images display
+- [ ] Price shows correctly
+- [ ] "Add to Cart" button works
+- [ ] /shop/cart — cart page loads
+
+### Trade Center & Other Public
+- [ ] /trade-center — loads
+- [ ] /collection — loads (public collection browser)
+- [ ] /compare — loads
+- [ ] /price-guide — loads
+- [ ] /drops — loads drop alerts
+- [ ] /news — loads
+- [ ] /community — loads
+- [ ] /wins — loads
+- [ ] /protect — loads
+- [ ] /protect-my-collection — loads
 
 ---
 
-## 2. AUTH SYSTEM
+## PART 2: AUTHENTICATION
 
-### Registration (/register)
-- [ ] Page loads with form
-- [ ] Username field validates (min 3 chars, alphanumeric + underscore)
-- [ ] Email field validates format
-- [ ] Password strength meter works
-- [ ] Weak password rejected (< 8 chars)
-- [ ] Age confirmation checkbox required
-- [ ] Honeypot field hidden from view
-- [ ] Submit with valid data → "Check your email" success message
-- [ ] Google signup button present (may need Google OAuth configured)
-- [ ] Duplicate username → error "Username is already taken"
-- [ ] Duplicate email → appropriate error
+### Registration
+- [ ] /register — page loads
+- [ ] Email + password signup works
+- [ ] Google OAuth signup works
+- [ ] Verification email sent
+- [ ] After signup → redirects to /dashboard
+- [ ] Profile auto-created in profiles table
+- [ ] Username field works
 
-### Login (/login)
-- [ ] Page loads with form
-- [ ] Login with admin@poke-trade.com / PokeTrade2026! → redirects to /dashboard
-- [ ] Wrong password → error message
-- [ ] Google login button present
-- [ ] "Forgot password" link → /forgot-password
+### Login
+- [ ] /login — page loads
+- [ ] Email + password login works
+- [ ] Google OAuth login works
+- [ ] "Forgot Password" link → /forgot-password works
+- [ ] Password reset email sends
+- [ ] After login → redirects to /dashboard
+- [ ] Wrong password shows error (not crash)
 
-### Forgot Password (/forgot-password)
-- [ ] Page loads
-- [ ] Enter email → sends reset link
-
-### Session Management
-- [ ] After login, refreshing page keeps you logged in
-- [ ] Protected pages (/dashboard/*) redirect to /login when not authenticated
-- [ ] Login pages redirect to /dashboard when already authenticated
+### Logout
+- [ ] Logout button works
+- [ ] Redirects to homepage
+- [ ] Can't access /dashboard after logout
+- [ ] Can't access /admin after logout
 
 ---
 
-## 3. DASHBOARD (Login Required)
+## PART 3: USER DASHBOARD (Logged In as Regular User)
 
-### Main Dashboard (/dashboard)
-- [ ] Loads without errors after login
-- [ ] Shows user stats (trades, collection value, etc.)
-- [ ] Sidebar navigation works on desktop
-- [ ] Mobile hamburger menu works
-- [ ] All sidebar links navigate correctly
+### Dashboard Home (/dashboard)
+- [ ] Page loads with stats cards
+- [ ] Collection count shows
+- [ ] Trade stats show
+- [ ] Recent activity shows
+- [ ] Navigation sidebar works
 
 ### Collection (/dashboard/collection)
-- [ ] Page loads
-- [ ] "Add Card" button works
-- [ ] Card search works (pulls from Pokemon TCG API)
-- [ ] Can add card to collection
-- [ ] Can set condition/quantity
-- [ ] Collection value calculates
-- [ ] Can remove cards
-
-### Binder (/dashboard/collection/binder)
-- [ ] Page loads
-- [ ] Visual binder view renders
-- [ ] Can organize cards in binder pages
+- [ ] Collection grid loads
+- [ ] Add card to collection works
+- [ ] Remove card from collection works
+- [ ] Search within collection works
+- [ ] Collection value total shows
+- [ ] Binder view (/dashboard/collection/binder) loads
 
 ### Want List (/dashboard/want-list)
-- [ ] Page loads
-- [ ] Can add cards to want list
-- [ ] Can remove from want list
-- [ ] Priority settings work
+- [ ] Want list loads
+- [ ] Add card to want list works
+- [ ] Remove card works
+- [ ] Search works
 
-### Portfolio (/dashboard/portfolio)
-- [ ] Page loads
-- [ ] Portfolio value chart renders
-- [ ] Value tracking over time
-
----
-
-## 4. TRADING SYSTEM
-
-### Create Trade (/dashboard/trades/new)
-- [ ] Page loads
-- [ ] Can search for trading partner
-- [ ] Can select cards to offer
-- [ ] Can select cards to request
+### Trading (/dashboard/trades)
+- [ ] Trade list loads
+- [ ] Create new trade (/dashboard/trades/new) — form loads
+- [ ] Search for trade partner works
+- [ ] Add cards to trade offer works
 - [ ] Submit trade offer works
-- [ ] Trade appears in "My Trades"
-
-### My Trades (/dashboard/trades)
-- [ ] Page loads
-- [ ] Lists sent/received trade offers
-- [ ] Can accept trade
-- [ ] Can decline trade
-- [ ] Can counter-offer
+- [ ] Received offers show
+- [ ] Accept/decline trade works
+- [ ] Counter-offer works
 - [ ] Trade status updates correctly
+- [ ] Shipping page (/dashboard/trades/[id]/shipping) loads
 
 ### Trade Floor (/dashboard/trade-floor)
-- [ ] Page loads
-- [ ] Shows open trade listings
-- [ ] Can browse other users' trade offers
+- [ ] Trade floor loads
+- [ ] Browse active trades works
 
-### Trade Offers (/dashboard/offers)
-- [ ] Page loads
-- [ ] Shows pending offers
+### Marketplace Dashboard (/dashboard/marketplace)
+- [ ] Create listing — form works
+- [ ] Set price works
+- [ ] Upload card photos works
+- [ ] Listing appears in marketplace
+- [ ] Edit listing works
+- [ ] Cancel/remove listing works
 
----
-
-## 5. MARKETPLACE / BUY-SELL
-
-### My Listings (/dashboard/marketplace)
-- [ ] Page loads
-- [ ] Can create new listing
-- [ ] Set price, condition, photos
-- [ ] Listing appears after creation
-
-### Purchases (/dashboard/purchases)
-- [ ] Page loads
-- [ ] Shows purchase history
-
-### Sales (/dashboard/sales)
-- [ ] Page loads
-- [ ] Shows sales history
-
-### Checkout Flow
-- [ ] Buy Now → checkout page loads
-- [ ] Stripe payment form renders
-- [ ] (Test mode) Can complete purchase with test card 4242424242424242
-
----
-
-## 6. MESSAGING
-
-### Messages (/dashboard/messages)
-- [ ] Page loads
-- [ ] Can start new conversation
-- [ ] Send message works
-- [ ] Receive message works
-- [ ] Unread indicator shows
-
----
-
-## 7. COMMUNITY FEATURES
-
-### Showcase (/dashboard/showcase)
-- [ ] Page loads
-- [ ] Can create showcase post
-- [ ] Can view others' showcases
+### Sales & Purchases
+- [ ] /dashboard/sales — shows seller orders
+- [ ] /dashboard/purchases — shows buyer orders
+- [ ] /dashboard/orders — shows all orders
+- [ ] /dashboard/offers — shows offers received
 
 ### Reviews (/dashboard/reviews)
-- [ ] Page loads
-- [ ] Shows received reviews
-- [ ] Can view review details
-
-### Seller Profile (/seller/[username])
-- [ ] Page loads for valid username
-- [ ] Shows user's listings, reviews, trust score
-
----
-
-## 8. MEMBERSHIP & PAYMENTS
-
-### Membership (/dashboard/membership)
-- [ ] Page loads
-- [ ] Shows current plan (Free)
-- [ ] Upgrade buttons for Pro ($9.99/mo) and Elite ($19.99/mo)
-- [ ] Stripe checkout opens on upgrade click
-
-### Protection (/dashboard/protection)
-- [ ] Page loads
-- [ ] Trade protection options display
-
-### Seller Setup (/dashboard/seller-setup)
-- [ ] Page loads
-- [ ] Stripe Connect onboarding flow starts
-
----
-
-## 9. DROPS (PRO FEATURE)
-
-### Drop Alerts (/dashboard/drops)
-- [ ] Page loads
-- [ ] Shows upcoming product drops
-- [ ] Subscribe to alerts (Pro+ only)
-- [ ] Free users see upgrade prompt
-
----
-
-## 10. DISPUTES
+- [ ] Review list loads
+- [ ] Submit review works (after trade completes)
+- [ ] Star rating works
+- [ ] Review text saves
 
 ### Disputes (/dashboard/disputes)
-- [ ] Page loads
-- [ ] Can open a dispute on a trade/order
-- [ ] Dispute form works
-- [ ] Dispute status tracking
+- [ ] Dispute list loads (user's own)
+- [ ] Create dispute form works
+- [ ] Attach evidence works
+- [ ] Dispute status shows correctly
 
----
-
-## 11. ACCOUNT SETTINGS
-
-### Settings (/dashboard/settings)
-- [ ] Page loads
-- [ ] Can update display name
-- [ ] Can update avatar
-- [ ] Can change email
-- [ ] Can change password
-
-### Verification (/dashboard/settings/verification)
-- [ ] Page loads
-- [ ] ID verification flow (Stripe Identity)
-
-### Security (/dashboard/security)
-- [ ] Page loads
-- [ ] Shows active sessions
-- [ ] Can revoke sessions
+### Messages (/dashboard/messages)
+- [ ] Message list loads
+- [ ] Send message works
+- [ ] Receive message shows
+- [ ] Conversation thread works
 
 ### Notifications (/dashboard/notifications)
-- [ ] Page loads
-- [ ] Shows notification list
-- [ ] Can mark as read
+- [ ] Notification list loads
+- [ ] Mark as read works
+- [ ] Notification links go to correct page
+
+### Showcase (/dashboard/showcase)
+- [ ] Create showcase post works
+- [ ] Upload card photos works
+- [ ] Like a post works
+- [ ] Comment on post works
+
+### Portfolio (/dashboard/portfolio)
+- [ ] Portfolio value chart loads
+- [ ] Card values display
+
+### Drops (/dashboard/drops)
+- [ ] Drop alerts page loads
+- [ ] Watchlist works
+- [ ] Alert preferences work
+
+### Membership (/dashboard/membership)
+- [ ] Current plan shows
+- [ ] Upgrade button works
+- [ ] Stripe checkout opens
+- [ ] After payment → plan upgrades
+
+### Protection (/dashboard/protection)
+- [ ] Trade protection info loads
+- [ ] Purchase protection works
+
+### Seller Setup (/dashboard/seller-setup)
+- [ ] Stripe Connect onboarding starts
+- [ ] Connect status shows
+
+### Settings (/dashboard/settings)
+- [ ] Profile edit works (username, display name, bio, location)
+- [ ] Avatar upload works
+- [ ] Verification page (/dashboard/settings/verification) loads
+- [ ] Email verification status shows
+- [ ] Phone verification works
+- [ ] ID verification (Stripe Identity) starts
+
+### Security (/dashboard/security)
+- [ ] Security page loads
+- [ ] Change password works
+- [ ] Active sessions show
+
+### Support (/dashboard/support)
+- [ ] Submit support ticket works
+- [ ] Ticket list shows
+- [ ] Reply to ticket works
+- [ ] Ticket status updates
+
+### Seller Profile
+- [ ] /seller/[username] — public seller page loads
+- [ ] Listings show
+- [ ] Reviews show
+- [ ] Trust score displays
 
 ---
 
-## 12. ADMIN PANEL (Admin Login Only)
+## PART 4: ADMIN DASHBOARD (Logged In as Admin)
 
-### Admin Dashboard (/admin)
-- [ ] Page loads (admin@poke-trade.com only)
-- [ ] Platform stats display
+### Admin Access
+- [ ] /admin — loads (non-admin user gets redirected)
+- [ ] Sidebar navigation works
+- [ ] All 13 admin pages accessible
+- [ ] "Back to Main Site" link works
+
+### Dashboard (/admin)
+- [ ] 12 stat cards load with real numbers
+- [ ] System health panel shows status
+- [ ] Recent activity feed loads
+- [ ] Attention alerts show for pending reports/disputes
 
 ### User Management (/admin/users)
-- [ ] Lists all users
-- [ ] Can view user details
-- [ ] Can ban/unban users
-- [ ] Can change user roles
+- [ ] User list loads with all users
+- [ ] Search by username works
+- [ ] Filter by tier (free/pro/elite) works
+- [ ] Filter by verification status works
+- [ ] Click user → detail view loads
+- [ ] Toggle admin works
+- [ ] Toggle verified works
+- [ ] Suspend user works
+- [ ] View user's trade/listing/order counts
 
 ### Trade Management (/admin/trades)
-- [ ] Lists all trades
-- [ ] Can view trade details
-- [ ] Can intervene in disputes
+- [ ] Trade list loads
+- [ ] Filter by status works
+- [ ] Search works
+- [ ] Click trade → detail view with items + dispute info
+- [ ] Admin can update trade status
+- [ ] Trade timeline shows events
 
-### Listing Management (/admin/listings)
-- [ ] Lists all listings
-- [ ] Can remove listings
-
-### Fraud Detection (/admin/fraud)
-- [ ] Page loads
-- [ ] Suspicious activity flags display
-
-### Reports (/admin/reports)
-- [ ] Lists user reports
-- [ ] Can review and action reports
+### Listing Moderation (/admin/listings)
+- [ ] Listing list loads
+- [ ] Filter by status works
+- [ ] Search works
+- [ ] Admin can feature/remove listings
+- [ ] Report counts show per listing
 
 ### Disputes (/admin/disputes)
-- [ ] Lists all disputes
-- [ ] Can resolve disputes
+- [ ] ALL disputes load (not just admin's own)
+- [ ] Filter by status (open/investigating/resolved)
+- [ ] View dispute details
+- [ ] Admin can add messages to dispute
+- [ ] Admin can resolve dispute with decision
+
+### Fraud (/admin/fraud)
+- [ ] Fraud flags page loads (in sidebar now)
+- [ ] Fraud flags list with user + listing info
+- [ ] Approve/flag/suspend/ban actions work
+- [ ] Admin action logged
 
 ### Verification (/admin/verification)
-- [ ] Lists verification requests
-- [ ] Can approve/deny
+- [ ] Verification requests load
+- [ ] Approve/reject works
 
-### Drop Management (/admin/drops)
-- [ ] Can add/edit product drops
+### Reports (/admin/reports)
+- [ ] Report list loads
+- [ ] Filter by status works
+- [ ] Resolve report works
+
+### Shop Management (/admin/shop)
+- [ ] Product list loads
+- [ ] Add new product works
+- [ ] Edit product works
+- [ ] Delete/archive product works
+- [ ] Order list loads
+- [ ] Order status management works
+
+### Drop Products (/admin/drops)
+- [ ] Drop product list loads
+- [ ] Add product works
+- [ ] Edit product works
+- [ ] Delete product works
+
+### Support (/admin/support)
+- [ ] Ticket list loads
+- [ ] View ticket details
+- [ ] Reply to ticket works
+- [ ] Update ticket status works
+- [ ] Feedback tab loads
+
+### Insurance Leads (/admin/insurance)
+- [ ] Lead list loads
+- [ ] Update lead status works
+- [ ] Add admin notes works
 
 ### Content (/admin/content)
-- [ ] Can manage announcements
-
-### Insurance Referrals (/admin/insurance)
-- [ ] Page loads
-
-### Admin Security (/dashboard/admin/security)
-- [ ] Audit log displays
-- [ ] Security settings
-
-### Admin System (/dashboard/admin/system)
-- [ ] System status display
+- [ ] Content management page loads
+- [ ] Announcement system works
 
 ---
 
-## 13. API HEALTH
+## PART 5: PAYMENT FLOWS (⚠️ LIVE STRIPE — BE CAREFUL)
 
-### Core APIs
-- [ ] GET /api/health → 200 OK
-- [ ] GET /api/cards/search?q=charizard → returns cards
-- [ ] GET /api/marketplace → returns listings
-- [ ] GET /api/prices → returns price data
+### Membership Purchase
+- [ ] Free → Pro upgrade: Stripe checkout loads
+- [ ] Payment completes (use a $1 test if possible)
+- [ ] Profile updates to Pro tier
+- [ ] Cancel membership works
+- [ ] ⚠️ Stripe webhook fires and updates DB
 
----
+### Shop Checkout
+- [ ] Add items to cart
+- [ ] Cart total calculates correctly
+- [ ] Checkout → Stripe payment page
+- [ ] Order created in DB after payment
+- [ ] ⚠️ Stripe webhook fires correctly
 
-## 14. MOBILE RESPONSIVENESS
+### Stripe Connect (Sellers)
+- [ ] Seller onboarding flow starts
+- [ ] Connect account created
+- [ ] Payout status shows in dashboard
 
-- [ ] Homepage — all sections stack properly on mobile
-- [ ] Login/Register forms — full width, no horizontal scroll
-- [ ] Dashboard — sidebar collapses to hamburger
-- [ ] Card grid — 2 columns on mobile, 4 on desktop
-- [ ] Trade creation — usable on mobile
-- [ ] Checkout — Stripe form works on mobile
-
----
-
-## 15. CROSS-BROWSER
-
-- [ ] Chrome — full test pass
-- [ ] Safari — basic navigation + auth
-- [ ] Firefox — basic navigation + auth
-- [ ] Mobile Safari (iPhone) — homepage + auth + dashboard
-- [ ] Mobile Chrome (Android) — homepage + auth + dashboard
+### Drop Alerts Subscription
+- [ ] Subscribe to drop alerts
+- [ ] Payment processes
+- [ ] Alerts activate
 
 ---
 
-## ⚠️ KNOWN ISSUES / NOT YET FUNCTIONAL
+## PART 6: CROSS-FUNCTIONAL TESTS
 
-1. **Google OAuth** — Needs Google Client ID/Secret configured in Supabase Auth settings
-2. **Stripe Payments** — Test mode only, needs webhook endpoint verified
-3. **Stripe Connect** — Needs to be enabled on Stripe dashboard for seller payouts
-4. **Stripe Identity** — Needs to be enabled for ID verification
-5. **Email Confirmations** — Supabase has `mailer_autoconfirm: false`, test accounts were manually confirmed
-6. **Card Data** — Relies on Pokemon TCG API (free tier, may rate limit)
-7. **Real-time Messaging** — Needs Supabase Realtime configured
-8. **Push Notifications** — Not yet implemented
+### Mobile Responsiveness
+- [ ] Homepage on mobile — no horizontal scroll, readable
+- [ ] Dashboard on mobile — sidebar collapses, usable
+- [ ] Admin panel on mobile — sidebar hamburger works
+- [ ] Marketplace on mobile — card grid stacks
+- [ ] Trade creation on mobile — form usable
+
+### Performance
+- [ ] Homepage loads in < 3 seconds
+- [ ] Marketplace with 19K cards paginates smoothly
+- [ ] Dashboard loads in < 2 seconds
+- [ ] No console errors on any page
+- [ ] Images lazy-load properly
+
+### SEO & Meta
+- [ ] /robots.txt serves correctly
+- [ ] /sitemap.xml generates
+- [ ] Homepage has proper title + description meta
+- [ ] Card pages have dynamic meta tags
+- [ ] OG image works when sharing links
+
+### Error Handling
+- [ ] 404 page shows for bad URLs
+- [ ] API errors show user-friendly messages (not raw errors)
+- [ ] Network disconnection handled gracefully
+- [ ] Expired sessions redirect to login
 
 ---
 
-*Last updated: June 24, 2026*
+## PART 7: PRE-LAUNCH BLOCKERS
+
+### Must Fix Before Go-Live
+- [ ] DNS: poke-trade.com → Vercel (A record: 76.76.21.21)
+- [ ] Supabase Site URL: change from localhost:3000 to https://poke-trade.com
+- [ ] Supabase Auth redirect URLs: add https://poke-trade.com/*
+- [ ] Stripe webhook endpoint: update to https://poke-trade.com/api/webhooks/stripe
+- [ ] Stripe Connect webhook: update to https://poke-trade.com/api/webhooks/stripe-connect
+- [ ] Google OAuth: add https://poke-trade.com to authorized redirect URIs
+- [ ] Verify .env.local is in .gitignore (never commit secrets)
+- [ ] Test signup/login flow on actual poke-trade.com domain
+- [ ] Admin account verified and working on production
+
+### Nice to Have Before Launch
+- [ ] Seed some shop products (at least 5-10)
+- [ ] Create 2-3 sample listings
+- [ ] Write a launch announcement
+- [ ] Set up Google Analytics (GA4)
+- [ ] Trademark filing submitted ($250 USPTO)
+
+---
+
+## SCORING
+
+Count your results:
+- Total items: ~180
+- ✅ Pass: ___
+- ❌ Fail: ___
+- ⚠️ Partial: ___
+
+**Go-Live Ready = 0 ❌ on Parts 1-4 and Part 7 blockers**
+
+---
+
+*Notes: Write any bugs/issues found here:*
+
+1. 
+2. 
+3. 
+4. 
+5. 
