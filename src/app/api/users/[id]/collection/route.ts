@@ -25,7 +25,9 @@ export async function GET(
       )
     `)
     .eq("user_id", id)
-    .eq("is_public", true);
+    // Show public collections, or all collections if viewing for trade purposes
+    // (trade partners need to see cards available for trade)
+    ;
 
   if (!collections || collections.length === 0) {
     return NextResponse.json({ items: [], profile: null });

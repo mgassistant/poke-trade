@@ -48,7 +48,7 @@ const MEMBERSHIP_TIERS = [
   {
     id: "pro",
     name: "Pro",
-    price: 9.99,
+    price: 19.99,
     badge: "Most Popular",
     highlight: true,
     label: null,
@@ -74,7 +74,7 @@ const MEMBERSHIP_TIERS = [
   {
     id: "elite",
     name: "Elite",
-    price: 19.99,
+    price: 29.99,
     badge: null,
     highlight: false,
     label: "Best Value",

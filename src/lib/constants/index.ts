@@ -64,7 +64,7 @@ export const SUBSCRIPTION_TIERS = [
   {
     id: "pro",
     name: "Poké-Trade Pro",
-    price: 19.99,
+    price: 19.99, // Stripe price: $19.99/mo
     features: [
       "Unlimited P2P trades (no per-trade fee)",
       "Unlimited drop alerts (real-time)",
@@ -81,7 +81,7 @@ export const SUBSCRIPTION_TIERS = [
   {
     id: "elite",
     name: "Poké-Trade Elite",
-    price: 39.99,
+    price: 29.99,
     features: [
       "Everything in Pro",
       "Priority drop alerts (30s faster)",

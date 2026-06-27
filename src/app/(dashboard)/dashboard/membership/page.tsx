@@ -43,7 +43,7 @@ const TIERS = [
   {
     id: "pro" as const,
     name: "Pro",
-    price: "$9.99",
+    price: "$19.99",
     priceDesc: "/month",
     icon: Zap,
     color: "text-blue-400",
@@ -66,7 +66,7 @@ const TIERS = [
   {
     id: "elite" as const,
     name: "Elite",
-    price: "$19.99",
+    price: "$29.99",
     priceDesc: "/month",
     icon: Crown,
     color: "text-yellow-400",
