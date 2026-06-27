@@ -24,35 +24,35 @@ const HEADERS = {
 export async function checkPokemonCenter(productUrl: string, sku: string): Promise<StockCheckResult> {
   const start = Date.now();
   try {
-    // Pokemon Center uses a custom storefront — try the product page JSON
-    const jsonUrl = productUrl.endsWith('.json') ? productUrl : `${productUrl}.json`;
-    const res = await fetch(jsonUrl, {
+    // Pokemon Center doesn't support .json — go straight to HTML
+    const res = await fetch(productUrl, {
       headers: HEADERS,
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!res.ok) {
-      // Fallback: check HTML page for add-to-cart button
-      const htmlRes = await fetch(productUrl, { headers: HEADERS, signal: AbortSignal.timeout(10000) });
-      const html = await htmlRes.text();
-      const inStock = html.includes('add-to-cart') || html.includes('Add to Cart') || html.includes('"available":true');
-      const priceMatch = html.match(/\$(\d+\.?\d*)/);
-      return {
-        inStock,
-        price: priceMatch ? parseFloat(priceMatch[1]) : undefined,
-        responseMs: Date.now() - start,
-      };
+      return { inStock: false, error: `HTTP ${res.status}`, responseMs: Date.now() - start };
     }
 
-    const data = await res.json();
-    const product = data.product;
-    if (!product) return { inStock: false, responseMs: Date.now() - start, error: 'No product data' };
+    const html = await res.text();
 
-    const variant = product.variants?.find((v: any) => v.available) || product.variants?.[0];
+    // Check multiple indicators for stock availability
+    const inStock = (
+      html.includes('add-to-cart') ||
+      html.includes('Add to Cart') ||
+      html.includes('"available":true') ||
+      html.includes('addToCartButton') ||
+      html.includes('"inStock":true')
+    ) && !html.includes('Out of Stock') && !html.includes('Sold Out');
+
+    // Extract price
+    const priceMatch = html.match(/"price":\s*"?(\d+\.?\d*)/) ||
+      html.match(/data-price="(\d+\.?\d*)/) ||
+      html.match(/\$(\d+\.\d{2})/);
+
     return {
-      inStock: variant?.available ?? false,
-      price: variant?.price ? parseFloat(variant.price) : undefined,
-      quantity: variant?.inventory_quantity,
+      inStock,
+      price: priceMatch ? parseFloat(priceMatch[1]) : undefined,
       responseMs: Date.now() - start,
     };
   } catch (e: any) {
