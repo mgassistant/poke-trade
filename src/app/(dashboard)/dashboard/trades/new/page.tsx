@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft, Search, X, Check, Loader2, User, Package, MessageSquare, Eye,
-  Plus, Shield, Truck, Lock, DollarSign
+  Plus, Shield, Truck, Lock, DollarSign, List, Grid3X3, Pencil
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -46,8 +46,28 @@ interface CardItem {
   };
 }
 
+interface SealedItem {
+  product_id: string;
+  name: string;
+  image_url: string | null;
+  quantity: number;
+  value: number;
+}
+
+interface ShopProduct {
+  id: string;
+  name: string;
+  slug: string;
+  image_url: string | null;
+  price: number;
+  retail_price: number | null;
+  status: string;
+  category: string | null;
+}
+
 type Step = 1 | 2 | 3 | 4 | 5;
 type ShippingMethod = "direct" | "protected";
+type ViewMode = "list" | "grid";
 
 const STEP_LABELS = [
   { num: 1, label: "Partner", icon: User },
@@ -83,7 +103,7 @@ function calculateFee(tradeValue: number, tier: MembershipTier): {
   };
 }
 
-/* ── Balance Scale Component ── */
+/* ── Balance Scale Component (Desktop) ── */
 function BalanceScale({ offerValue, wantValue }: { offerValue: number; wantValue: number }) {
   const total = offerValue + wantValue;
   const diff = total > 0 ? ((offerValue - wantValue) / Math.max(total, 1)) * 100 : 0;
@@ -105,7 +125,7 @@ function BalanceScale({ offerValue, wantValue }: { offerValue: number; wantValue
   const rightEmoji = diff < -15 ? "😟" : diff < -5 ? "😐" : "😊";
 
   return (
-    <div className="flex flex-col items-center py-4 select-none">
+    <div className="hidden sm:flex flex-col items-center py-4 select-none">
       <div
         className="text-sm font-bold mb-3 px-4 py-1.5 rounded-full transition-all duration-500"
         style={{ color: status.color, background: `${status.color}15`, boxShadow: status.glow }}
@@ -158,19 +178,294 @@ function BalanceScale({ offerValue, wantValue }: { offerValue: number; wantValue
   );
 }
 
-/* ── Card Slot Grid ── */
-function CardSlotGrid({
+/* ── Compact Balance Bar (Mobile) ── */
+function CompactBalanceBar({ offerValue, wantValue }: { offerValue: number; wantValue: number }) {
+  const total = offerValue + wantValue;
+  const diff = offerValue - wantValue;
+  const absDiff = Math.abs(diff);
+
+  let statusText: string;
+  let barColor: string;
+  if (total === 0) {
+    statusText = "Add cards to begin";
+    barColor = "bg-gray-300";
+  } else if (absDiff < total * 0.1) {
+    statusText = "Fair trade ⚖️";
+    barColor = "bg-green-500";
+  } else if (diff > 0) {
+    statusText = `They're up $${absDiff.toFixed(2)}`;
+    barColor = "bg-orange-500";
+  } else {
+    statusText = `You're up $${absDiff.toFixed(2)}`;
+    barColor = "bg-blue-500";
+  }
+
+  // Balance percentage for the gradient bar
+  const offerPct = total > 0 ? (offerValue / total) * 100 : 50;
+
+  return (
+    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t shadow-lg px-4 py-2.5 safe-area-pb">
+      <div className="flex items-center justify-between text-xs mb-1.5">
+        <span className="font-medium text-[#E3350D]">You: ${offerValue.toFixed(2)}</span>
+        <span className="font-semibold text-foreground">{statusText}</span>
+        <span className="font-medium text-[#3B4CCA]">Them: ${wantValue.toFixed(2)}</span>
+      </div>
+      <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+          style={{ width: `${Math.max(5, Math.min(95, offerPct))}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ── Trade Summary Header ── */
+function TradeSummary({
+  offerCards,
+  wantCards,
+  sealedOffered,
+  sealedWanted,
+  offerValue,
+  wantValue,
+}: {
+  offerCards: number;
+  wantCards: number;
+  sealedOffered: number;
+  sealedWanted: number;
+  offerValue: number;
+  wantValue: number;
+}) {
+  return (
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 bg-gradient-to-r from-red-50 to-blue-50 rounded-xl border border-gray-200">
+      <div className="flex items-center gap-1.5 text-sm">
+        <span className="font-semibold text-[#E3350D]">You:</span>
+        <span className="text-muted-foreground">
+          {offerCards} card{offerCards !== 1 ? "s" : ""}
+          {sealedOffered > 0 && `, ${sealedOffered} sealed`}
+          {" · "}
+        </span>
+        <span className="font-bold text-[#E3350D]">${offerValue.toFixed(2)}</span>
+      </div>
+      <div className="hidden sm:block text-muted-foreground">|</div>
+      <div className="flex items-center gap-1.5 text-sm">
+        <span className="font-semibold text-[#3B4CCA]">Them:</span>
+        <span className="text-muted-foreground">
+          {wantCards} card{wantCards !== 1 ? "s" : ""}
+          {sealedWanted > 0 && `, ${sealedWanted} sealed`}
+          {" · "}
+        </span>
+        <span className="font-bold text-[#3B4CCA]">${wantValue.toFixed(2)}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── View Mode Toggle ── */
+function ViewToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: ViewMode) => void }) {
+  return (
+    <div className="flex items-center border rounded-lg overflow-hidden">
+      <button
+        onClick={() => onChange("list")}
+        className={`p-1.5 transition-colors ${mode === "list" ? "bg-[#E3350D] text-white" : "bg-muted/50 text-muted-foreground hover:bg-muted"}`}
+        title="List view"
+      >
+        <List className="h-4 w-4" />
+      </button>
+      <button
+        onClick={() => onChange("grid")}
+        className={`p-1.5 transition-colors ${mode === "grid" ? "bg-[#E3350D] text-white" : "bg-muted/50 text-muted-foreground hover:bg-muted"}`}
+        title="Grid view"
+      >
+        <Grid3X3 className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+/* ── Card List View ── */
+function CardListView({
   items,
-  onRemove,
+  sealedItems,
+  onRemoveCard,
+  onRemoveSealed,
+  customValues,
+  onEditPrice,
+  editingPriceId,
+  editPriceValue,
+  onEditPriceChange,
+  onEditPriceSave,
+  onEditPriceCancel,
   emptyLabel,
   accentColor,
 }: {
   items: CardItem[];
-  onRemove: (id: string) => void;
+  sealedItems: SealedItem[];
+  onRemoveCard: (id: string) => void;
+  onRemoveSealed: (productId: string) => void;
+  customValues: Record<string, number>;
+  onEditPrice: (id: string) => void;
+  editingPriceId: string | null;
+  editPriceValue: string;
+  onEditPriceChange: (val: string) => void;
+  onEditPriceSave: (id: string) => void;
+  onEditPriceCancel: () => void;
   emptyLabel: string;
   accentColor: string;
 }) {
-  if (items.length === 0) {
+  if (items.length === 0 && sealedItems.length === 0) {
+    return (
+      <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center">
+        <p className="text-sm text-muted-foreground">{emptyLabel}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5">
+      {items.map((item) => {
+        const marketPrice = item.cards?.market_value ?? 0;
+        const customPrice = customValues[item.id];
+        const displayPrice = customPrice ?? marketPrice;
+        const isEditing = editingPriceId === item.id;
+
+        return (
+          <div
+            key={item.id}
+            className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors group"
+          >
+            <div className="h-12 w-9 rounded-md overflow-hidden bg-muted relative shrink-0 border"
+              style={{ borderColor: accentColor + "30" }}>
+              {item.cards?.image_url ? (
+                <Image src={item.cards.image_url} alt="" fill className="object-contain" sizes="36px" />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs">
+                  {item.cards?.name?.[0] || "?"}
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate">{item.cards?.name}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {item.condition || "Near Mint"}
+                {item.cards?.rarity && ` · ${item.cards.rarity}`}
+                {item.cards?.card_sets?.name && ` · ${item.cards.card_sets.name}`}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {isEditing ? (
+                <div className="flex flex-col items-end gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground">$</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={editPriceValue}
+                      onChange={(e) => onEditPriceChange(e.target.value.replace(/[^0-9.]/g, ""))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") onEditPriceSave(item.id);
+                        if (e.key === "Escape") onEditPriceCancel();
+                      }}
+                      autoFocus
+                      className="w-20 px-1.5 py-0.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <button onClick={() => onEditPriceSave(item.id)} className="text-green-600 hover:text-green-700">
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button onClick={onEditPriceCancel} className="text-gray-400 hover:text-gray-600">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Market: ${marketPrice.toFixed(2)}</p>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <div className="text-right">
+                    <p className="text-sm font-bold" style={{ color: accentColor }}>
+                      ${displayPrice.toFixed(2)}
+                    </p>
+                    {customPrice !== undefined && (
+                      <p className="text-[10px] text-muted-foreground line-through">
+                        Mkt: ${marketPrice.toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => onEditPrice(item.id)}
+                    className="text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
+                    title="Edit price"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={() => onRemoveCard(item.id)}
+                className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs shrink-0"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        );
+      })}
+      {sealedItems.map((si) => (
+        <div
+          key={si.product_id}
+          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors group"
+        >
+          <div className="h-12 w-9 rounded-md overflow-hidden bg-muted relative shrink-0 border flex items-center justify-center"
+            style={{ borderColor: accentColor + "30" }}>
+            {si.image_url ? (
+              <Image src={si.image_url} alt="" fill className="object-contain" sizes="36px" />
+            ) : (
+              <span className="text-lg">📦</span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate flex items-center gap-1">
+              <span>📦</span> {si.name}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Sealed · Qty: {si.quantity}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <p className="text-sm font-bold" style={{ color: accentColor }}>
+              ${(si.value * si.quantity).toFixed(2)}
+            </p>
+            <button
+              onClick={() => onRemoveSealed(si.product_id)}
+              className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs shrink-0"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Card Slot Grid ── */
+function CardSlotGrid({
+  items,
+  sealedItems,
+  onRemoveCard,
+  onRemoveSealed,
+  customValues,
+  emptyLabel,
+  accentColor,
+}: {
+  items: CardItem[];
+  sealedItems: SealedItem[];
+  onRemoveCard: (id: string) => void;
+  onRemoveSealed: (productId: string) => void;
+  customValues: Record<string, number>;
+  emptyLabel: string;
+  accentColor: string;
+}) {
+  if (items.length === 0 && sealedItems.length === 0) {
     return (
       <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center">
         <p className="text-sm text-muted-foreground">{emptyLabel}</p>
@@ -180,36 +475,235 @@ function CardSlotGrid({
 
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-      {items.map((item) => (
-        <div key={item.id} className="relative group">
+      {items.map((item) => {
+        const price = customValues[item.id] ?? item.cards?.market_value ?? 0;
+        return (
+          <div key={item.id} className="relative group">
+            <div
+              className="aspect-[2.5/3.5] rounded-lg overflow-hidden bg-muted border-2 transition-colors"
+              style={{ borderColor: accentColor + "40" }}
+            >
+              {item.cards?.image_url ? (
+                <Image src={item.cards.image_url} alt={item.cards.name} fill className="object-contain" sizes="100px" />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs">
+                  {item.cards?.name?.[0] || "?"}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => onRemoveCard(item.id)}
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md text-xs"
+            >
+              ×
+            </button>
+            <p className="text-[10px] truncate mt-0.5 font-medium">{item.cards?.name}</p>
+            <p className="text-[9px] text-muted-foreground">${price.toFixed(2)}</p>
+          </div>
+        );
+      })}
+      {sealedItems.map((si) => (
+        <div key={si.product_id} className="relative group">
           <div
-            className="aspect-[2.5/3.5] rounded-lg overflow-hidden bg-muted border-2 transition-colors"
+            className="aspect-[2.5/3.5] rounded-lg overflow-hidden bg-muted border-2 transition-colors flex items-center justify-center"
             style={{ borderColor: accentColor + "40" }}
           >
-            {item.cards?.image_url ? (
-              <Image
-                src={item.cards.image_url}
-                alt={item.cards.name}
-                fill
-                className="object-contain"
-                sizes="100px"
-              />
+            {si.image_url ? (
+              <Image src={si.image_url} alt={si.name} fill className="object-contain" sizes="100px" />
             ) : (
-              <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs">
-                {item.cards?.name?.[0] || "?"}
-              </div>
+              <span className="text-2xl">📦</span>
             )}
           </div>
           <button
-            onClick={() => onRemove(item.id)}
+            onClick={() => onRemoveSealed(si.product_id)}
             className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md text-xs"
           >
             ×
           </button>
-          <p className="text-[10px] truncate mt-0.5 font-medium">{item.cards?.name}</p>
-          <p className="text-[9px] text-muted-foreground">${(item.cards?.market_value || 0).toFixed(2)}</p>
+          <p className="text-[10px] truncate mt-0.5 font-medium">📦 {si.name}</p>
+          <p className="text-[9px] text-muted-foreground">${(si.value * si.quantity).toFixed(2)} (x{si.quantity})</p>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ── Sealed Product Picker Modal ── */
+function SealedProductPicker({
+  onAdd,
+  onClose,
+}: {
+  onAdd: (item: SealedItem) => void;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [products, setProducts] = useState<ShopProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<ShopProduct | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [customValue, setCustomValue] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/shop/products?status=all&limit=100");
+        const data = await res.json();
+        if (data.products) setProducts(data.products);
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!search) return products;
+    const q = search.toLowerCase();
+    return products.filter((p) => p.name.toLowerCase().includes(q));
+  }, [products, search]);
+
+  const handleAdd = () => {
+    if (!selectedProduct) return;
+    const value = parseFloat(customValue) || selectedProduct.price || 0;
+    onAdd({
+      product_id: selectedProduct.id,
+      name: selectedProduct.name,
+      image_url: selectedProduct.image_url,
+      quantity,
+      value,
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-background w-full sm:max-w-lg sm:rounded-xl rounded-t-xl max-h-[85vh] flex flex-col shadow-xl">
+        <div className="flex items-center justify-between p-4 border-b">
+          <h3 className="font-bold text-lg">📦 Add Sealed Product</h3>
+          <button onClick={onClose} className="p-1 hover:bg-muted rounded-lg transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {selectedProduct ? (
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-xl">
+              <div className="h-16 w-16 rounded-lg overflow-hidden bg-muted relative shrink-0 border">
+                {selectedProduct.image_url ? (
+                  <Image src={selectedProduct.image_url} alt="" fill className="object-contain" sizes="64px" />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center text-2xl">📦</div>
+                )}
+              </div>
+              <div>
+                <p className="font-bold">{selectedProduct.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  Retail: ${(selectedProduct.retail_price || selectedProduct.price || 0).toFixed(2)}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Quantity</label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="99"
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Value Each ($)</label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={customValue}
+                  onChange={(e) => setCustomValue(e.target.value.replace(/[^0-9.]/g, ""))}
+                  placeholder={(selectedProduct.price || 0).toFixed(2)}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setSelectedProduct(null)}>
+                Back
+              </Button>
+              <Button className="flex-1 bg-[#E3350D] hover:bg-[#c72e0b]" onClick={handleAdd}>
+                Add to Trade
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="p-3 border-b">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search sealed products..."
+                  className="pl-10"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3">
+              {loading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3 p-2">
+                      <Skeleton className="h-12 w-12 rounded-lg" />
+                      <div className="flex-1 space-y-1">
+                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-sm text-muted-foreground">No products found</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {filtered.map((product) => (
+                    <button
+                      key={product.id}
+                      onClick={() => {
+                        setSelectedProduct(product);
+                        setCustomValue("");
+                        setQuantity(1);
+                      }}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <div className="h-12 w-12 rounded-lg overflow-hidden bg-muted relative shrink-0 border">
+                        {product.image_url ? (
+                          <Image src={product.image_url} alt="" fill className="object-contain" sizes="48px" />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center text-xl">📦</div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{product.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          ${(product.retail_price || product.price || 0).toFixed(2)}
+                          {product.category && ` · ${product.category}`}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -232,7 +726,6 @@ function CollectionBrowser({
 }) {
   const [search, setSearch] = useState("");
   const filtered = useMemo(() => {
-    // Filter out reserved cards
     const available = items.filter((i) => !i.reserved_for_trade_id);
     if (!search) return available;
     const q = search.toLowerCase();
@@ -297,17 +790,9 @@ function CollectionBrowser({
                   >
                     <div className="aspect-[2.5/3.5] rounded-md overflow-hidden bg-muted relative">
                       {item.cards?.image_url ? (
-                        <Image
-                          src={item.cards.image_url}
-                          alt={item.cards.name}
-                          fill
-                          className="object-contain"
-                          sizes="100px"
-                        />
+                        <Image src={item.cards.image_url} alt={item.cards.name} fill className="object-contain" sizes="100px" />
                       ) : (
-                        <div className="h-full w-full flex items-center justify-center text-muted-foreground/30 text-xs">
-                          ?
-                        </div>
+                        <div className="h-full w-full flex items-center justify-center text-muted-foreground/30 text-xs">?</div>
                       )}
                       {isSelected && (
                         <div className="absolute top-1 right-1 h-5 w-5 rounded-full bg-[#E3350D] flex items-center justify-center">
@@ -360,6 +845,19 @@ function NewTradeContent() {
   const [selectedOffer, setSelectedOffer] = useState<CardItem[]>([]);
   const [selectedWant, setSelectedWant] = useState<CardItem[]>([]);
   const [browsingCollection, setBrowsingCollection] = useState<"mine" | "theirs" | null>(null);
+  const [browsingSealedFor, setBrowsingSealedFor] = useState<"offer" | "want" | null>(null);
+
+  // View mode: default list on mobile, grid on desktop (detected via initial state)
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+
+  // Custom values per card
+  const [customValues, setCustomValues] = useState<Record<string, number>>({});
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+  const [editPriceValue, setEditPriceValue] = useState("");
+
+  // Sealed products
+  const [sealedOffered, setSealedOffered] = useState<SealedItem[]>([]);
+  const [sealedWanted, setSealedWanted] = useState<SealedItem[]>([]);
 
   // Step 3: Shipping & Protection
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>("direct");
@@ -368,26 +866,29 @@ function NewTradeContent() {
 
   // Step 4: Message
   const [notes, setNotes] = useState("");
-  const [cashOffer, setCashOffer] = useState(0); // Cash YOU add to sweeten your side
-  const [cashWant, setCashWant] = useState(0);   // Cash you WANT from them
+  const [cashOffer, setCashOffer] = useState(0);
+  const [cashWant, setCashWant] = useState(0);
 
   // Step 5: Submit
   const [submitting, setSubmitting] = useState(false);
 
   // Trade limits
-  const [userTotalTrades, setUserTotalTrades] = useState(0);
   const [userTraderLevel, setUserTraderLevel] = useState(getTraderLevel(0));
   const [maxTradeValue, setMaxTradeValue] = useState(25);
 
-  // Values
-  const offerCardsValue = selectedOffer.reduce(
-    (sum, i) => sum + (i.cards?.market_value || i.current_value || 0), 0
-  );
-  const wantCardsValue = selectedWant.reduce(
-    (sum, i) => sum + (i.cards?.market_value || i.current_value || 0), 0
-  );
-  const offerValue = offerCardsValue + cashOffer;
-  const wantValue = wantCardsValue + cashWant;
+  // Values (with custom prices)
+  const offerCardsValue = selectedOffer.reduce((sum, i) => {
+    const customPrice = customValues[i.id];
+    return sum + (customPrice ?? i.cards?.market_value ?? i.current_value ?? 0);
+  }, 0);
+  const sealedOfferValue = sealedOffered.reduce((sum, si) => sum + si.value * si.quantity, 0);
+  const wantCardsValue = selectedWant.reduce((sum, i) => {
+    const customPrice = customValues[i.id];
+    return sum + (customPrice ?? i.cards?.market_value ?? i.current_value ?? 0);
+  }, 0);
+  const sealedWantValue = sealedWanted.reduce((sum, si) => sum + si.value * si.quantity, 0);
+  const offerValue = offerCardsValue + sealedOfferValue + cashOffer;
+  const wantValue = wantCardsValue + sealedWantValue + cashWant;
   const totalTradeValue = offerValue + wantValue;
 
   // Fee calculation
@@ -396,6 +897,13 @@ function NewTradeContent() {
   const offerIds = useMemo(() => new Set(selectedOffer.map((i) => i.id)), [selectedOffer]);
   const wantIds = useMemo(() => new Set(selectedWant.map((i) => i.id)), [selectedWant]);
 
+  // Detect mobile on mount for default view mode
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth >= 640) {
+      setViewMode("grid");
+    }
+  }, []);
+
   // Fetch membership tier and user profile for trade limits
   useEffect(() => {
     (async () => {
@@ -403,18 +911,17 @@ function NewTradeContent() {
         const res = await fetch("/api/membership");
         const data = await res.json();
         if (data.tier) setMembershipTier(data.tier);
-      } catch {}
+      } catch { /* ignore */ }
     })();
     (async () => {
       try {
         const res = await fetch("/api/settings");
         const data = await res.json();
         const totalTrades = data.profile?.total_trades || 0;
-        setUserTotalTrades(totalTrades);
         const level = getTraderLevel(totalTrades);
         setUserTraderLevel(level);
         setMaxTradeValue(getMaxTradeValue(totalTrades));
-      } catch {}
+      } catch { /* ignore */ }
     })();
   }, []);
 
@@ -430,7 +937,7 @@ function NewTradeContent() {
         const res = await fetch(`/api/users/search?q=${encodeURIComponent(userQuery)}`);
         const data = await res.json();
         if (data.users) setUserResults(data.users);
-      } catch {} finally { setSearchingUsers(false); }
+      } catch { /* ignore */ } finally { setSearchingUsers(false); }
     }, 300);
     return () => clearTimeout(timer);
   }, [userQuery]);
@@ -450,7 +957,7 @@ function NewTradeContent() {
         );
         setMyCards(items);
       }
-    } catch {} finally { setMyCardsLoading(false); }
+    } catch { /* ignore */ } finally { setMyCardsLoading(false); }
   }, []);
 
   const fetchTheirCards = useCallback(async () => {
@@ -464,7 +971,7 @@ function NewTradeContent() {
           data.items.map((item: CardItem) => ({ ...item, collection_item_id: item.id }))
         );
       }
-    } catch {} finally { setTheirCardsLoading(false); }
+    } catch { /* ignore */ } finally { setTheirCardsLoading(false); }
   }, [selectedUser]);
 
   useEffect(() => {
@@ -487,6 +994,58 @@ function NewTradeContent() {
     });
   };
 
+  // Price editing helpers
+  const startEditPrice = (id: string) => {
+    const current = customValues[id];
+    const item = [...selectedOffer, ...selectedWant].find((i) => i.id === id);
+    const price = current ?? item?.cards?.market_value ?? 0;
+    setEditPriceValue(price.toFixed(2));
+    setEditingPriceId(id);
+  };
+
+  const saveEditPrice = (id: string) => {
+    const val = parseFloat(editPriceValue);
+    if (!isNaN(val) && val >= 0) {
+      setCustomValues((prev) => ({ ...prev, [id]: val }));
+    }
+    setEditingPriceId(null);
+    setEditPriceValue("");
+  };
+
+  const cancelEditPrice = () => {
+    setEditingPriceId(null);
+    setEditPriceValue("");
+  };
+
+  // Sealed product helpers
+  const addSealedOffer = (item: SealedItem) => {
+    setSealedOffered((prev) => {
+      const existing = prev.find((s) => s.product_id === item.product_id);
+      if (existing) {
+        return prev.map((s) =>
+          s.product_id === item.product_id
+            ? { ...s, quantity: s.quantity + item.quantity, value: item.value }
+            : s
+        );
+      }
+      return [...prev, item];
+    });
+  };
+
+  const addSealedWant = (item: SealedItem) => {
+    setSealedWanted((prev) => {
+      const existing = prev.find((s) => s.product_id === item.product_id);
+      if (existing) {
+        return prev.map((s) =>
+          s.product_id === item.product_id
+            ? { ...s, quantity: s.quantity + item.quantity, value: item.value }
+            : s
+        );
+      }
+      return [...prev, item];
+    });
+  };
+
   // Reset protection terms when switching shipping method
   useEffect(() => {
     if (shippingMethod === "direct") {
@@ -502,6 +1061,25 @@ function NewTradeContent() {
     }
     setSubmitting(true);
     try {
+      // Build metadata for sealed items and custom values in notes JSON
+      const tradeMetadata: Record<string, unknown> = {};
+      if (Object.keys(customValues).length > 0) {
+        tradeMetadata.custom_values = customValues;
+      }
+      if (sealedOffered.length > 0) {
+        tradeMetadata.sealed_offered = sealedOffered;
+      }
+      if (sealedWanted.length > 0) {
+        tradeMetadata.sealed_wanted = sealedWanted;
+      }
+
+      // Combine user notes with metadata
+      let combinedNotes = notes || "";
+      if (Object.keys(tradeMetadata).length > 0) {
+        const metaTag = `\n<!--TRADE_META:${JSON.stringify(tradeMetadata)}-->`;
+        combinedNotes = combinedNotes + metaTag;
+      }
+
       const payload = {
         receiver_id: selectedUser.id,
         items_offered: selectedOffer.map((i) => ({
@@ -512,7 +1090,7 @@ function NewTradeContent() {
           card_id: i.cards.id || i.card_id,
           collection_item_id: i.collection_item_id,
         })),
-        notes: notes || null,
+        notes: combinedNotes || null,
         shipping_method: shippingMethod,
         trade_protection_selected: shippingMethod === "protected",
         declared_trade_value: totalTradeValue,
@@ -554,8 +1132,10 @@ function NewTradeContent() {
     return names[Math.min(level, names.length - 1)] || "Rookie";
   };
 
+  const hasAnyItems = selectedOffer.length > 0 || selectedWant.length > 0 || sealedOffered.length > 0 || sealedWanted.length > 0;
+
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-8">
+    <div className="max-w-5xl mx-auto space-y-6 pb-20 sm:pb-8">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={() => router.back()}>
@@ -720,9 +1300,20 @@ function NewTradeContent() {
       {/* ═══════════ STEP 2: Card Selection with Balance Scale ═══════════ */}
       {step === 2 && (
         <div className="space-y-4">
+          {/* Summary Header */}
+          <TradeSummary
+            offerCards={selectedOffer.length}
+            wantCards={selectedWant.length}
+            sealedOffered={sealedOffered.length}
+            sealedWanted={sealedWanted.length}
+            offerValue={offerValue}
+            wantValue={wantValue}
+          />
+
           <Card className="overflow-hidden">
             <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-yellow-100">
               <BalanceScale offerValue={offerValue} wantValue={wantValue} />
+              {/* Mobile compact balance shown via sticky bar below */}
               {/* Trade Limit Badge */}
               <div className="flex justify-center pb-3">
                 {isPokemonMaster ? (
@@ -748,26 +1339,63 @@ function NewTradeContent() {
               )}
             </div>
           </Card>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center justify-end">
+            <ViewToggle mode={viewMode} onChange={setViewMode} />
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* YOUR OFFER */}
             <Card className="overflow-hidden">
               <div className="bg-[#E3350D] p-3 flex items-center justify-between">
                 <h3 className="text-white font-bold flex items-center gap-2">📥 Your Offer</h3>
                 <span className="text-white/90 text-sm font-medium">${offerValue.toFixed(2)}</span>
               </div>
               <CardContent className="p-4 space-y-3">
-                <CardSlotGrid
-                  items={selectedOffer}
-                  onRemove={(id) => setSelectedOffer((p) => p.filter((i) => i.id !== id))}
-                  emptyLabel="No cards offered yet"
-                  accentColor="#E3350D"
-                />
-                <Button
-                  variant="outline"
-                  className="w-full border-dashed border-[#E3350D]/30 text-[#E3350D] hover:bg-red-50"
-                  onClick={() => setBrowsingCollection("mine")}
-                >
-                  <Plus className="h-4 w-4 mr-2" /> Add Card from Your Collection
-                </Button>
+                {viewMode === "list" ? (
+                  <CardListView
+                    items={selectedOffer}
+                    sealedItems={sealedOffered}
+                    onRemoveCard={(id) => setSelectedOffer((p) => p.filter((i) => i.id !== id))}
+                    onRemoveSealed={(pid) => setSealedOffered((p) => p.filter((s) => s.product_id !== pid))}
+                    customValues={customValues}
+                    onEditPrice={startEditPrice}
+                    editingPriceId={editingPriceId}
+                    editPriceValue={editPriceValue}
+                    onEditPriceChange={setEditPriceValue}
+                    onEditPriceSave={saveEditPrice}
+                    onEditPriceCancel={cancelEditPrice}
+                    emptyLabel="No cards offered yet"
+                    accentColor="#E3350D"
+                  />
+                ) : (
+                  <CardSlotGrid
+                    items={selectedOffer}
+                    sealedItems={sealedOffered}
+                    onRemoveCard={(id) => setSelectedOffer((p) => p.filter((i) => i.id !== id))}
+                    onRemoveSealed={(pid) => setSealedOffered((p) => p.filter((s) => s.product_id !== pid))}
+                    customValues={customValues}
+                    emptyLabel="No cards offered yet"
+                    accentColor="#E3350D"
+                  />
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-dashed border-[#E3350D]/30 text-[#E3350D] hover:bg-red-50 text-xs sm:text-sm"
+                    onClick={() => setBrowsingCollection("mine")}
+                  >
+                    <Plus className="h-4 w-4 mr-1.5" /> Add Card
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-dashed border-[#E3350D]/30 text-[#E3350D] hover:bg-red-50 text-xs sm:text-sm"
+                    onClick={() => setBrowsingSealedFor("offer")}
+                  >
+                    <Package className="h-4 w-4 mr-1.5" /> Add Sealed
+                  </Button>
+                </div>
                 <div className="flex items-center gap-2 mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
                   <DollarSign className="h-4 w-4 text-green-600 shrink-0" />
                   <span className="text-xs text-green-700 font-medium whitespace-nowrap">Add Cash:</span>
@@ -789,25 +1417,57 @@ function NewTradeContent() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* YOU WANT */}
             <Card className="overflow-hidden">
               <div className="bg-[#3B4CCA] p-3 flex items-center justify-between">
                 <h3 className="text-white font-bold flex items-center gap-2">📤 You Want</h3>
                 <span className="text-white/90 text-sm font-medium">${wantValue.toFixed(2)}</span>
               </div>
               <CardContent className="p-4 space-y-3">
-                <CardSlotGrid
-                  items={selectedWant}
-                  onRemove={(id) => setSelectedWant((p) => p.filter((i) => i.id !== id))}
-                  emptyLabel="No cards requested yet"
-                  accentColor="#3B4CCA"
-                />
-                <Button
-                  variant="outline"
-                  className="w-full border-dashed border-[#3B4CCA]/30 text-[#3B4CCA] hover:bg-blue-50"
-                  onClick={() => setBrowsingCollection("theirs")}
-                >
-                  <Plus className="h-4 w-4 mr-2" /> Add Card from {selectedUser?.display_name || selectedUser?.username}&apos;s Collection
-                </Button>
+                {viewMode === "list" ? (
+                  <CardListView
+                    items={selectedWant}
+                    sealedItems={sealedWanted}
+                    onRemoveCard={(id) => setSelectedWant((p) => p.filter((i) => i.id !== id))}
+                    onRemoveSealed={(pid) => setSealedWanted((p) => p.filter((s) => s.product_id !== pid))}
+                    customValues={customValues}
+                    onEditPrice={startEditPrice}
+                    editingPriceId={editingPriceId}
+                    editPriceValue={editPriceValue}
+                    onEditPriceChange={setEditPriceValue}
+                    onEditPriceSave={saveEditPrice}
+                    onEditPriceCancel={cancelEditPrice}
+                    emptyLabel="No cards requested yet"
+                    accentColor="#3B4CCA"
+                  />
+                ) : (
+                  <CardSlotGrid
+                    items={selectedWant}
+                    sealedItems={sealedWanted}
+                    onRemoveCard={(id) => setSelectedWant((p) => p.filter((i) => i.id !== id))}
+                    onRemoveSealed={(pid) => setSealedWanted((p) => p.filter((s) => s.product_id !== pid))}
+                    customValues={customValues}
+                    emptyLabel="No cards requested yet"
+                    accentColor="#3B4CCA"
+                  />
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-dashed border-[#3B4CCA]/30 text-[#3B4CCA] hover:bg-blue-50 text-xs sm:text-sm"
+                    onClick={() => setBrowsingCollection("theirs")}
+                  >
+                    <Plus className="h-4 w-4 mr-1.5" /> Add Card
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-dashed border-[#3B4CCA]/30 text-[#3B4CCA] hover:bg-blue-50 text-xs sm:text-sm"
+                    onClick={() => setBrowsingSealedFor("want")}
+                  >
+                    <Package className="h-4 w-4 mr-1.5" /> Add Sealed
+                  </Button>
+                </div>
                 <div className="flex items-center gap-2 mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
                   <DollarSign className="h-4 w-4 text-blue-600 shrink-0" />
                   <span className="text-xs text-blue-700 font-medium whitespace-nowrap">Request Cash:</span>
@@ -830,18 +1490,21 @@ function NewTradeContent() {
               </CardContent>
             </Card>
           </div>
+
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setStep(1)} className="gap-2">
               <ArrowLeft className="h-4 w-4" /> Back
             </Button>
             <Button
               onClick={() => setStep(3)}
-              disabled={selectedOffer.length === 0 && selectedWant.length === 0}
+              disabled={!hasAnyItems}
               className="bg-[#E3350D] hover:bg-[#c72e0b] gap-2 px-6"
             >
               Shipping <span className="text-lg">→</span>
             </Button>
           </div>
+
+          {/* Modals */}
           {browsingCollection === "mine" && (
             <CollectionBrowser
               items={myCards}
@@ -862,6 +1525,21 @@ function NewTradeContent() {
               title={`${selectedUser?.display_name || selectedUser?.username}'s Collection`}
             />
           )}
+          {browsingSealedFor === "offer" && (
+            <SealedProductPicker
+              onAdd={addSealedOffer}
+              onClose={() => setBrowsingSealedFor(null)}
+            />
+          )}
+          {browsingSealedFor === "want" && (
+            <SealedProductPicker
+              onAdd={addSealedWant}
+              onClose={() => setBrowsingSealedFor(null)}
+            />
+          )}
+
+          {/* Mobile Compact Balance Bar */}
+          <CompactBalanceBar offerValue={offerValue} wantValue={wantValue} />
         </div>
       )}
 
@@ -940,7 +1618,6 @@ function NewTradeContent() {
                   <p className="text-sm text-muted-foreground mt-1">
                     Protect eligible direct-ship trades with payment authorization, tracking verification, and platform dispute review.
                   </p>
-                  {/* Dynamic fee breakdown */}
                   <div className="mt-2 p-3 bg-yellow-100/50 rounded-lg border border-yellow-200">
                     <p className="text-xs font-semibold text-yellow-800 mb-1">Fee Breakdown</p>
                     <p className="text-xs text-yellow-700">
@@ -984,7 +1661,7 @@ function NewTradeContent() {
               </div>
             </button>
 
-            {/* Legal Disclosure Checkbox (required for protection) */}
+            {/* Legal Disclosure Checkbox */}
             {shippingMethod === "protected" && (
               <div className="border border-yellow-200 bg-yellow-50/50 rounded-xl p-4 space-y-3">
                 <h4 className="font-bold text-sm text-yellow-800 flex items-center gap-2">
@@ -1074,6 +1751,18 @@ function NewTradeContent() {
           <Card className="overflow-hidden">
             <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-yellow-100">
               <BalanceScale offerValue={offerValue} wantValue={wantValue} />
+              {/* Mobile compact bar */}
+              <div className="sm:hidden flex items-center justify-between px-4 py-3">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Your Offer</p>
+                  <p className="text-lg font-bold text-[#E3350D]">${offerValue.toFixed(2)}</p>
+                </div>
+                <div className="text-2xl">⚡</div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">You Want</p>
+                  <p className="text-lg font-bold text-[#3B4CCA]">${wantValue.toFixed(2)}</p>
+                </div>
+              </div>
             </div>
           </Card>
 
@@ -1083,25 +1772,59 @@ function NewTradeContent() {
                 <h3 className="text-white font-bold text-sm">📥 Your Offer · ${offerValue.toFixed(2)}</h3>
               </div>
               <CardContent className="p-4 space-y-2">
-                {selectedOffer.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No cards offered</p>
+                {selectedOffer.length === 0 && sealedOffered.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No items offered</p>
                 ) : (
-                  selectedOffer.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3">
-                      <div className="h-12 w-9 rounded-md overflow-hidden bg-muted relative shrink-0 border">
-                        {item.cards?.image_url && (
-                          <Image src={item.cards.image_url} alt="" fill className="object-contain" sizes="36px" />
-                        )}
+                  <>
+                    {selectedOffer.map((item) => {
+                      const price = customValues[item.id] ?? item.cards?.market_value ?? 0;
+                      return (
+                        <div key={item.id} className="flex items-center gap-3">
+                          <div className="h-12 w-9 rounded-md overflow-hidden bg-muted relative shrink-0 border">
+                            {item.cards?.image_url && (
+                              <Image src={item.cards.image_url} alt="" fill className="object-contain" sizes="36px" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{item.cards?.name}</p>
+                            <p className="text-xs text-muted-foreground">{item.cards?.card_sets?.name}</p>
+                          </div>
+                          <span className="text-sm font-bold text-[#E3350D]">
+                            ${price.toFixed(2)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    {sealedOffered.map((si) => (
+                      <div key={si.product_id} className="flex items-center gap-3">
+                        <div className="h-12 w-9 rounded-md overflow-hidden bg-muted relative shrink-0 border flex items-center justify-center">
+                          {si.image_url ? (
+                            <Image src={si.image_url} alt="" fill className="object-contain" sizes="36px" />
+                          ) : (
+                            <span className="text-lg">📦</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">📦 {si.name}</p>
+                          <p className="text-xs text-muted-foreground">Sealed · Qty: {si.quantity}</p>
+                        </div>
+                        <span className="text-sm font-bold text-[#E3350D]">
+                          ${(si.value * si.quantity).toFixed(2)}
+                        </span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{item.cards?.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.cards?.card_sets?.name}</p>
-                      </div>
-                      <span className="text-sm font-bold text-[#E3350D]">
-                        ${(item.cards?.market_value || 0).toFixed(2)}
-                      </span>
+                    ))}
+                  </>
+                )}
+                {cashOffer > 0 && (
+                  <div className="flex items-center gap-3 pt-1 border-t">
+                    <div className="h-12 w-9 rounded-md bg-green-100 flex items-center justify-center shrink-0 border border-green-200">
+                      <DollarSign className="h-5 w-5 text-green-600" />
                     </div>
-                  ))
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Cash Added</p>
+                    </div>
+                    <span className="text-sm font-bold text-green-600">${cashOffer.toFixed(2)}</span>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -1110,25 +1833,59 @@ function NewTradeContent() {
                 <h3 className="text-white font-bold text-sm">📤 You Want · ${wantValue.toFixed(2)}</h3>
               </div>
               <CardContent className="p-4 space-y-2">
-                {selectedWant.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No cards requested</p>
+                {selectedWant.length === 0 && sealedWanted.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No items requested</p>
                 ) : (
-                  selectedWant.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3">
-                      <div className="h-12 w-9 rounded-md overflow-hidden bg-muted relative shrink-0 border">
-                        {item.cards?.image_url && (
-                          <Image src={item.cards.image_url} alt="" fill className="object-contain" sizes="36px" />
-                        )}
+                  <>
+                    {selectedWant.map((item) => {
+                      const price = customValues[item.id] ?? item.cards?.market_value ?? 0;
+                      return (
+                        <div key={item.id} className="flex items-center gap-3">
+                          <div className="h-12 w-9 rounded-md overflow-hidden bg-muted relative shrink-0 border">
+                            {item.cards?.image_url && (
+                              <Image src={item.cards.image_url} alt="" fill className="object-contain" sizes="36px" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{item.cards?.name}</p>
+                            <p className="text-xs text-muted-foreground">{item.cards?.card_sets?.name}</p>
+                          </div>
+                          <span className="text-sm font-bold text-[#3B4CCA]">
+                            ${price.toFixed(2)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    {sealedWanted.map((si) => (
+                      <div key={si.product_id} className="flex items-center gap-3">
+                        <div className="h-12 w-9 rounded-md overflow-hidden bg-muted relative shrink-0 border flex items-center justify-center">
+                          {si.image_url ? (
+                            <Image src={si.image_url} alt="" fill className="object-contain" sizes="36px" />
+                          ) : (
+                            <span className="text-lg">📦</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">📦 {si.name}</p>
+                          <p className="text-xs text-muted-foreground">Sealed · Qty: {si.quantity}</p>
+                        </div>
+                        <span className="text-sm font-bold text-[#3B4CCA]">
+                          ${(si.value * si.quantity).toFixed(2)}
+                        </span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{item.cards?.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.cards?.card_sets?.name}</p>
-                      </div>
-                      <span className="text-sm font-bold text-[#3B4CCA]">
-                        ${(item.cards?.market_value || 0).toFixed(2)}
-                      </span>
+                    ))}
+                  </>
+                )}
+                {cashWant > 0 && (
+                  <div className="flex items-center gap-3 pt-1 border-t">
+                    <div className="h-12 w-9 rounded-md bg-blue-100 flex items-center justify-center shrink-0 border border-blue-200">
+                      <DollarSign className="h-5 w-5 text-blue-600" />
                     </div>
-                  ))
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Cash Requested</p>
+                    </div>
+                    <span className="text-sm font-bold text-blue-600">${cashWant.toFixed(2)}</span>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -1210,7 +1967,7 @@ function NewTradeContent() {
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={submitting || (selectedOffer.length === 0 && selectedWant.length === 0) || isOverTradeLimit}
+              disabled={submitting || !hasAnyItems || isOverTradeLimit}
               className="bg-[#E3350D] hover:bg-[#c72e0b] gap-2 px-8 py-3 text-base font-bold shadow-lg hover:shadow-xl transition-all"
             >
               {submitting ? (
@@ -1232,7 +1989,6 @@ export default function NewTradePage() {
       fallback={
         <div className="space-y-6 max-w-5xl mx-auto">
           <div>
-
             <h1 className="text-2xl font-bold">🎮 Pokétopia Trade Center</h1>
           </div>
           <Skeleton className="h-64 w-full rounded-xl" />
