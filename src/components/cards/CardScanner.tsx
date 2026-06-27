@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
-import { X, Camera, Upload, Search, RotateCcw, Check } from "lucide-react";
+import { X, Camera, Upload, Search, RotateCcw, Check, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +48,17 @@ export default function CardScanner({ open, onClose, onAddCard }: CardScannerPro
   const [adding, setAdding] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
+  const [aiRecognizing, setAiRecognizing] = useState(false);
+  const [aiResult, setAiResult] = useState<{
+    card_name: string;
+    set_name: string;
+    card_number: string;
+    rarity: string;
+    confidence: string;
+    condition_estimate: string;
+    condition_notes: string;
+  } | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -114,6 +125,37 @@ export default function CardScanner({ open, onClose, onAddCard }: CardScannerPro
     }
   }, [open]);
 
+  // AI recognition function
+  const recognizeCard = async (imageDataUrl: string) => {
+    setAiRecognizing(true);
+    setAiError(null);
+    setAiResult(null);
+    try {
+      const res = await fetch("/api/cards/scan/recognize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: imageDataUrl }),
+      });
+      const data = await res.json();
+      if (data.recognized && data.ai) {
+        setAiResult(data.ai);
+        if (data.matches && data.matches.length > 0) {
+          setSearchResults(data.matches);
+          setSearchQuery(data.ai.card_name || "");
+        }
+        if (data.ai.condition_estimate) {
+          setSelectedCondition(data.ai.condition_estimate);
+        }
+      } else {
+        setAiError(data.message || data.error || "Could not recognize card");
+      }
+    } catch {
+      setAiError("Recognition failed — try typing the card name instead");
+    } finally {
+      setAiRecognizing(false);
+    }
+  };
+
   // Capture photo from camera
   const capturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -128,6 +170,8 @@ export default function CardScanner({ open, onClose, onAddCard }: CardScannerPro
     setCapturedImage(dataUrl);
     stopCamera();
     setStep("identify");
+    // Auto-trigger AI recognition
+    recognizeCard(dataUrl);
   };
 
   // Handle file upload
@@ -139,6 +183,7 @@ export default function CardScanner({ open, onClose, onAddCard }: CardScannerPro
       const dataUrl = ev.target?.result as string;
       setCapturedImage(dataUrl);
       setStep("identify");
+      recognizeCard(dataUrl);
     };
     reader.readAsDataURL(file);
   };
@@ -153,6 +198,7 @@ export default function CardScanner({ open, onClose, onAddCard }: CardScannerPro
       const dataUrl = ev.target?.result as string;
       setCapturedImage(dataUrl);
       setStep("identify");
+      recognizeCard(dataUrl);
     };
     reader.readAsDataURL(file);
   };
@@ -205,6 +251,8 @@ export default function CardScanner({ open, onClose, onAddCard }: CardScannerPro
     setSearchQuery("");
     setSearchResults([]);
     setSelectedCard(null);
+    setAiResult(null);
+    setAiError(null);
     setStep("capture");
   };
 
@@ -376,9 +424,53 @@ export default function CardScanner({ open, onClose, onAddCard }: CardScannerPro
                 </div>
               )}
 
+              {/* AI Recognition Status */}
+              {aiRecognizing && (
+                <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <Loader2 className="h-5 w-5 text-blue-500 animate-spin shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-800">AI recognizing card...</p>
+                    <p className="text-xs text-blue-600">Analyzing image with GPT-4o</p>
+                  </div>
+                </div>
+              )}
+
+              {aiResult && !aiRecognizing && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Sparkles className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-semibold text-green-800">AI Identified</span>
+                    <Badge variant="outline" className={`text-[10px] ml-auto ${
+                      aiResult.confidence === "high" ? "border-green-400 text-green-700 bg-green-100" :
+                      aiResult.confidence === "medium" ? "border-yellow-400 text-yellow-700 bg-yellow-100" :
+                      "border-red-400 text-red-700 bg-red-100"
+                    }`}>
+                      {aiResult.confidence} confidence
+                    </Badge>
+                  </div>
+                  <p className="text-sm font-medium text-gray-900">{aiResult.card_name}</p>
+                  <p className="text-xs text-gray-600">
+                    {aiResult.set_name}{aiResult.card_number ? ` · #${aiResult.card_number}` : ""}
+                    {aiResult.rarity ? ` · ${aiResult.rarity}` : ""}
+                  </p>
+                  {aiResult.condition_notes && (
+                    <p className="text-xs text-gray-500 mt-1 italic">Condition: {aiResult.condition_notes}</p>
+                  )}
+                </div>
+              )}
+
+              {aiError && !aiRecognizing && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">{aiError}</p>
+                  <p className="text-xs text-yellow-600 mt-1">You can search manually below</p>
+                </div>
+              )}
+
               <div>
                 <p className="text-sm text-muted-foreground mb-2">
-                  Type the card name to find it in our database:
+                  {aiResult && searchResults.length > 0
+                    ? "Select the correct match below, or refine your search:"
+                    : "Type the card name to find it in our database:"}
                 </p>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
