@@ -205,7 +205,7 @@ async function notifyWatchlistUsers(
 
   if (!profiles?.length) return;
 
-  // For now, log notifications — in production, send push/email/SMS
+  // Send in-app notifications to each watchlist user
   for (const profile of profiles) {
     const watcher = watchers.find(w => w.user_id === profile.id);
 
@@ -216,8 +216,20 @@ async function notifyWatchlistUsers(
 
     console.log(`📩 Notify ${profile.display_name || profile.email}: ${alertType} — ${productName} @ ${retailer} ($${price || 'N/A'})`);
 
-    // TODO: Integrate with push notifications, email (Resend), SMS
-    // For now, create an in-app notification record
+    // Insert in-app notification
+    await supabase.from('notifications').insert({
+      user_id: profile.id,
+      notification_type: alertType === 'restock' ? 'drop_restock' : 'drop_price_drop',
+      title: alertType === 'restock'
+        ? `🟢 ${productName} Back In Stock!`
+        : `📉 Price Drop: ${productName}`,
+      message: alertType === 'restock'
+        ? `${productName} is back in stock at ${retailer} for $${price || 'N/A'}! Act fast!`
+        : `${productName} dropped to $${price} at ${retailer}`,
+      data: { product_id: productId, retailer, price, alert_type: alertType },
+    });
+
+    // Update alert as notified
     await supabase.from('drop_alerts').update({
       notified: true,
       notification_count: 1,

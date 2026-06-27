@@ -28,6 +28,26 @@ interface Stats {
   openDisputes: number;
 }
 
+interface DropAlertItem {
+  id: string;
+  alert_type: string;
+  created_at: string;
+  drop_products: {
+    product_name: string;
+    retailer: string;
+    image_url: string | null;
+  };
+}
+
+function alertBadgeAdmin(type: string) {
+  switch (type) {
+    case 'restock': return { label: '🟢 Restock', cls: 'border-green-300 text-green-700 bg-green-50' };
+    case 'price_drop': return { label: '📉 Price Drop', cls: 'border-blue-300 text-blue-700 bg-blue-50' };
+    case 'back_oos': return { label: '🔴 OOS', cls: 'border-red-300 text-red-700 bg-red-50' };
+    default: return { label: type, cls: 'border-gray-300 text-gray-700 bg-gray-50' };
+  }
+}
+
 interface ActivityItem {
   id: string;
   user_id: string;
@@ -62,17 +82,18 @@ function formatTime(dateStr: string) {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [dropAlerts, setDropAlerts] = useState<DropAlertItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/stats")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.stats) setStats(data.stats);
-        if (data.activity) setActivity(data.activity);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch("/api/admin/stats").then(r => r.json()).catch(() => ({})),
+      fetch("/api/admin/drops/alerts?limit=5").then(r => r.json()).catch(() => ({ alerts: [] })),
+    ]).then(([statsData, alertsData]) => {
+      if (statsData.stats) setStats(statsData.stats);
+      if (statsData.activity) setActivity(statsData.activity);
+      setDropAlerts(alertsData.alerts || []);
+    }).finally(() => setLoading(false));
   }, []);
 
   const statCards = [
@@ -201,6 +222,47 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Recent Restock Alerts */}
+      {dropAlerts.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Bell className="h-4 w-4 text-yellow-500" />
+                Recent Restock Alerts
+              </CardTitle>
+              <a
+                href="/admin/drops?tab=alerts"
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View All →
+              </a>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {dropAlerts.map((alert) => {
+                const badge = alertBadgeAdmin(alert.alert_type);
+                return (
+                  <div key={alert.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <Badge variant="outline" className={`text-[10px] shrink-0 ${badge.cls}`}>
+                      {badge.label}
+                    </Badge>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium text-gray-900 truncate block">
+                        {alert.drop_products?.product_name || 'Unknown'}
+                      </span>
+                      <span className="text-xs text-gray-500">{alert.drop_products?.retailer || '—'}</span>
+                    </div>
+                    <span className="text-xs text-gray-400 shrink-0">{formatTime(alert.created_at)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Action Alerts */}
       {stats && (stats.pendingReports > 0 || stats.openDisputes > 0) && (

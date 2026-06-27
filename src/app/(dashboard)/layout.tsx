@@ -9,11 +9,133 @@ import {
   Star, History, CreditCard, LogOut, Menu, X,
   Package, Gavel, Store, BookOpen, Sparkles, Headphones
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useUser } from "@/lib/hooks/useUser";
+
+interface Notification {
+  id: string;
+  notification_type: string;
+  title: string;
+  message: string;
+  data: Record<string, any> | null;
+  read_at: string | null;
+  created_at: string;
+}
+
+function formatTimeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+function notificationIcon(type: string) {
+  if (type.includes('restock')) return '🟢';
+  if (type.includes('price')) return '📉';
+  if (type.includes('trade')) return '🔄';
+  if (type.includes('order')) return '📦';
+  return '🔔';
+}
+
+function NotificationBell() {
+  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await fetch('/api/notifications');
+      if (!res.ok) return;
+      const data = await res.json();
+      setNotifications((data.notifications || []).slice(0, 10));
+      setUnreadCount(data.unreadCount || 0);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const markRead = async (id: string) => {
+    await fetch('/api/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'mark_read', notification_id: id }),
+    });
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read_at: new Date().toISOString() } : n));
+    setUnreadCount(prev => Math.max(0, prev - 1));
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <Button variant="ghost" size="icon" className="relative" onClick={() => setOpen(!open)}>
+        <Bell className="h-4 w-4" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-red-500 rounded-full text-[9px] font-bold flex items-center justify-center text-white">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </Button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+            <span className="text-sm font-semibold text-gray-900">Notifications</span>
+            {unreadCount > 0 && (
+              <span className="text-[10px] text-gray-500">{unreadCount} unread</span>
+            )}
+          </div>
+          <div className="max-h-[360px] overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="p-6 text-center text-sm text-gray-400">No notifications</div>
+            ) : (
+              notifications.map(n => (
+                <button
+                  key={n.id}
+                  className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors flex gap-3 ${
+                    !n.read_at ? 'bg-blue-50/40' : ''
+                  }`}
+                  onClick={() => { if (!n.read_at) markRead(n.id); }}
+                >
+                  <span className="text-lg shrink-0 mt-0.5">{notificationIcon(n.notification_type)}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium text-gray-900 truncate">{n.title}</div>
+                    <div className="text-[11px] text-gray-500 truncate">{n.message}</div>
+                    <div className="text-[10px] text-gray-400 mt-0.5">{formatTimeAgo(n.created_at)}</div>
+                  </div>
+                  {!n.read_at && <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0 mt-2" />}
+                </button>
+              ))
+            )}
+          </div>
+          <a
+            href="/dashboard/notifications"
+            className="block text-center text-xs font-medium text-blue-600 hover:text-blue-700 py-2.5 border-t border-gray-100"
+          >
+            View All Notifications
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const sidebarLinks = [
   { section: "Overview", items: [
@@ -158,10 +280,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Menu className="h-5 w-5 text-gray-500" />
           </button>
           <div className="flex-1" />
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-4 w-4" />
-            <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 bg-red-500 rounded-full text-[9px] font-bold flex items-center justify-center text-white">3</span>
-          </Button>
+          <NotificationBell />
           <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
             U
           </div>
