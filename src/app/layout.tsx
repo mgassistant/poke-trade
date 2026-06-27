@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import PWAInstall from "@/components/PWAInstall";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -63,9 +64,24 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Poké-Trade",
+  },
   other: {
     "impact-site-verification": "28ad154a-5b53-498b-9876-582c3810ccef",
+    "mobile-web-app-capable": "yes",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#dc2626",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -77,6 +93,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased bg-white text-gray-900`}>
         {children}
+        <PWAInstall />
       </body>
     </html>
   );
