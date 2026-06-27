@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
   // Auto-pull trade documentation as initial evidence message
   if (tradeId) {
     const { data: tradeDocs } = await supabase
-      .from("trade_documentation")
+      .from("trade_events")
       .select("*")
       .eq("trade_id", tradeId)
       .limit(1);
