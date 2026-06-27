@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft, Search, X, Check, Loader2, User, Package, MessageSquare, Eye,
-  Plus, Shield, Truck, Lock
+  Plus, Shield, Truck, Lock, DollarSign
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -367,17 +367,21 @@ function NewTradeContent() {
 
   // Step 4: Message
   const [notes, setNotes] = useState("");
+  const [cashOffer, setCashOffer] = useState(0); // Cash YOU add to sweeten your side
+  const [cashWant, setCashWant] = useState(0);   // Cash you WANT from them
 
   // Step 5: Submit
   const [submitting, setSubmitting] = useState(false);
 
   // Values
-  const offerValue = selectedOffer.reduce(
+  const offerCardsValue = selectedOffer.reduce(
     (sum, i) => sum + (i.cards?.market_value || i.current_value || 0), 0
   );
-  const wantValue = selectedWant.reduce(
+  const wantCardsValue = selectedWant.reduce(
     (sum, i) => sum + (i.cards?.market_value || i.current_value || 0), 0
   );
+  const offerValue = offerCardsValue + cashOffer;
+  const wantValue = wantCardsValue + cashWant;
   const totalTradeValue = offerValue + wantValue;
 
   // Fee calculation
@@ -492,6 +496,8 @@ function NewTradeContent() {
         shipping_method: shippingMethod,
         trade_protection_selected: shippingMethod === "protected",
         declared_trade_value: totalTradeValue,
+        cash_offer: cashOffer || 0,
+        cash_want: cashWant || 0,
         protection_terms_accepted: shippingMethod === "protected" ? protectionTermsAccepted : false,
       };
 
@@ -719,6 +725,25 @@ function NewTradeContent() {
                 >
                   <Plus className="h-4 w-4 mr-2" /> Add Card from Your Collection
                 </Button>
+                <div className="flex items-center gap-2 mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
+                  <DollarSign className="h-4 w-4 text-green-600 shrink-0" />
+                  <span className="text-xs text-green-700 font-medium whitespace-nowrap">Add Cash:</span>
+                  <div className="relative flex-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-green-600">$</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={cashOffer || ""}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/[^0-9.]/g, "");
+                        const num = parseFloat(v) || 0;
+                        setCashOffer(Math.min(num, 10000));
+                      }}
+                      placeholder="0.00"
+                      className="w-full pl-6 pr-2 py-1.5 text-sm border border-green-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 bg-white"
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
             <Card className="overflow-hidden">
@@ -740,6 +765,25 @@ function NewTradeContent() {
                 >
                   <Plus className="h-4 w-4 mr-2" /> Add Card from {selectedUser?.display_name || selectedUser?.username}&apos;s Collection
                 </Button>
+                <div className="flex items-center gap-2 mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                  <DollarSign className="h-4 w-4 text-blue-600 shrink-0" />
+                  <span className="text-xs text-blue-700 font-medium whitespace-nowrap">Request Cash:</span>
+                  <div className="relative flex-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-blue-600">$</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={cashWant || ""}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/[^0-9.]/g, "");
+                        const num = parseFloat(v) || 0;
+                        setCashWant(Math.min(num, 10000));
+                      }}
+                      placeholder="0.00"
+                      className="w-full pl-6 pr-2 py-1.5 text-sm border border-blue-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

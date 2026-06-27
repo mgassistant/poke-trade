@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const { receiver_id, items_offered, items_wanted, cash_amount, notes, shipping_method, trade_protection_selected, declared_trade_value, protection_terms_accepted } = body;
+  const { receiver_id, items_offered, items_wanted, cash_amount, cash_offer, cash_want, notes, shipping_method, trade_protection_selected, declared_trade_value, protection_terms_accepted } = body;
 
   if (!receiver_id) return NextResponse.json({ error: "Receiver required" }, { status: 400 });
   if (receiver_id === user.id) return NextResponse.json({ error: "Cannot trade with yourself" }, { status: 400 });
@@ -110,7 +110,8 @@ export async function POST(request: NextRequest) {
       sender_id: user.id,
       receiver_id,
       status: "pending",
-      cash_amount: cash_amount || null,
+      cash_offer: cash_offer || cash_amount || 0,
+      cash_want: cash_want || 0,
       notes: unevenTradeWarning ? `⚠️ Uneven Trade Warning: Value difference exceeds 2x.${notes ? '\n' + notes : ''}` : (notes || null),
       shipping_method: effectiveShippingMethod,
       fee_amount: feeAmount,
@@ -159,7 +160,8 @@ export async function POST(request: NextRequest) {
     version_number: 1,
     proposed_by: user.id,
     action: "initial",
-    cash_amount: cash_amount || null,
+    cash_offer: cash_offer || cash_amount || 0,
+    cash_want: cash_want || 0,
     notes: notes || null,
     items_offered: items_offered || [],
     items_wanted: items_wanted || [],
