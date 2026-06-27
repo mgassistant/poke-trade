@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   ArrowLeft, Camera, Package, Truck, CheckCircle, AlertTriangle,
-  Loader2, Shield, ExternalLink, Copy, Lock, Clock
+  Loader2, Shield, Lock, Clock
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

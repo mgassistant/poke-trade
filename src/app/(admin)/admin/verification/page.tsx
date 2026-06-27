@@ -60,9 +60,9 @@ export default function VerificationPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Trade Verification Center</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Trade Protection Center</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Poké-Trade Verified shipping queue — {total} trades with tracking
+          Protected trades queue — {total} trades with tracking
         </p>
       </div>
 
@@ -76,7 +76,7 @@ export default function VerificationPage() {
             onClick={() => { setStatusFilter(s); setPage(1); }}
             className="text-xs"
           >
-            {s || "All Verified"}
+            {s || "All Protected"}
           </Button>
         ))}
       </div>

@@ -113,7 +113,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-bold text-foreground border-b border-gray-200 pb-2">Platform Fee Disclosure</h2>
             <p className="text-muted-foreground leading-relaxed mt-4">
-              Poké-Trade charges platform fees on marketplace transactions (5% for free tier, 3% for Pro and Elite members). Secure Trade verification fees ($5.99 or 3% of trade value, whichever is higher) are split equally between both trading parties. All fees are non-refundable once a transaction is completed.
+              Poké-Trade charges platform fees on marketplace transactions (5% for free tier, 3% for Pro and Elite members). Trade Protection fees vary by membership tier (Free: $5.99 or 5%, Pro/Elite: $3.99 or 3%, whichever is higher) and are split equally between both trading parties. All fees are non-refundable once a transaction is completed. Poké-Trade does not buy, sell, inspect, authenticate, grade, store, ship, or take possession of any traded items.
             </p>
           </section>
 
