@@ -67,9 +67,9 @@ export async function checkPokemonCenter(productUrl: string, sku: string): Promi
 export async function checkTarget(productUrl: string, sku: string): Promise<StockCheckResult> {
   const start = Date.now();
   try {
-    // Extract TCIN from URL (the A-XXXXXXXX part)
-    const tcinMatch = sku.match(/A-?(\d+)/) || productUrl.match(/A-(\d+)/);
-    const tcin = tcinMatch?.[1] || sku.replace('A-', '');
+    // Extract TCIN from URL or SKU — Target uses numeric TCINs
+    const tcinMatch = productUrl.match(/A-(\d+)/) || sku.match(/(\d{7,})/);
+    const tcin = tcinMatch?.[1] || sku.replace(/\D/g, '');
 
     if (!tcin) return { inStock: false, error: 'No TCIN found', responseMs: Date.now() - start };
 
