@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Search, ExternalLink, CheckCircle2, AlertTriangle, ArrowRight, Fingerprint, Award } from "lucide-react";
+import PSALookup from "@/components/cards/PSALookup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -115,32 +116,42 @@ export default function VerifyPage() {
               ))}
             </div>
 
-            {/* Cert input */}
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={selectedGrader.placeholder}
-                  value={certNumber}
-                  onChange={(e) => setCertNumber(e.target.value)}
-                  className="pl-10 h-12 text-base"
-                  onKeyDown={(e) => e.key === "Enter" && handleVerify()}
-                />
+            {/* Cert input — PSA uses our API, others link out */}
+            {selectedGrader.name === "PSA" ? (
+              <div>
+                <PSALookup />
+                <p className="text-xs text-muted-foreground mt-3">
+                  Powered by PSA&apos;s official API. Results include grade, population data, and card details.
+                </p>
               </div>
-              <Button
-                size="lg"
-                className="bg-success hover:bg-success/90 text-white h-12"
-                onClick={handleVerify}
-                disabled={!certNumber.trim()}
-              >
-                Verify
-                <ExternalLink className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-
-            <p className="text-xs text-muted-foreground mt-3">
-              Opens {selectedGrader.name}&apos;s official verification page in a new tab. Always verify directly with the grading company.
-            </p>
+            ) : (
+              <div>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder={selectedGrader.placeholder}
+                      value={certNumber}
+                      onChange={(e) => setCertNumber(e.target.value)}
+                      className="pl-10 h-12 text-base"
+                      onKeyDown={(e) => e.key === "Enter" && handleVerify()}
+                    />
+                  </div>
+                  <Button
+                    size="lg"
+                    className="bg-success hover:bg-success/90 text-white h-12"
+                    onClick={handleVerify}
+                    disabled={!certNumber.trim()}
+                  >
+                    Verify
+                    <ExternalLink className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Opens {selectedGrader.name}&apos;s official verification page in a new tab.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
