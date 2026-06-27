@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
-import { Shield, ArrowRight, Check, Camera, Award, FileCheck, Search, Lock, Sparkles } from "lucide-react";
+import { Shield, ArrowRight, Check, Lock, FileCheck, Scale, Truck, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { AUTH_SERVICE_TIERS } from "@/lib/constants";
 
 export default function ProtectPage() {
   return (
@@ -22,44 +20,44 @@ export default function ProtectPage() {
             Poké-Trade Protect
           </Badge>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight">
-            <span className="text-foreground">Card </span>
-            <span className="text-success">Authentication</span>
+            <span className="text-foreground">Trade </span>
+            <span className="text-success">Protection</span>
             <br />
             <span className="text-foreground">You Can Trust</span>
           </h1>
           <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Protect your investment. Our expert authentication service verifies your Pokémon cards are genuine, 
-            assesses condition, and provides a digital certificate — all at a fraction of grading costs.
+            Protect your trades with payment authorization holds, tracking verification, and platform dispute review.
+            All items ship directly between users — Poké-Trade never takes possession of your cards.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="xl" className="bg-success hover:bg-success/90 text-white shadow-sm" asChild>
               <Link href="/register">
-                Get Cards Authenticated
+                Start Trading Safely
                 <ArrowRight className="h-4 w-4 ml-1" />
               </Link>
             </Button>
             <Button size="xl" variant="outline" asChild>
-              <Link href="/pricing">View All Plans</Link>
+              <Link href="/membership">View Membership Plans</Link>
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Why Authenticate */}
+      {/* How Trade Protection Works */}
       <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-4">
-            Why <span className="text-success">Authenticate</span>?
+            How Trade <span className="text-success">Protection</span> Works
           </h2>
           <p className="text-center text-muted-foreground mb-16 max-w-lg mx-auto">
-            The Pokémon card market is flooded with fakes. Protect yourself.
+            Direct shipping between users with platform safeguards at every step.
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: <Shield className="h-6 w-6" />, title: "Fake Protection", desc: "Counterfeit cards are getting better. Our experts catch what the eye misses.", stat: "$500M+", statLabel: "in fakes sold yearly" },
-              { icon: <Award className="h-6 w-6" />, title: "Increase Value", desc: "Authenticated cards sell for 20-40% more than unverified cards.", stat: "+35%", statLabel: "avg value increase" },
-              { icon: <Lock className="h-6 w-6" />, title: "Buyer Confidence", desc: "Verified badge on your listing means instant trust from buyers.", stat: "2.5x", statLabel: "faster sales" },
-              { icon: <Camera className="h-6 w-6" />, title: "Faster Than PSA", desc: "3-10 days vs 3-6 months. Get verified and back to trading fast.", stat: "3-10", statLabel: "day turnaround" },
+              { icon: <CreditCard className="h-6 w-6" />, title: "Payment Authorization", desc: "Secure payment holds protect both parties. Funds are authorized but not captured until trade completes.", stat: "Secure", statLabel: "payment holds" },
+              { icon: <Truck className="h-6 w-6" />, title: "Direct Shipping", desc: "Ship directly to your trade partner. Required tracking and photo proof for every protected trade.", stat: "Direct", statLabel: "between users" },
+              { icon: <FileCheck className="h-6 w-6" />, title: "Tracking Verification", desc: "Valid tracking numbers required. Delivery confirmation triggers trade completion.", stat: "Required", statLabel: "for all trades" },
+              { icon: <Scale className="h-6 w-6" />, title: "Dispute Resolution", desc: "Submit disputes with evidence through our portal. Platform review for qualifying trades.", stat: "Fair", statLabel: "dispute review" },
             ].map((item, i) => (
               <motion.div
                 key={item.title}
@@ -87,17 +85,57 @@ export default function ProtectPage() {
         </div>
       </section>
 
-      {/* Service Tiers */}
+      {/* Protection Tiers */}
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-4">
-            Authentication <span className="text-primary">Packages</span>
+            Protection <span className="text-primary">Tiers</span>
           </h2>
           <p className="text-center text-muted-foreground mb-16">
-            Choose the level of verification your cards need
+            Higher membership = more protection benefits
           </p>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {AUTH_SERVICE_TIERS.map((tier, i) => (
+            {[
+              {
+                name: "Free",
+                price: "$5.99 or 5%",
+                priceNote: "whichever is higher, split 50/50",
+                features: [
+                  "Direct shipping between users",
+                  "Required photo proof",
+                  "Required tracking numbers",
+                  "Basic dispute support",
+                  "No platform protection benefit",
+                ],
+                highlight: false,
+              },
+              {
+                name: "Pro",
+                price: "$3.99 or 3%",
+                priceNote: "whichever is higher, split 50/50",
+                features: [
+                  "Everything in Free",
+                  "Up to $50 discretionary platform credit",
+                  "Priority dispute review (2-3 days)",
+                  "Secure payment authorization hold",
+                  "Enhanced evidence review",
+                ],
+                highlight: true,
+              },
+              {
+                name: "Elite",
+                price: "$3.99 or 3%",
+                priceNote: "whichever is higher, split 50/50",
+                features: [
+                  "Everything in Pro",
+                  "Up to $100 discretionary platform credit",
+                  "Priority dispute review (1-2 days)",
+                  "Dedicated support representative",
+                  "Secure payment authorization hold",
+                ],
+                highlight: false,
+              },
+            ].map((tier, i) => (
               <motion.div
                 key={tier.name}
                 initial={{ opacity: 0, y: 25 }}
@@ -106,9 +144,9 @@ export default function ProtectPage() {
                 transition={{ delay: i * 0.12 }}
               >
                 <Card className={`h-full relative ${
-                  tier.name === "Premium Authentication" ? "border-success/50 shadow-sm" : ""
+                  tier.highlight ? "border-success/50 shadow-sm" : ""
                 }`}>
-                  {tier.name === "Premium Authentication" && (
+                  {tier.highlight && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                       <Badge className="px-4 bg-success text-white border-success">Most Popular</Badge>
                     </div>
@@ -116,10 +154,9 @@ export default function ProtectPage() {
                   <CardContent className="pt-10 pb-8">
                     <h3 className="text-lg font-bold">{tier.name}</h3>
                     <div className="mt-3 flex items-baseline gap-1">
-                      <span className="text-4xl font-bold">${tier.price}</span>
-                      <span className="text-sm text-muted-foreground">/card</span>
+                      <span className="text-2xl font-bold">{tier.price}</span>
                     </div>
-                    <p className="mt-2 text-xs text-muted-foreground">{tier.turnaround} turnaround</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{tier.priceNote}</p>
                     <ul className="mt-6 space-y-3">
                       {tier.features.map((feature) => (
                         <li key={feature} className="flex items-start gap-2.5 text-sm">
@@ -132,11 +169,11 @@ export default function ProtectPage() {
                     </ul>
                     <Button
                       className={`w-full mt-8 ${
-                        tier.name === "Premium Authentication"
+                        tier.highlight
                           ? "bg-success hover:bg-success/90 text-white"
                           : ""
                       }`}
-                      variant={tier.name === "Premium Authentication" ? "default" : "outline"}
+                      variant={tier.highlight ? "default" : "outline"}
                       size="lg"
                       asChild
                     >
@@ -147,9 +184,6 @@ export default function ProtectPage() {
               </motion.div>
             ))}
           </div>
-          <p className="text-center text-xs text-muted-foreground mt-8">
-            Elite members get 20% off all authentication services. <Link href="/pricing" className="text-primary hover:underline">Upgrade now</Link>
-          </p>
         </div>
       </section>
 
@@ -161,10 +195,10 @@ export default function ProtectPage() {
           </h2>
           <div className="grid md:grid-cols-4 gap-8">
             {[
-              { step: "1", icon: <Camera className="h-6 w-6" />, title: "Submit Photos", desc: "Upload clear front and back photos of your card through our platform." },
-              { step: "2", icon: <Search className="h-6 w-6" />, title: "Expert Review", desc: "Our authentication experts examine texture, printing, and details." },
-              { step: "3", icon: <FileCheck className="h-6 w-6" />, title: "Get Certified", desc: "Receive your digital authentication certificate with unique QR code." },
-              { step: "4", icon: <Sparkles className="h-6 w-6" />, title: "Trade with Trust", desc: "Your verified badge appears on all listings and trades." },
+              { step: "1", icon: <Shield className="h-6 w-6" />, title: "Select Protection", desc: "Choose Trade Protection when creating your trade. Accept the terms and pay the protection fee." },
+              { step: "2", icon: <Truck className="h-6 w-6" />, title: "Ship Directly", desc: "Ship your cards directly to your trade partner with required tracking and photo proof." },
+              { step: "3", icon: <FileCheck className="h-6 w-6" />, title: "Confirm Receipt", desc: "Both parties confirm receipt. Payment authorizations are managed based on trade completion." },
+              { step: "4", icon: <Scale className="h-6 w-6" />, title: "Dispute if Needed", desc: "If something goes wrong, submit a dispute with evidence for platform review." },
             ].map((item, i) => (
               <motion.div
                 key={item.step}
@@ -189,12 +223,12 @@ export default function ProtectPage() {
         </div>
       </section>
 
-      {/* Insurance Disclaimer */}
+      {/* Disclaimer */}
       <section className="py-8">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="bg-gray-100 border border-gray-200 rounded-xl p-5">
             <p className="text-sm text-gray-600 leading-relaxed">
-              <span className="font-medium">ℹ️ Important:</span> The Trade Protection Program is a platform service, not insurance. Benefits are subject to review and approval under our platform terms. For collection insurance, we recommend consulting a licensed insurance professional.
+              <span className="font-medium">ℹ️ Important:</span> Poké-Trade is an online marketplace and does not buy, sell, inspect, authenticate, grade, store, ship, or take possession of any traded items. All items are shipped directly between users. Trade Protection is an optional platform benefit, not insurance. Benefits are discretionary, subject to review, and limited to applicable membership maximums. For collection insurance, we recommend consulting a licensed insurance professional.
             </p>
           </div>
         </div>
@@ -204,14 +238,14 @@ export default function ProtectPage() {
       <section className="py-20">
         <div className="mx-auto max-w-3xl px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">
-            Protect Your <span className="text-success">Collection</span>
+            Trade with <span className="text-success">Confidence</span>
           </h2>
           <p className="text-muted-foreground mb-8">
-            Don&apos;t let counterfeits ruin your investment. Get your cards authenticated today.
+            Add Trade Protection to your next trade for payment authorization, tracking verification, and dispute support.
           </p>
           <Button size="xl" className="bg-success hover:bg-success/90 text-white" asChild>
             <Link href="/register">
-              Start Authentication
+              Start Trading
               <ArrowRight className="h-4 w-4 ml-1" />
             </Link>
           </Button>

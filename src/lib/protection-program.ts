@@ -1,7 +1,11 @@
 /**
  * Poké-Trade Protection Program
  *
- * IMPORTANT: This is a platform service providing discretionary assistance.
+ * IMPORTANT: Poké-Trade is an online marketplace. It does NOT buy, sell, inspect,
+ * authenticate, grade, store, ship, or take possession of any traded items.
+ * All items are shipped directly between users.
+ *
+ * Trade Protection is an optional platform benefit for eligible trades only.
  * It is NOT insurance. It is NOT a guarantee. All benefits are subject to
  * investigation and review. Dollar amounts are MAXIMUMS, not guaranteed payouts.
  */
@@ -36,43 +40,46 @@ const PROTECTION_TIERS: Record<MembershipTier, ProtectionTier> = {
       "Basic dispute support",
       "Standard review timeline (5-7 business days)",
       "Access to Dispute Resolution Center",
+      "Direct shipping between users",
     ],
     maxCredit: 0,
     priorityReview: false,
     dedicatedSupport: false,
     description:
-      "Basic dispute support through the Dispute Resolution Center. File disputes, submit evidence, and receive standard review.",
+      "Basic dispute support through the Dispute Resolution Center. All trades are shipped directly between users. No platform protection benefit included.",
   },
   pro: {
     tier: "pro",
     name: "Pro Protection",
     benefits: [
       "Priority dispute review (2-3 business days)",
-      "Up to $100 in discretionary platform credits per incident (subject to investigation)",
+      "Up to $50 in discretionary platform credits per incident (subject to investigation)",
+      "Direct shipping between users with payment authorization hold",
       "Enhanced evidence review",
       "Access to Dispute Resolution Center",
     ],
-    maxCredit: 100,
+    maxCredit: 50,
     priorityReview: true,
     dedicatedSupport: false,
     description:
-      "Priority dispute review with eligibility for up to $100 in discretionary platform credits per qualifying incident. All credits are subject to investigation and are not guaranteed.",
+      "Priority dispute review with eligibility for up to $50 in discretionary platform credits per qualifying incident. All trades are shipped directly between users with secure payment authorization. All credits are subject to investigation and are not guaranteed.",
   },
   elite: {
     tier: "elite",
     name: "Elite Protection",
     benefits: [
       "Priority dispute review (1-2 business days)",
-      "Up to $250 in discretionary platform credits per incident (subject to investigation)",
+      "Up to $100 in discretionary platform credits per incident (subject to investigation)",
+      "Direct shipping between users with payment authorization hold",
       "Dedicated support representative",
       "Enhanced evidence review",
       "Access to Dispute Resolution Center",
     ],
-    maxCredit: 250,
+    maxCredit: 100,
     priorityReview: true,
     dedicatedSupport: true,
     description:
-      "Our highest level of discretionary protection. Priority review, dedicated support, and eligibility for up to $250 in platform credits per qualifying incident. All credits are subject to investigation and are not guaranteed.",
+      "Our highest level of discretionary protection. Priority review, dedicated support, and eligibility for up to $100 in platform credits per qualifying incident. All trades are shipped directly between users with secure payment authorization. All credits are subject to investigation and are not guaranteed.",
   },
 };
 
@@ -157,10 +164,10 @@ export function getAllProtectionTiers(): ProtectionTier[] {
   return [PROTECTION_TIERS.free, PROTECTION_TIERS.pro, PROTECTION_TIERS.elite];
 }
 
-/** Standard disclaimer text. */
+/** Standard disclaimer text — the full legal disclosure. */
 export const PROTECTION_DISCLAIMER =
-  "The Poké-Trade Protection Program is a platform service, not insurance. Benefits are discretionary and subject to review. Platform credits are maximums, not guaranteed amounts. All claims are investigated individually. Poké-Trade reserves the right to deny or limit benefits based on investigation findings.";
+  "By selecting Trade Protection, I understand and agree that Poké-Trade is an online marketplace and does not buy, sell, inspect, authenticate, grade, store, ship, or take possession of any traded items. All items are shipped directly between users.\n\nTrade Protection is an optional platform benefit for eligible trades only. Eligibility requires full compliance with Poké-Trade procedures, including accurate declared values, required photos, valid tracking, delivery confirmation, payment authorization, and timely dispute submission.\n\nProtection benefits are limited and may be provided as platform credit, reimbursement, or another remedy determined by Poké-Trade in its reasonable discretion, up to the applicable membership limit. Trade Protection does not guarantee reimbursement and does not make Poké-Trade responsible for user conduct, counterfeit items, shipping issues, inaccurate values, fraud, or off-platform activity.\n\nPoké-Trade may deny claims involving fraud, abuse, missing evidence, inaccurate values, prohibited items, failure to follow required procedures, or violations of the Terms of Service. Payment authorizations may be released, adjusted, or captured only as permitted by the Trade Protection Terms, payment processor rules, and applicable law.";
 
 /** Short disclaimer for banners. */
 export const PROTECTION_DISCLAIMER_SHORT =
-  "Protection Program benefits are discretionary and subject to review.";
+  "Trade Protection benefits are discretionary and subject to review. Poké-Trade does not take possession of any traded items.";

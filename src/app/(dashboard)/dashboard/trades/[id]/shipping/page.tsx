@@ -19,7 +19,7 @@ interface Trade {
   receiver_id: string;
   status: string;
   shipping_method: string;
-  verification_fee_paid: boolean;
+  trade_protection_selected: boolean;
   locked_at: string | null;
   auto_cancel_at: string | null;
   fee_amount: number | null;
@@ -42,13 +42,6 @@ interface ShippingDetails {
   receiver_photos: string[];
   receiver_received_at: string | null;
   receiver_confirmed: boolean;
-  auth_center_received_sender: string | null;
-  auth_center_received_receiver: string | null;
-  auth_center_verified: boolean;
-  auth_center_notes: string | null;
-  auth_center_cross_ship_sender_tracking: string | null;
-  auth_center_cross_ship_receiver_tracking: string | null;
-  inspection_deadline: string | null;
   disputed: boolean;
   dispute_reason: string | null;
 }
@@ -61,7 +54,7 @@ const CARRIERS = [
   { value: "other", label: "Other", hint: "Min 5 characters" },
 ];
 
-const AUTH_CENTER_ADDRESS = "Poké-Trade Verification Center\n123 Trade Lane, Suite 200\nPokemon City, CA 90210";
+
 
 /* Tracking validation (client-side mirror) */
 function isValidTracking(num: string, carrier: string): { valid: boolean; error?: string } {
@@ -156,7 +149,7 @@ export default function ShippingPage() {
 
   const isSender = trade?.sender_id === currentUserId;
   const isLocked = trade?.status === "locked";
-  const isVerified = trade?.shipping_method === "verified";
+  const isProtected = trade?.shipping_method === "protected";
 
   const myTracking = isSender ? shipping?.sender_tracking : shipping?.receiver_tracking;
   const theirTracking = isSender ? shipping?.receiver_tracking : shipping?.sender_tracking;
@@ -223,9 +216,6 @@ export default function ShippingPage() {
     }
   };
 
-  const copyAddress = () => {
-    navigator.clipboard.writeText(AUTH_CENTER_ADDRESS.replace(/\n/g, ", "));
-  };
 
   if (loading) {
     return (
@@ -267,11 +257,11 @@ export default function ShippingPage() {
           </h1>
           <div className="flex items-center gap-2 mt-0.5">
             <Badge variant="outline" className={
-              isVerified
+              isProtected
                 ? "bg-yellow-50 border-yellow-200 text-yellow-800"
                 : "bg-green-50 border-green-200 text-green-700"
             }>
-              {isVerified ? "🛡️ Poké-Trade Verified" : "📦 Direct Ship"}
+              {isProtected ? "🛡️ Trade Protection" : "📦 Direct Trade"}
             </Badge>
             <Badge variant="outline" className={
               isLocked
@@ -280,9 +270,9 @@ export default function ShippingPage() {
             }>
               {isLocked ? "🔒 LOCKED" : trade.status}
             </Badge>
-            {trade.protection_amount && trade.protection_amount > 0 && (
+            {trade.protection_amount != null && trade.protection_amount > 0 && (
               <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700">
-                🛡️ ${trade.protection_amount} protection
+                🛡️ Up to ${trade.protection_amount} protection
               </Badge>
             )}
           </div>
@@ -339,25 +329,18 @@ export default function ShippingPage() {
         })}
       </div>
 
-      {/* Verified Trade: Auth Center Address */}
-      {isVerified && (
+      {/* Trade Protection Notice */}
+      {isProtected && (
         <Card className="border-yellow-200 bg-yellow-50/50">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <Shield className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
               <div className="flex-1">
-                <h3 className="font-bold text-sm text-yellow-800">Ship to Poké-Trade Verification Center</h3>
-                <pre className="text-sm text-yellow-700 mt-2 whitespace-pre-line font-sans">
-                  {AUTH_CENTER_ADDRESS}
-                </pre>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-2 border-yellow-300 text-yellow-800 hover:bg-yellow-100"
-                  onClick={copyAddress}
-                >
-                  <Copy className="h-3 w-3 mr-1" /> Copy Address
-                </Button>
+                <h3 className="font-bold text-sm text-yellow-800">Trade Protection Active</h3>
+                <p className="text-sm text-yellow-700 mt-2">
+                  Ship directly to your trade partner. Both parties must provide valid tracking numbers and photo proof.
+                  Payment authorization is held until both parties confirm receipt.
+                </p>
               </div>
             </div>
           </CardContent>
@@ -482,33 +465,7 @@ export default function ShippingPage() {
             </div>
           )}
 
-          {/* Verified trade: auth center status */}
-          {isVerified && (
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <h4 className="text-sm font-bold text-yellow-800 mb-2">🔍 Verification Status</h4>
-              <div className="space-y-1.5 text-xs text-yellow-700">
-                <p>
-                  Sender package received:{" "}
-                  {shipping?.auth_center_received_sender
-                    ? `✅ ${new Date(shipping.auth_center_received_sender).toLocaleDateString()}`
-                    : "⏳ Pending"}
-                </p>
-                <p>
-                  Receiver package received:{" "}
-                  {shipping?.auth_center_received_receiver
-                    ? `✅ ${new Date(shipping.auth_center_received_receiver).toLocaleDateString()}`
-                    : "⏳ Pending"}
-                </p>
-                <p>
-                  Verification:{" "}
-                  {shipping?.auth_center_verified ? "✅ Cards Verified!" : "⏳ Awaiting verification"}
-                </p>
-                {shipping?.auth_center_notes && (
-                  <p className="mt-1 italic">Notes: {shipping.auth_center_notes}</p>
-                )}
-              </div>
-            </div>
-          )}
+
         </CardContent>
       </Card>
 

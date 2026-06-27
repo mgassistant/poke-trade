@@ -1,93 +1,116 @@
 /**
- * Secure Trade fee calculation and trade protection utilities
+ * Trade Protection fee calculation and trade protection utilities.
+ *
+ * Poké-Trade is an online marketplace. It does NOT buy, sell, inspect,
+ * authenticate, grade, store, ship, or take possession of any traded items.
+ * All items are shipped directly between users.
  */
+
+export type MembershipTier = 'free' | 'pro' | 'elite';
+export type ShippingMethod = 'direct' | 'protected';
+export type AuthorizationStatus = 'none' | 'pending' | 'authorized' | 'captured' | 'released' | 'failed';
+
+export interface ProtectionConfig {
+  tier: MembershipTier;
+  feeMinimum: number;
+  feeRate: number;
+  maxProtectionBenefit: number;
+}
+
+export const PROTECTION_CONFIGS: Record<MembershipTier, ProtectionConfig> = {
+  free: {
+    tier: 'free',
+    feeMinimum: 5.99,
+    feeRate: 0.05,
+    maxProtectionBenefit: 0,
+  },
+  pro: {
+    tier: 'pro',
+    feeMinimum: 3.99,
+    feeRate: 0.03,
+    maxProtectionBenefit: 50,
+  },
+  elite: {
+    tier: 'elite',
+    feeMinimum: 3.99,
+    feeRate: 0.03,
+    maxProtectionBenefit: 100,
+  },
+};
 
 export interface FeeBreakdown {
   totalFee: number;
   perParty: number;
   tradeValue: number;
   method: 'flat' | 'percentage';
+  feeMinimum: number;
+  feeRate: number;
+  maxProtectionBenefit: number;
+  tier: MembershipTier;
 }
 
 /**
- * Calculate Secure Trade (Verified) fee based on trade value.
- * - Under $50: flat $5.99
- * - $50+: 3% of total trade value
- * - Whichever is HIGHER (minimum $5.99)
- * - Split 50/50 between parties
+ * Calculate Trade Protection fee based on the higher-tier party and trade value.
+ *
+ * - Free: $5.99 OR 5% (whichever higher), split 50/50. No protection benefit.
+ * - Pro:  $3.99 OR 3% (whichever higher), split 50/50. Up to $50 protection.
+ * - Elite: $3.99 OR 3% (whichever higher), split 50/50. Up to $100 protection.
  */
-export function calculateSecureTradeFee(tradeValue: number): FeeBreakdown {
-  const flatFee = 5.99;
-  const percentageFee = tradeValue * 0.03;
-  const totalFee = Math.max(flatFee, percentageFee);
-  const method = percentageFee > flatFee ? 'percentage' : 'flat';
+export function calculateProtectionFee(tradeValue: number, tier: MembershipTier): FeeBreakdown {
+  const config = PROTECTION_CONFIGS[tier];
+  const percentageFee = tradeValue * config.feeRate;
+  const totalFee = Math.max(config.feeMinimum, percentageFee);
+  const method = percentageFee > config.feeMinimum ? 'percentage' : 'flat';
 
   return {
     totalFee: Math.round(totalFee * 100) / 100,
     perParty: Math.round((totalFee / 2) * 100) / 100,
     tradeValue,
     method,
+    feeMinimum: config.feeMinimum,
+    feeRate: config.feeRate,
+    maxProtectionBenefit: config.maxProtectionBenefit,
+    tier,
   };
 }
 
-export type MembershipTier = 'free' | 'pro' | 'elite';
+/**
+ * Determine the effective tier for fee calculation.
+ * Uses the higher tier between sender and receiver.
+ */
+export function getEffectiveTier(senderTier: MembershipTier, receiverTier: MembershipTier): MembershipTier {
+  const tierOrder: MembershipTier[] = ['free', 'pro', 'elite'];
+  const senderIdx = tierOrder.indexOf(senderTier);
+  const receiverIdx = tierOrder.indexOf(receiverTier);
+  return tierOrder[Math.max(senderIdx, receiverIdx)];
+}
 
 export interface ProtectionInfo {
   /** Maximum eligible discretionary platform credit, subject to review */
   maxEligibleCredit: number;
-  source: 'membership' | 'secure_trade' | 'addon' | 'none';
-  addonAvailable: boolean;
-  addonCost: number;
-  /** Maximum addon credit amount, subject to review */
-  addonMaxCredit: number;
+  source: 'membership' | 'none';
 }
 
 /**
- * Get trade protection details based on membership tier and shipping method.
+ * Get trade protection details based on membership tier.
+ * All trades are direct-ship between users. Protection benefits come from membership tier.
  */
 export function getTradeProtection(
   tier: MembershipTier,
-  shippingMethod: 'direct' | 'verified'
+  shippingMethod: ShippingMethod
 ): ProtectionInfo {
-  // Secure Trade includes up to $50 discretionary platform credit, subject to review
-  if (shippingMethod === 'verified') {
+  if (shippingMethod === 'protected') {
+    const config = PROTECTION_CONFIGS[tier];
     return {
-      maxEligibleCredit: 50,
-      source: 'secure_trade',
-      addonAvailable: true,
-      addonCost: 2.99,
-      addonMaxCredit: 500,
+      maxEligibleCredit: config.maxProtectionBenefit,
+      source: config.maxProtectionBenefit > 0 ? 'membership' : 'none',
     };
   }
 
-  // Direct Ship — depends on membership
-  if (tier === 'elite') {
-    return {
-      maxEligibleCredit: 100,
-      source: 'membership',
-      addonAvailable: true,
-      addonCost: 2.99,
-      addonMaxCredit: 500,
-    };
-  }
-
-  if (tier === 'pro') {
-    return {
-      maxEligibleCredit: 50,
-      source: 'membership',
-      addonAvailable: true,
-      addonCost: 2.99,
-      addonMaxCredit: 500,
-    };
-  }
-
-  // Free tier + Direct Ship = no protection
+  // Direct Ship — no protection
   return {
     maxEligibleCredit: 0,
     source: 'none',
-    addonAvailable: true,
-    addonCost: 2.99,
-    addonMaxCredit: 500,
   };
 }
 

@@ -1,7 +1,8 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { calculateSecureTradeFee, getTradeProtection } from "@/lib/trade-fees";
+import { calculateProtectionFee, getTradeProtection, getEffectiveTier } from "@/lib/trade-fees";
+import type { MembershipTier, ShippingMethod } from "@/lib/trade-fees";
 import { notifyNewTrade } from "@/lib/email-notifications";
 
 export async function POST(request: NextRequest) {
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const { receiver_id, items_offered, items_wanted, cash_amount, notes, shipping_method, add_protection } = body;
+  const { receiver_id, items_offered, items_wanted, cash_amount, notes, shipping_method, trade_protection_selected, declared_trade_value, protection_terms_accepted } = body;
 
   if (!receiver_id) return NextResponse.json({ error: "Receiver required" }, { status: 400 });
   if (receiver_id === user.id) return NextResponse.json({ error: "Cannot trade with yourself" }, { status: 400 });
@@ -78,13 +79,17 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Calculate fee for verified shipping
+  // Calculate fee for protected shipping
   let feeAmount = 0;
   let feePerParty = 0;
-  if (shipping_method === "verified") {
-    const feeBreakdown = calculateSecureTradeFee(tradeValue);
+  let protectionMaxBenefit = 0;
+  const effectiveShippingMethod: ShippingMethod = shipping_method === 'protected' ? 'protected' : 'direct';
+  if (effectiveShippingMethod === 'protected') {
+    const senderTier = (senderProfile?.subscription_tier || 'free') as MembershipTier;
+    const feeBreakdown = calculateProtectionFee(tradeValue, senderTier);
     feeAmount = feeBreakdown.totalFee;
     feePerParty = feeBreakdown.perParty;
+    protectionMaxBenefit = feeBreakdown.maxProtectionBenefit;
   }
 
   // Calculate protection
@@ -94,15 +99,9 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id)
     .single();
 
-  const membershipTier = senderProfile?.subscription_tier || "free";
-  const protection = getTradeProtection(membershipTier, shipping_method || "direct");
-  let protectionAmount = protection.maxEligibleCredit;
-  let protectionPaid = false;
-
-  if (add_protection && protection.addonAvailable) {
-    protectionAmount = protection.addonMaxCredit;
-    protectionPaid = true;
-  }
+  const membershipTier = (senderProfile?.subscription_tier || "free") as MembershipTier;
+  const protection = getTradeProtection(membershipTier, effectiveShippingMethod);
+  const protectionAmount = protection.maxEligibleCredit;
 
   // Create trade offer
   const { data: trade, error: tradeError } = await supabase
@@ -113,12 +112,19 @@ export async function POST(request: NextRequest) {
       status: "pending",
       cash_amount: cash_amount || null,
       notes: unevenTradeWarning ? `⚠️ Uneven Trade Warning: Value difference exceeds 2x.${notes ? '\n' + notes : ''}` : (notes || null),
-      shipping_method: shipping_method || 'direct',
+      shipping_method: effectiveShippingMethod,
       fee_amount: feeAmount,
       fee_per_party: feePerParty,
       protection_amount: protectionAmount,
-      protection_paid: protectionPaid,
       trade_value: tradeValue,
+      trade_protection_selected: effectiveShippingMethod === 'protected',
+      protection_fee_total: feeAmount,
+      protection_fee_each: feePerParty,
+      sender_tier: membershipTier,
+      declared_trade_value: declared_trade_value || tradeValue,
+      protection_terms_accepted_at: (effectiveShippingMethod === 'protected' && protection_terms_accepted) ? new Date().toISOString() : null,
+      protection_terms_version: '1.0',
+      protection_max_benefit: protectionMaxBenefit,
     })
     .select()
     .single();

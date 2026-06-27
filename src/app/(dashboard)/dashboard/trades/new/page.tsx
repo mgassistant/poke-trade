@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PROTECTION_DISCLAIMER } from "@/lib/protection-program";
 
 /* ── Types ── */
 interface UserProfile {
@@ -45,7 +46,7 @@ interface CardItem {
 }
 
 type Step = 1 | 2 | 3 | 4 | 5;
-type ShippingMethod = "direct" | "verified";
+type ShippingMethod = "direct" | "protected";
 
 const STEP_LABELS = [
   { num: 1, label: "Partner", icon: User },
@@ -56,14 +57,28 @@ const STEP_LABELS = [
 ];
 
 /* ── Fee Calculation (mirrors server logic) ── */
-function calculateFee(tradeValue: number): { total: number; perParty: number; method: string } {
-  const flat = 5.99;
-  const pct = tradeValue * 0.03;
-  const total = Math.max(flat, pct);
+type MembershipTier = "free" | "pro" | "elite";
+
+const PROTECTION_CONFIGS: Record<MembershipTier, { feeMinimum: number; feeRate: number; maxBenefit: number }> = {
+  free: { feeMinimum: 5.99, feeRate: 0.05, maxBenefit: 0 },
+  pro: { feeMinimum: 3.99, feeRate: 0.03, maxBenefit: 50 },
+  elite: { feeMinimum: 3.99, feeRate: 0.03, maxBenefit: 100 },
+};
+
+function calculateFee(tradeValue: number, tier: MembershipTier): {
+  total: number; perParty: number; method: string;
+  feeMinimum: number; feeRate: number; maxBenefit: number;
+} {
+  const config = PROTECTION_CONFIGS[tier];
+  const pct = tradeValue * config.feeRate;
+  const total = Math.max(config.feeMinimum, pct);
   return {
     total: Math.round(total * 100) / 100,
     perParty: Math.round((total / 2) * 100) / 100,
-    method: pct > flat ? "3%" : "flat $5.99",
+    method: pct > config.feeMinimum ? `${config.feeRate * 100}%` : `flat $${config.feeMinimum}`,
+    feeMinimum: config.feeMinimum,
+    feeRate: config.feeRate,
+    maxBenefit: config.maxBenefit,
   };
 }
 
@@ -347,8 +362,8 @@ function NewTradeContent() {
 
   // Step 3: Shipping & Protection
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>("direct");
-  const [addProtection, setAddProtection] = useState(false);
-  const [membershipTier, setMembershipTier] = useState<"free" | "pro" | "elite">("free");
+  const [protectionTermsAccepted, setProtectionTermsAccepted] = useState(false);
+  const [membershipTier, setMembershipTier] = useState<MembershipTier>("free");
 
   // Step 4: Message
   const [notes, setNotes] = useState("");
@@ -366,7 +381,7 @@ function NewTradeContent() {
   const totalTradeValue = offerValue + wantValue;
 
   // Fee calculation
-  const fee = useMemo(() => calculateFee(totalTradeValue), [totalTradeValue]);
+  const fee = useMemo(() => calculateFee(totalTradeValue, membershipTier), [totalTradeValue, membershipTier]);
 
   const offerIds = useMemo(() => new Set(selectedOffer.map((i) => i.id)), [selectedOffer]);
   const wantIds = useMemo(() => new Set(selectedWant.map((i) => i.id)), [selectedWant]);
@@ -448,22 +463,19 @@ function NewTradeContent() {
     });
   };
 
-  // Protection info
-  const protectionInfo = useMemo(() => {
-    if (shippingMethod === "verified") {
-      return { amount: 50, source: "Secure Trade", included: true };
+  // Reset protection terms when switching shipping method
+  useEffect(() => {
+    if (shippingMethod === "direct") {
+      setProtectionTermsAccepted(false);
     }
-    if (membershipTier === "elite") {
-      return { amount: 100, source: "Elite membership", included: true };
-    }
-    if (membershipTier === "pro") {
-      return { amount: 50, source: "Pro membership", included: true };
-    }
-    return { amount: 0, source: "none", included: false };
-  }, [shippingMethod, membershipTier]);
+  }, [shippingMethod]);
 
   const handleSubmit = async () => {
     if (!selectedUser) return;
+    if (shippingMethod === "protected" && !protectionTermsAccepted) {
+      alert("You must accept the Trade Protection terms before proceeding.");
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = {
@@ -478,7 +490,9 @@ function NewTradeContent() {
         })),
         notes: notes || null,
         shipping_method: shippingMethod,
-        add_protection: addProtection,
+        trade_protection_selected: shippingMethod === "protected",
+        declared_trade_value: totalTradeValue,
+        protection_terms_accepted: shippingMethod === "protected" ? protectionTermsAccepted : false,
       };
 
       let res;
@@ -774,9 +788,9 @@ function NewTradeContent() {
             <p className="text-white/80 text-sm">Choose shipping method and trade protection</p>
           </div>
           <CardContent className="p-6 space-y-4">
-            {/* Direct Ship */}
+            {/* Direct Trade (Free) */}
             <button
-              onClick={() => { setShippingMethod("direct"); setAddProtection(false); }}
+              onClick={() => { setShippingMethod("direct"); }}
               className={`w-full text-left p-5 rounded-xl border-2 transition-all ${
                 shippingMethod === "direct"
                   ? "border-[#E3350D] bg-red-50 shadow-md"
@@ -791,17 +805,18 @@ function NewTradeContent() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-lg">Direct Ship</h3>
+                    <h3 className="font-bold text-lg">Direct Trade</h3>
                     <Badge className="bg-green-100 text-green-700 border-green-200">Free</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Ship directly to each other — fast and free!
+                    Ship directly to each other. No Poké-Trade protection included.
                   </p>
                   <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
                     <li className="flex items-center gap-2">📸 Photo proof required before shipping</li>
                     <li className="flex items-center gap-2">📦 Both traders provide tracking numbers</li>
-                    <li className="flex items-center gap-2">🔒 Trade locked until both parties ship</li>
-                    <li className="flex items-center gap-2">⏰ 7-day shipping deadline after acceptance</li>
+                    <li className="flex items-center gap-2">🔒 Trade locked after acceptance</li>
+                    <li className="flex items-center gap-2">⏰ 7-day shipping deadline</li>
+                    <li className="flex items-center gap-2">❌ No platform reimbursement or protection</li>
                   </ul>
                 </div>
                 {shippingMethod === "direct" && (
@@ -812,54 +827,69 @@ function NewTradeContent() {
               </div>
             </button>
 
-            {/* Verified */}
+            {/* Poké-Trade Trade Protection */}
             <button
-              onClick={() => setShippingMethod("verified")}
+              onClick={() => setShippingMethod("protected")}
               className={`w-full text-left p-5 rounded-xl border-2 transition-all ${
-                shippingMethod === "verified"
+                shippingMethod === "protected"
                   ? "border-[#FFCB05] bg-yellow-50 shadow-md"
                   : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
               }`}
             >
               <div className="flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
-                  shippingMethod === "verified" ? "bg-[#FFCB05] text-gray-900" : "bg-gray-100 text-gray-500"
+                  shippingMethod === "protected" ? "bg-[#FFCB05] text-gray-900" : "bg-gray-100 text-gray-500"
                 }`}>
                   <Shield className="h-6 w-6" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-lg">Poké-Trade Verified</h3>
+                    <h3 className="font-bold text-lg">Poké-Trade Trade Protection</h3>
                     <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
                       ${fee.total.toFixed(2)}
                     </Badge>
                     <Badge className="bg-blue-100 text-blue-700 border-blue-200">⭐ Recommended</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Maximum protection with authentication and discretionary platform credit
+                    Protect eligible direct-ship trades with payment authorization, tracking verification, and platform dispute review.
                   </p>
                   {/* Dynamic fee breakdown */}
                   <div className="mt-2 p-3 bg-yellow-100/50 rounded-lg border border-yellow-200">
                     <p className="text-xs font-semibold text-yellow-800 mb-1">Fee Breakdown</p>
                     <p className="text-xs text-yellow-700">
-                      Trade value: ${totalTradeValue.toFixed(2)} · Fee: {fee.method} = ${fee.total.toFixed(2)}
+                      Declared value: ${totalTradeValue.toFixed(2)} · Rate: {(fee.feeRate * 100)}% · Minimum: ${fee.feeMinimum.toFixed(2)}
                     </p>
                     <p className="text-xs text-yellow-700 font-medium mt-0.5">
-                      Your share: ${fee.perParty.toFixed(2)} | Their share: ${fee.perParty.toFixed(2)}
+                      Total fee: ${fee.total.toFixed(2)} · Your share: ${fee.perParty.toFixed(2)} | Their share: ${fee.perParty.toFixed(2)}
                     </p>
+                    {fee.maxBenefit > 0 && (
+                      <p className="text-xs text-yellow-700 font-medium mt-0.5">
+                        🛡️ Max protection benefit: up to ${fee.maxBenefit.toFixed(2)} ({membershipTier} tier)
+                      </p>
+                    )}
+                    {fee.maxBenefit === 0 && (
+                      <p className="text-xs text-orange-600 mt-0.5">
+                        ⚠️ Free tier: no protection benefit. Upgrade to Pro or Elite for coverage.
+                      </p>
+                    )}
                     <p className="text-[10px] text-yellow-600 mt-1">
-                      $5.99 or 3% (whichever is higher) · Split 50/50
+                      ${fee.feeMinimum.toFixed(2)} or {(fee.feeRate * 100)}% (whichever is higher) · Split 50/50
                     </p>
                   </div>
                   <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-                    <li className="flex items-center gap-2">🏢 Both ship to Poké-Trade auth center</li>
-                    <li className="flex items-center gap-2">🔍 Cards authenticated &amp; condition verified</li>
-                    <li className="flex items-center gap-2">📦 Cross-shipped to recipients</li>
-                    <li className="flex items-center gap-2">✅ &ldquo;Verified Trade&rdquo; badge on profiles</li>
-                    <li className="flex items-center gap-2">🛡️ Up to $50 discretionary platform credit included</li>
+                    <li className="flex items-center gap-2">📦 Direct shipping between users</li>
+                    <li className="flex items-center gap-2">📸 Required photo proof</li>
+                    <li className="flex items-center gap-2">🔍 Required tracking</li>
+                    <li className="flex items-center gap-2">✅ Delivery confirmation</li>
+                    <li className="flex items-center gap-2">⚖️ Dispute submission portal</li>
+                    <li className="flex items-center gap-2">💳 Secure payment authorization</li>
+                    <li className="flex items-center gap-2">🛡️ Membership protection benefits may apply</li>
+                    <li className="flex items-center gap-2 text-xs italic text-muted-foreground/70">
+                      ℹ️ Poké-Trade does not receive, inspect, authenticate, or ship products
+                    </li>
                   </ul>
                 </div>
-                {shippingMethod === "verified" && (
+                {shippingMethod === "protected" && (
                   <div className="w-6 h-6 rounded-full bg-[#FFCB05] flex items-center justify-center shrink-0">
                     <Check className="h-4 w-4 text-gray-900" />
                   </div>
@@ -867,67 +897,28 @@ function NewTradeContent() {
               </div>
             </button>
 
-            {/* Trade Protection Section */}
-            <div className="border-t pt-4 mt-4">
-              <h3 className="font-bold text-base flex items-center gap-2 mb-3">
-                <Shield className="h-5 w-5 text-blue-500" /> Trade Protection
-              </h3>
-
-              {shippingMethod === "verified" ? (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-                  <p className="text-sm text-green-800 font-medium flex items-center gap-2">
-                    ✅ Up to $50 discretionary platform credit included with Secure Trade
-                  </p>
-                  <p className="text-xs text-green-600 mt-1">
-                    Your trade is eligible for up to $50 discretionary platform credit, subject to review.
-                  </p>
+            {/* Legal Disclosure Checkbox (required for protection) */}
+            {shippingMethod === "protected" && (
+              <div className="border border-yellow-200 bg-yellow-50/50 rounded-xl p-4 space-y-3">
+                <h4 className="font-bold text-sm text-yellow-800 flex items-center gap-2">
+                  <Shield className="h-4 w-4" /> Trade Protection Disclosure
+                </h4>
+                <div className="max-h-48 overflow-y-auto text-xs text-gray-600 leading-relaxed bg-white rounded-lg p-3 border border-gray-200">
+                  {PROTECTION_DISCLAIMER}
                 </div>
-              ) : protectionInfo.included ? (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-                  <p className="text-sm text-green-800 font-medium flex items-center gap-2">
-                    ✅ Up to ${protectionInfo.amount} discretionary platform credit ({protectionInfo.source})
-                  </p>
-                  <p className="text-xs text-green-600 mt-1">
-                    Your {membershipTier} membership provides up to ${protectionInfo.amount} discretionary platform credit per trade.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl">
-                    <p className="text-sm text-orange-800 font-medium">
-                      ⚠️ No trade protection on free tier with Direct Ship
-                    </p>
-                    <p className="text-xs text-orange-600 mt-1">
-                      Upgrade to Pro ($19.99/mo) for up to $100 discretionary platform credit per trade, or add protection below.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setAddProtection(!addProtection)}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                      addProtection
-                        ? "border-blue-500 bg-blue-50 shadow-md"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-sm">Add Trade Protection</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          $2.99 per trade · Up to $500 discretionary platform credit (subject to review)
-                        </p>
-                      </div>
-                      <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-0.5 ${
-                        addProtection ? "bg-blue-500" : "bg-gray-200"
-                      }`}>
-                        <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-                          addProtection ? "translate-x-4" : "translate-x-0"
-                        }`} />
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              )}
-            </div>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={protectionTermsAccepted}
+                    onChange={(e) => setProtectionTermsAccepted(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#E3350D] focus:ring-[#E3350D]"
+                  />
+                  <span className="text-xs text-gray-700">
+                    I have read and agree to the Trade Protection terms and disclosure above.
+                  </span>
+                </label>
+              </div>
+            )}
 
             {/* Trade Locking Notice */}
             <div className="p-4 bg-red-50 border border-red-200 rounded-xl mt-2">
@@ -947,6 +938,7 @@ function NewTradeContent() {
               </Button>
               <Button
                 onClick={() => setStep(4)}
+                disabled={shippingMethod === "protected" && !protectionTermsAccepted}
                 className="bg-[#E3350D] hover:bg-[#c72e0b] gap-2 px-6"
               >
                 Add Message <span className="text-lg">→</span>
@@ -1079,37 +1071,34 @@ function NewTradeContent() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Shipping</span>
                 <Badge variant="outline" className={
-                  shippingMethod === "verified"
+                  shippingMethod === "protected"
                     ? "bg-yellow-50 border-yellow-200 text-yellow-800"
                     : "bg-green-50 border-green-200 text-green-700"
                 }>
-                  {shippingMethod === "verified" ? `🛡️ Poké-Trade Verified ($${fee.total.toFixed(2)})` : "📦 Direct Ship (Free)"}
+                  {shippingMethod === "protected" ? `🛡️ Trade Protection ($${fee.total.toFixed(2)})` : "📦 Direct Trade (Free)"}
                 </Badge>
               </div>
 
-              {shippingMethod === "verified" && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Your fee share</span>
-                  <span className="text-sm font-medium">${fee.perParty.toFixed(2)}</span>
-                </div>
+              {shippingMethod === "protected" && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Your fee share</span>
+                    <span className="text-sm font-medium">${fee.perParty.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Max protection benefit</span>
+                    <Badge variant="outline" className={
+                      fee.maxBenefit > 0
+                        ? "bg-green-50 border-green-200 text-green-700"
+                        : "bg-orange-50 border-orange-200 text-orange-700"
+                    }>
+                      {fee.maxBenefit > 0
+                        ? `🛡️ Up to $${fee.maxBenefit.toFixed(2)} (${membershipTier})`
+                        : "⚠️ None (free tier)"}
+                    </Badge>
+                  </div>
+                </>
               )}
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Trade Protection</span>
-                <Badge variant="outline" className={
-                  (protectionInfo.included || addProtection || shippingMethod === "verified")
-                    ? "bg-green-50 border-green-200 text-green-700"
-                    : "bg-red-50 border-red-200 text-red-700"
-                }>
-                  {shippingMethod === "verified"
-                    ? "🛡️ $50 included"
-                    : protectionInfo.included
-                    ? `🛡️ $${protectionInfo.amount} (${protectionInfo.source})`
-                    : addProtection
-                    ? "🛡️ Up to $500 protection ($2.99)"
-                    : "❌ None"}
-                </Badge>
-              </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Trade Locking</span>
@@ -1156,6 +1145,7 @@ export default function NewTradePage() {
       fallback={
         <div className="space-y-6 max-w-5xl mx-auto">
           <div>
+
             <h1 className="text-2xl font-bold">🎮 Pokétopia Trade Center</h1>
           </div>
           <Skeleton className="h-64 w-full rounded-xl" />

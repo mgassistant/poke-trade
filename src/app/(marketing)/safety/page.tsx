@@ -60,7 +60,7 @@ export default function SafetyPage() {
             <span className="text-success">Confidence</span>
           </h1>
           <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-            7 layers of protection keep you safe from scams, fakes, and fraud. From identity verification to secure payment holds — we provide the tools you need to trade with confidence.
+            7 layers of protection keep you safe from scams, fakes, and fraud. From identity verification to secure payment authorization holds — we provide the tools you need to trade with confidence.
           </p>
         </div>
       </section>
@@ -92,16 +92,16 @@ export default function SafetyPage() {
               {
                 layer: 3,
                 icon: <CreditCard className="h-5 w-5" />,
-                title: "Secure Payment Holds",
-                desc: "All marketplace payments are held in a secure payment hold. Sellers only get paid after the buyer confirms receipt and passes the 48-hour inspection window.",
-                features: ["Stripe holds funds until delivery", "48-hour buyer inspection window", "One-click dispute during inspection", "Automatic release after window"],
+                title: "Secure Payment Authorization",
+                desc: "For protected trades, payment authorizations are held securely. Sellers only get paid after the buyer confirms receipt and passes the inspection window.",
+                features: ["Payment authorization holds", "Buyer inspection window", "One-click dispute during inspection", "Automatic release after window"],
               },
               {
                 layer: 4,
                 icon: <Truck className="h-5 w-5" />,
-                title: "Shipping Verification",
-                desc: "Tracking numbers required for trades and sales over $25. Delivery confirmation needed before funds release.",
-                features: ["Mandatory tracking ($25+)", "Delivery confirmation", "Photo proof of packaging ($100+)", "Carrier integration"],
+                title: "Direct Shipping with Tracking",
+                desc: "All items ship directly between users. Tracking numbers required for trades and sales over $25. Delivery confirmation needed before authorization release.",
+                features: ["Direct shipping between users", "Mandatory tracking ($25+)", "Photo proof of packaging ($100+)", "Delivery confirmation"],
               },
               {
                 layer: 5,
@@ -294,11 +294,11 @@ export default function SafetyPage() {
             The Safest Place to <span className="text-success">Trade Cards</span>
           </h2>
           <p className="text-muted-foreground mb-8">
-            7 layers of protection. Verified traders. Secure payment holds. Join the community that takes trust seriously.
+            7 layers of protection. Trusted traders. Secure payment authorization. Join the community that takes safety seriously.
           </p>
           <Button size="xl" className="bg-success hover:bg-success/90 text-white" asChild>
             <Link href="/register">
-              Create Verified Account
+              Create Your Account
               <ArrowRight className="h-4 w-4 ml-1" />
             </Link>
           </Button>

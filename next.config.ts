@@ -24,6 +24,11 @@ const nextConfig: NextConfig = {
         hostname: "ruuhbwjmhqecomwrgaeq.supabase.co",
         pathname: "/storage/**",
       },
+      {
+        protocol: "https",
+        hostname: "images.scrydex.com",
+        pathname: "/**",
+      },
     ],
   },
 
@@ -58,7 +63,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://checkout.stripe.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://images.pokemontcg.io https://tcgplayer-cdn.tcgplayer.com https://ruuhbwjmhqecomwrgaeq.supabase.co https://*.stripe.com",
+              "img-src 'self' data: blob: https://images.pokemontcg.io https://images.scrydex.com https://tcgplayer-cdn.tcgplayer.com https://ruuhbwjmhqecomwrgaeq.supabase.co https://*.stripe.com",
               "font-src 'self' data:",
               "connect-src 'self' https://ruuhbwjmhqecomwrgaeq.supabase.co https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://api.pokemontcg.io",
               "frame-src 'self' https://js.stripe.com https://checkout.stripe.com",

@@ -126,7 +126,7 @@ export function HeroSection() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
             {[
               { value: "19,000+", label: "Cards Listed" },
-              { value: "Verified", label: "Trusted Traders" },
+              { value: "Trusted", label: "Verified Traders" },
               { value: "3%", label: "Low Fees" },
               { value: "Secure", label: "Every Trade" },
             ].map((stat) => (
