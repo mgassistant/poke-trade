@@ -25,6 +25,7 @@ const adminLinks = [
     { href: "/admin/shop", label: "Shop", icon: ShoppingBag },
     { href: "/admin/verification", label: "Verification", icon: CheckCircle },
     { href: "/admin/disputes", label: "Disputes", icon: FileWarning },
+    { href: "/admin/fraud", label: "Fraud", icon: Shield },
     { href: "/admin/support", label: "Support", icon: Headphones },
     { href: "/admin/drops", label: "Drop Products", icon: Package },
     { href: "/admin/insurance", label: "Insurance Leads", icon: Shield },

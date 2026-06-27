@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -18,8 +18,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   }
 
-  // Get fraud flags with related data
-  const { data: flags, error } = await supabase
+  // Get fraud flags with related data using service client
+  const svc = await createServiceClient();
+  const { data: flags, error } = await svc
     .from("fraud_flags")
     .select("*")
     .order("created_at", { ascending: false })
@@ -27,28 +28,23 @@ export async function GET(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Enrich with profile and listing data
-  const enrichedFlags = await Promise.all(
-    (flags || []).map(async (flag) => {
-      const { data: flagProfile } = await supabase
-        .from("profiles")
-        .select("username, display_name, trust_score, verification_level")
-        .eq("id", flag.user_id)
-        .single();
+  // Batch-load profiles and listings to avoid N+1
+  const userIds = [...new Set((flags || []).map(f => f.user_id))];
+  const listingIds = [...new Set((flags || []).filter(f => f.listing_id).map(f => f.listing_id))];
 
-      let listing = null;
-      if (flag.listing_id) {
-        const { data: listingData } = await supabase
-          .from("listings")
-          .select("title, price")
-          .eq("id", flag.listing_id)
-          .single();
-        listing = listingData;
-      }
+  const [profilesRes, listingsRes] = await Promise.all([
+    userIds.length > 0 ? svc.from("profiles").select("id, username, display_name, trust_score, verification_level").in("id", userIds) : { data: [] },
+    listingIds.length > 0 ? svc.from("listings").select("id, title, price").in("id", listingIds) : { data: [] },
+  ]);
 
-      return { ...flag, profile: flagProfile, listing };
-    })
-  );
+  const profileMap = new Map((profilesRes.data || []).map(p => [p.id, p]));
+  const listingMap = new Map((listingsRes.data || []).map(l => [l.id, l]));
+
+  const enrichedFlags = (flags || []).map(flag => ({
+    ...flag,
+    profile: profileMap.get(flag.user_id) || null,
+    listing: flag.listing_id ? listingMap.get(flag.listing_id) || null : null,
+  }));
 
   return NextResponse.json({ flags: enrichedFlags });
 }

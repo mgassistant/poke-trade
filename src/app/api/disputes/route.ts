@@ -1,12 +1,42 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const isAdmin = request.nextUrl.searchParams.get("admin") === "true";
+
+  // If admin=true, verify admin role and return ALL disputes
+  if (isAdmin) {
+    const { data: profile } = await supabase.from("profiles").select("is_admin").eq("id", user.id).single();
+    if (!profile?.is_admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+    const svc = await createServiceClient();
+    const status = request.nextUrl.searchParams.get("status");
+    let query = svc
+      .from("disputes")
+      .select(`
+        *,
+        trade_offer:trade_offers(
+          id, status, sender_id, receiver_id, created_at,
+          sender:profiles!trade_offers_sender_id_fkey(id, username, display_name, avatar_url),
+          receiver:profiles!trade_offers_receiver_id_fkey(id, username, display_name, avatar_url)
+        )
+      `)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (status && status !== "all") query = query.eq("status", status);
+
+    const { data: disputes, error } = await query;
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ disputes });
+  }
+
+  // Regular user: return only their disputes
   const { data: disputes, error } = await supabase
     .from("disputes")
     .select(`

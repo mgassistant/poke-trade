@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient as createAuthClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -379,6 +380,13 @@ function generateAlerts(productIds: string[], productMap: Map<string, SeedProduc
 }
 
 export async function POST() {
+  // Admin auth check
+  const authClient = await createAuthClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { data: profile } = await authClient.from("profiles").select("is_admin").eq("id", user.id).single();
+  if (!profile?.is_admin) return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+
   // Clear existing data
   await supabase.from("drop_alerts").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await supabase.from("drop_watchlist").delete().neq("id", "00000000-0000-0000-0000-000000000000");

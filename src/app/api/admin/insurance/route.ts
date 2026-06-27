@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser();
@@ -19,10 +19,12 @@ export async function GET() {
   const user = await requireAdmin(supabase);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: leads, error } = await supabase
+  const svc = await createServiceClient();
+  const { data: leads, error } = await svc
     .from("insurance_leads")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(200);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -48,7 +50,8 @@ export async function PATCH(request: NextRequest) {
     if (key in updates) filtered[key] = updates[key];
   }
 
-  const { error } = await supabase
+  const svc = await createServiceClient();
+  const { error } = await svc
     .from("insurance_leads")
     .update(filtered)
     .eq("id", id);
