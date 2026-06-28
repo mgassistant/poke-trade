@@ -23,19 +23,43 @@ export async function POST(request: NextRequest) {
 
   let matches: any[] = [];
 
-  // Strategy 1: Exact number match (may return multiple sets)
-  const { data: exactMatches } = await supabase
-    .from("cards")
-    .select(CARD_SELECT)
-    .eq("number", number)
-    .order("market_value", { ascending: false, nullsFirst: false })
-    .limit(20);
-
-  if (exactMatches && exactMatches.length > 0) {
-    matches = exactMatches;
+  // Strategy 1: Number + name combo (most precise)
+  if (name && name.length >= 2) {
+    const nameWords = name.toLowerCase().split(/\s+/).filter((w: string) => w.length >= 2).slice(0, 3);
+    
+    // Try exact number match filtered by name
+    let query = supabase.from("cards").select(CARD_SELECT).eq("number", number);
+    for (const word of nameWords) {
+      query = query.ilike("name", `%${word}%`);
+    }
+    const { data: nameNumMatches } = await query.order("market_value", { ascending: false, nullsFirst: false }).limit(10);
+    if (nameNumMatches && nameNumMatches.length > 0) {
+      matches = nameNumMatches;
+    }
+    
+    // Try with leading zeros
+    if (matches.length === 0 && numberWithZeros && numberWithZeros !== number) {
+      let q2 = supabase.from("cards").select(CARD_SELECT).eq("number", numberWithZeros);
+      for (const word of nameWords) {
+        q2 = q2.ilike("name", `%${word}%`);
+      }
+      const { data } = await q2.order("market_value", { ascending: false, nullsFirst: false }).limit(10);
+      if (data && data.length > 0) matches = data;
+    }
   }
 
-  // Strategy 2: Try with leading zeros
+  // Strategy 2: Number only (if no name or name search failed)
+  if (matches.length === 0) {
+    const { data: exactMatches } = await supabase
+      .from("cards")
+      .select(CARD_SELECT)
+      .eq("number", number)
+      .order("market_value", { ascending: false, nullsFirst: false })
+      .limit(20);
+    if (exactMatches && exactMatches.length > 0) matches = exactMatches;
+  }
+
+  // Strategy 3: Try with leading zeros
   if (matches.length === 0 && numberWithZeros && numberWithZeros !== number) {
     const { data } = await supabase
       .from("cards")

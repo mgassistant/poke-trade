@@ -173,12 +173,23 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    
+    // CRITICAL: Crop to just the card frame region (center 75% width, card aspect ratio)
+    // This prevents OCR/AI from reading neighboring cards in a binder
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    const cardWidth = Math.round(vw * 0.75);
+    const cardHeight = Math.round(cardWidth * 1.4); // Pokémon card aspect ratio ~2.5:3.5
+    const cropX = Math.round((vw - cardWidth) / 2);
+    const cropY = Math.round((vh - cardHeight) / 2);
+    
+    canvas.width = cardWidth;
+    canvas.height = cardHeight;
     const ctx = canvas.getContext("2d");
     if (!ctx) { setProcessing(false); return; }
-    ctx.drawImage(video, 0, 0);
-    const rawDataUrl = canvas.toDataURL("image/jpeg", 0.8);
+    // Draw only the cropped card region
+    ctx.drawImage(video, cropX, cropY, cardWidth, cardHeight, 0, 0, cardWidth, cardHeight);
+    const rawDataUrl = canvas.toDataURL("image/jpeg", 0.85);
     // Compress before sending to API
     const dataUrl = await compressForScan(rawDataUrl);
 
@@ -198,10 +209,13 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
 
     try {
       // ── Phase 1: Try OCR first (free, fast, client-side) ──
+      // OCR has a 5-second timeout — if Tesseract hasn't loaded yet, skip to AI
       let matched = false;
       try {
-        const ocr = await ocrCardImage(dataUrl);
-        if (ocr.cardNumberClean || (ocr.cardName && ocr.cardName.length >= 3)) {
+        const ocrPromise = ocrCardImage(dataUrl);
+        const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
+        const ocr = await Promise.race([ocrPromise, timeoutPromise]);
+        if (ocr && (ocr.cardNumberClean || (ocr.cardName && ocr.cardName.length >= 3))) {
           const ocrResult = await searchByOcr(ocr);
           if (ocrResult.matches.length > 0) {
             const topMatch = ocrResult.matches[0];
@@ -314,10 +328,12 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
       try {
         let matched = false;
 
-        // Try OCR first (free, no API call)
+        // Try OCR first (free, no API call) with 5s timeout
         try {
-          const ocr = await ocrCardImage(card.image);
-          if (ocr.cardNumberClean || (ocr.cardName && ocr.cardName.length >= 3)) {
+          const ocrPromise = ocrCardImage(card.image);
+          const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
+          const ocr = await Promise.race([ocrPromise, timeoutPromise]);
+          if (ocr && (ocr.cardNumberClean || (ocr.cardName && ocr.cardName.length >= 3))) {
             const ocrResult = await searchByOcr(ocr);
             if (ocrResult.matches.length > 0) {
               const topMatch = ocrResult.matches[0];
