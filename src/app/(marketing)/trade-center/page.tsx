@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   Repeat, ArrowRight, ArrowDown, Search, Users, Shield, TrendingUp,
   Package, Star, MessageSquare, FileCheck, Truck, CheckCircle2,
   Lock, Scale, Eye, History, AlertTriangle, Crown, Gavel, ChevronRight,
   DollarSign, Handshake, Award,
 } from "lucide-react";
+import { CardShowcase } from "@/components/shared/CardShowcase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +32,10 @@ export default function TradeCenterPage() {
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative py-20 overflow-hidden">
+        {/* Background card imagery */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <CardShowcase variant="floating" count={5} className="w-full h-full" />
+        </div>
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <Badge variant="secondary" className="mb-6 px-4 py-1.5">
             <Repeat className="h-3.5 w-3.5 mr-1.5" />
@@ -128,7 +134,7 @@ export default function TradeCenterPage() {
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
                   <div className="text-xs font-semibold text-primary mb-3">🎴 YOU OFFER</div>
                   <div className="flex items-center gap-3 p-2 bg-muted/20 rounded-lg mb-2">
-                    <div className="h-12 w-9 bg-muted/40 rounded flex items-center justify-center text-lg">🔥</div>
+                    <div className="h-14 w-10 rounded overflow-hidden bg-muted/40 relative shrink-0"><Image src="https://images.pokemontcg.io/sv3/254_hires.png" alt="Charizard ex" fill className="object-contain" sizes="40px" /></div>
                     <div>
                       <div className="font-semibold text-sm">Charizard EX</div>
                       <div className="text-xs text-muted-foreground">Obsidian Flames · NM</div>
@@ -151,7 +157,7 @@ export default function TradeCenterPage() {
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
                   <div className="text-xs font-semibold text-secondary mb-3">🎯 YOU WANT</div>
                   <div className="flex items-center gap-3 p-2 bg-muted/20 rounded-lg">
-                    <div className="h-12 w-9 bg-muted/40 rounded flex items-center justify-center text-lg">🌙</div>
+                    <div className="h-14 w-10 rounded overflow-hidden bg-muted/40 relative shrink-0"><Image src="https://images.pokemontcg.io/swsh7/215_hires.png" alt="Umbreon VMAX" fill className="object-contain" sizes="40px" /></div>
                     <div>
                       <div className="font-semibold text-sm">Umbreon VMAX</div>
                       <div className="text-xs text-muted-foreground">Evolving Skies · NM</div>

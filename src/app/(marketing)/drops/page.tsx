@@ -8,6 +8,7 @@ import {
   TrendingDown, TrendingUp, Package, ShoppingCart,
   Lock, Shield, CheckCircle2, Crown, Star,
 } from "lucide-react";
+import { CardShowcase } from "@/components/shared/CardShowcase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -319,7 +320,9 @@ export default function DropsPage() {
     <div className="min-h-screen">
       {/* ── Hero ── */}
       <section className="relative py-16 md:py-20 overflow-hidden bg-gradient-to-br from-amber-50 via-white to-red-50">
-        <div className="absolute top-4 right-8 text-6xl opacity-10 select-none">⚡</div>
+        <div className="absolute top-4 right-8 opacity-10 pointer-events-none hidden lg:block">
+          <CardShowcase variant="fan" count={3} offset={3} />
+        </div>
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 bg-amber-100/80 text-amber-700 rounded-full text-sm font-medium border border-amber-200/60">
             <Zap className="h-4 w-4" />

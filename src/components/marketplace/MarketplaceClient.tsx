@@ -7,7 +7,9 @@ import { motion } from "framer-motion";
 import {
   Search, LayoutGrid, Grid3X3, ArrowUpDown, Loader2,
   ChevronLeft, ChevronRight, Package, Award, Layers, ShoppingBag,
+  ExternalLink, Shield,
 } from "lucide-react";
+import { SEALED_PRODUCTS, GRADED_PRODUCTS } from "@/lib/tcgplayer-products";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -328,20 +330,63 @@ export function MarketplaceClient() {
 
         {/* ── Sealed Products ── */}
         {category === "sealed" && (
-          <div className="text-center py-20">
-            <Package className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Sealed Products</h2>
-            <p className="text-muted-foreground mb-2">Booster boxes, Elite Trainer Boxes, tins, and more</p>
-            <p className="text-sm text-muted-foreground mb-8">
-              Sealed product listings are coming soon. Check our <Link href="/drops" className="text-primary hover:underline">Drop Alerts</Link> for retailer stock tracking.
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 max-w-4xl mx-auto">
-              {SEALED_TYPES.filter((t) => t.key).map((t) => (
-                <div key={t.key} className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-                  <div className="text-2xl mb-2">📦</div>
-                  <span className="text-xs font-medium text-muted-foreground">{t.label}</span>
-                  <Badge variant="outline" className="mt-2 text-[8px] block">Coming Soon</Badge>
-                </div>
+          <div>
+            <div className="mb-6">
+              <h2 className="text-xl font-bold">Sealed Products</h2>
+              <p className="text-sm text-muted-foreground mt-1">Booster boxes, ETBs, collection boxes, and tins — market prices from TCGPlayer</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {SEALED_PRODUCTS.map((product) => (
+                <Card key={product.slug} className="group hover:shadow-md transition-all hover:-translate-y-1 overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="h-32 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center relative p-4">
+                      <Image
+                        src={product.image_url}
+                        alt={product.set_name}
+                        width={160}
+                        height={64}
+                        className="max-h-16 w-auto object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                      />
+                      <div className="absolute top-2 left-2">
+                        <Badge variant="outline" className="text-[9px] bg-white/80">
+                          {product.category === "booster_box" ? "Booster Box" :
+                           product.category === "etb" ? "ETB" :
+                           product.category === "collection_box" ? "Collection Box" :
+                           product.category === "special" ? "Premium" : product.category}
+                        </Badge>
+                      </div>
+                      {!product.in_stock && (
+                        <div className="absolute top-2 right-2">
+                          <Badge className="text-[9px] bg-red-100 text-red-700 border-0">Sold Out</Badge>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4 space-y-2">
+                      <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 min-h-[2.5rem]">
+                        {product.name}
+                      </h3>
+                      <p className="text-[10px] text-muted-foreground">{product.set_name}</p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-lg font-bold text-foreground">${product.market_price.toFixed(2)}</span>
+                        {product.msrp < product.market_price && (
+                          <span className="text-xs text-muted-foreground line-through">${product.msrp.toFixed(2)} MSRP</span>
+                        )}
+                        {product.msrp > product.market_price && (
+                          <span className="text-[10px] text-green-600 font-medium">Below MSRP!</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground line-clamp-2">{product.description}</p>
+                      <a
+                        href={product.tcgplayer_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 h-9 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium rounded-lg transition-colors w-full mt-2"
+                      >
+                        View on TCGPlayer <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
@@ -349,21 +394,73 @@ export function MarketplaceClient() {
 
         {/* ── Graded Cards ── */}
         {category === "graded" && (
-          <div className="text-center py-20">
-            <Award className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Graded Cards</h2>
-            <p className="text-muted-foreground mb-2">PSA, BGS, and CGC certified cards</p>
-            <p className="text-sm text-muted-foreground mb-8">
-              Graded card marketplace is coming soon. List your slabs and find certified gems.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
-              {GRADING_COMPANIES.filter((g) => g.key).map((g) => (
-                <div key={g.key} className="bg-white rounded-xl border border-gray-200 p-6 text-center">
-                  <div className="text-3xl mb-3">🏆</div>
-                  <h3 className="font-bold text-lg mb-1">{g.label}</h3>
-                  <p className="text-xs text-muted-foreground">Certified & authenticated</p>
-                  <Badge variant="outline" className="mt-3 text-[9px]">Coming Soon</Badge>
-                </div>
+          <div>
+            <div className="mb-6">
+              <h2 className="text-xl font-bold">Graded Cards</h2>
+              <p className="text-sm text-muted-foreground mt-1">PSA, BGS, and CGC certified — verified authentic and professionally graded</p>
+            </div>
+            {/* Grader Filter */}
+            <div className="flex gap-2 mb-6">
+              {GRADING_COMPANIES.map((g) => (
+                <button
+                  key={g.key}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-gray-200 hover:border-primary/30 transition-colors"
+                >
+                  {g.key ? (
+                    <span className="flex items-center gap-1.5">
+                      <Shield className="h-3 w-3" /> {g.label}
+                    </span>
+                  ) : g.label}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {GRADED_PRODUCTS.map((product) => (
+                <Card key={product.slug} className="group hover:shadow-md transition-all hover:-translate-y-1 overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center relative p-4">
+                      <Image
+                        src={product.image_url}
+                        alt={product.name}
+                        width={120}
+                        height={168}
+                        className="max-h-40 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute top-2 left-2">
+                        <Badge className={`text-[9px] border-0 ${
+                          product.grader === "PSA" ? "bg-red-100 text-red-700" :
+                          product.grader === "BGS" ? "bg-blue-100 text-blue-700" :
+                          "bg-green-100 text-green-700"
+                        }`}>
+                          {product.grader} {product.grade}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-2">
+                      <h3 className="text-sm font-semibold text-foreground truncate">{product.name}</h3>
+                      <p className="text-[10px] text-muted-foreground">{product.set_name} · #{product.card_number}</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[9px]">{product.rarity}</Badge>
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-lg font-bold text-foreground">
+                          {product.market_price >= 1000
+                            ? `$${(product.market_price / 1000).toFixed(1)}K`
+                            : `$${product.market_price.toFixed(2)}`}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">market value</span>
+                      </div>
+                      <a
+                        href={product.tcgplayer_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 h-9 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium rounded-lg transition-colors w-full mt-2"
+                      >
+                        View on TCGPlayer <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>

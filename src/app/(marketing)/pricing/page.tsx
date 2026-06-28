@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Check, Crown, ArrowRight } from "lucide-react";
+import { CardShowcase } from "@/components/shared/CardShowcase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,8 +10,12 @@ import { SUBSCRIPTION_TIERS } from "@/lib/constants";
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen py-20">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-20 relative">
+      {/* Background cards */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <CardShowcase variant="floating" count={4} offset={6} className="w-full h-full" />
+      </div>
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">
           <Badge variant="secondary" className="mb-6 px-4 py-1.5">
