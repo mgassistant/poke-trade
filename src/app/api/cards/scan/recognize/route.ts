@@ -1,14 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
+import { checkRateLimit, rateLimitKey, getClientIp } from "@/lib/rate-limit";
+import { safeError, errors } from "@/lib/safe-error";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Per-user daily scan cap (in-memory, resets on deploy)
+const dailyScans = new Map<string, { count: number; date: string }>();
+const DAILY_SCAN_LIMITS: Record<string, number> = { free: 50, pro: 200, elite: 500 };
 
 // POST /api/cards/scan/recognize — AI-powered card recognition from photo
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return errors.unauthorized();
+
+  // Rate limit: 10 scans/min per user
+  const ip = getClientIp(request.headers);
+  const rlKey = rateLimitKey(ip, user.id);
+  const rl = checkRateLimit(rlKey, "api");
+  if (!rl.allowed) return errors.rateLimited(rl.retryAfterSeconds);
+
+  // Daily cap check
+  const today = new Date().toISOString().slice(0, 10);
+  const userDaily = dailyScans.get(user.id);
+  if (userDaily && userDaily.date === today) {
+    // Get user tier for limit
+    const { data: profile } = await supabase.from("profiles").select("subscription_tier").eq("id", user.id).single();
+    const tier = profile?.subscription_tier || "free";
+    const limit = DAILY_SCAN_LIMITS[tier] || 50;
+    if (userDaily.count >= limit) {
+      return errors.quotaExceeded(`You've reached your daily scan limit (${limit} scans). Upgrade for more.`);
+    }
+    userDaily.count++;
+  } else {
+    dailyScans.set(user.id, { count: 1, date: today });
+  }
 
   const body = await request.json();
   const { image } = body; // base64 data URL
@@ -197,11 +225,7 @@ If you absolutely cannot identify the card, return:
       matches,
       match_count: matches.length,
     });
-  } catch (err: any) {
-    console.error("Card recognition error:", err);
-    return NextResponse.json(
-      { error: err.message || "Recognition failed" },
-      { status: 500 }
-    );
+  } catch (err) {
+    return safeError(err, "Card recognition failed. Please try again.", { code: "AI_ERROR", status: 502 });
   }
 }

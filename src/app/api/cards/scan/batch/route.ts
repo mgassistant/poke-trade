@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
+import { checkRateLimit, rateLimitKey, getClientIp } from "@/lib/rate-limit";
+import { safeError, errors } from "@/lib/safe-error";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -20,6 +22,12 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Rate limit: 5 batch requests/min
+  const ip = getClientIp(request.headers);
+  const rlKey = rateLimitKey(ip, user.id);
+  const rl = checkRateLimit(rlKey, "checkout"); // 3/min tier
+  if (!rl.allowed) return errors.rateLimited(rl.retryAfterSeconds);
 
   const body = await request.json();
   const { images, mode } = body as {
@@ -49,9 +57,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ results, total: results.length });
-  } catch (err: any) {
-    console.error("Batch scan error:", err);
-    return NextResponse.json({ error: err.message || "Batch scan failed" }, { status: 500 });
+  } catch (err) {
+    return safeError(err, "Batch scan failed. Please try again.", { code: "AI_ERROR", status: 502 });
   }
 }
 
