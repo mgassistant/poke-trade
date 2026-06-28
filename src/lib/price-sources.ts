@@ -1,8 +1,9 @@
 /**
  * Multi-source price comparison engine
  * Aggregates pricing from: Pokemon TCG API (TCGPlayer + CardMarket),
- * PokeTrace (eBay sold + graded), and direct TCGPlayer
+ * PokeTrace (eBay sold + graded), eBay Browse API, and direct TCGPlayer
  */
+import { fetchEbayPrices } from "./ebay";
 
 export interface PriceSource {
   source: string;
@@ -232,15 +233,17 @@ async function fetchPriceTracker(cardName: string): Promise<{ sources: PriceSour
 // ============================================================
 export async function getComparisonPrices(cardName: string): Promise<PriceComparison[]> {
   // Fetch from all sources in parallel
-  const [tcgCards, pokeTraceResults, priceTrackerResults] = await Promise.allSettled([
+  const [tcgCards, pokeTraceResults, priceTrackerResults, ebayResults] = await Promise.allSettled([
     fetchTCGApi(cardName),
     fetchPokeTrace(cardName),
     fetchPriceTracker(cardName),
+    fetchEbayPrices(cardName),
   ]);
 
   const cards = tcgCards.status === "fulfilled" ? tcgCards.value : [];
   const pokeTrace = pokeTraceResults.status === "fulfilled" ? pokeTraceResults.value : [];
   const priceTracker = priceTrackerResults.status === "fulfilled" ? priceTrackerResults.value : { sources: [], graded: [] };
+  const ebay = ebayResults.status === "fulfilled" ? ebayResults.value : [];
 
   return cards.slice(0, 5).map((card) => {
     const sources: PriceSource[] = [
@@ -248,6 +251,7 @@ export async function getComparisonPrices(cardName: string): Promise<PriceCompar
       ...(extractCardMarketPrices(card) ? [extractCardMarketPrices(card)!] : []),
       ...pokeTrace,
       ...priceTracker.sources,
+      ...ebay,
     ];
 
     // Find best price
@@ -348,9 +352,9 @@ export const AVAILABLE_APIS = [
   {
     name: "eBay Browse API",
     url: "https://developer.ebay.com",
-    status: "planned" as const,
+    status: "active" as const,
     free: true,
-    provides: ["Active listings", "Sold listings (limited)", "Search by image"],
+    provides: ["Active listings", "Real-time pricing", "Seller data", "Search by category"],
     rateLimit: "5K calls/day",
   },
 ] as const;
