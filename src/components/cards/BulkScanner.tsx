@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CONDITIONS, getConditionValue } from "@/lib/constants/conditions";
+import { compressForScan, compressForBinder, readAndCompressFile } from "@/lib/image-utils";
 
 /* ────────── Types ────────── */
 
@@ -176,7 +177,9 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
     const ctx = canvas.getContext("2d");
     if (!ctx) { setProcessing(false); return; }
     ctx.drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+    const rawDataUrl = canvas.toDataURL("image/jpeg", 0.8);
+    // Compress before sending to API
+    const dataUrl = await compressForScan(rawDataUrl);
 
     const scanId = `scan-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const placeholder: ScannedCard = {
@@ -248,7 +251,7 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
     const newCards: ScannedCard[] = [];
 
     for (const file of files.slice(0, 50)) {
-      const dataUrl = await readFileAsDataUrl(file);
+      const dataUrl = await readAndCompressFile(file, 640, 900, 0.75);
       const scanId = `batch-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       newCards.push({
         id: scanId,
@@ -316,7 +319,12 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
     if (!file) return;
 
     setProcessing(true);
-    const dataUrl = await readFileAsDataUrl(file);
+    const rawUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => resolve(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    });
+    const dataUrl = await compressForBinder(rawUrl);
 
     try {
       const res = await fetch("/api/cards/scan/batch", {
@@ -532,32 +540,30 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
                       <Button size="sm" variant="outline" className="text-white border-white/30" onClick={() => fileInputRef.current?.click()}>
                         <Upload className="h-4 w-4" />
                       </Button>
-                      <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => {
+                      <input ref={fileInputRef} type="file" accept="image/*" onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          const dataUrl = ev.target?.result as string;
-                          const scanId = `upload-${Date.now()}`;
-                          setScannedCards((prev) => [{ id: scanId, image: dataUrl, ai: null, matches: [], selectedMatch: null, condition: "near_mint", quantity: 1, status: "pending" }, ...prev]);
-                          setProcessing(true);
-                          fetch("/api/cards/scan/recognize", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: dataUrl }) })
-                            .then((r) => r.json())
-                            .then((data) => {
-                              if (data.recognized && data.matches?.length > 0) {
-                                const topMatch = data.matches[0];
-                                const isDuplicate = existingCardIds?.has(topMatch.id);
-                                playBeep(true);
-                                setScannedCards((prev) => prev.map((c) => c.id === scanId ? { ...c, ai: data.ai, matches: data.matches, selectedMatch: topMatch, condition: data.ai?.condition_estimate || "near_mint", status: isDuplicate ? "duplicate" : "recognized" } : c));
-                              } else {
-                                playBeep(false);
-                                setScannedCards((prev) => prev.map((c) => c.id === scanId ? { ...c, status: "failed", error: "Not identified" } : c));
-                              }
-                            })
-                            .catch(() => setScannedCards((prev) => prev.map((c) => c.id === scanId ? { ...c, status: "failed", error: "Failed" } : c)))
-                            .finally(() => setProcessing(false));
-                        };
-                        reader.readAsDataURL(file);
+                        const dataUrl = await readAndCompressFile(file, 640, 900, 0.75);
+                        const scanId = `upload-${Date.now()}`;
+                        setScannedCards((prev) => [{ id: scanId, image: dataUrl, ai: null, matches: [], selectedMatch: null, condition: "near_mint", quantity: 1, status: "pending" }, ...prev]);
+                        setProcessing(true);
+                        try {
+                          const res = await fetch("/api/cards/scan/recognize", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: dataUrl }) });
+                          const data = await res.json();
+                          if (data.recognized && data.matches?.length > 0) {
+                            const topMatch = data.matches[0];
+                            const isDuplicate = existingCardIds?.has(topMatch.id);
+                            playBeep(true);
+                            setScannedCards((prev) => prev.map((c) => c.id === scanId ? { ...c, ai: data.ai, matches: data.matches, selectedMatch: topMatch, condition: data.ai?.condition_estimate || "near_mint", status: isDuplicate ? "duplicate" : "recognized" } : c));
+                          } else {
+                            playBeep(false);
+                            setScannedCards((prev) => prev.map((c) => c.id === scanId ? { ...c, status: "failed", error: "Not identified" } : c));
+                          }
+                        } catch {
+                          setScannedCards((prev) => prev.map((c) => c.id === scanId ? { ...c, status: "failed", error: "Failed" } : c));
+                        } finally {
+                          setProcessing(false);
+                        }
                         e.target.value = "";
                       }} className="hidden" />
                     </>
@@ -894,12 +900,4 @@ function ScannedCardRow({
   );
 }
 
-/* ── Helpers ── */
 
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target?.result as string);
-    reader.readAsDataURL(file);
-  });
-}

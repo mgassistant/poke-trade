@@ -62,8 +62,8 @@ async function processSingleCard(image: string, supabase: any) {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      max_tokens: 300,
+      model: "gpt-4o",
+      max_tokens: 500,
       messages: [
         {
           role: "system",
@@ -182,7 +182,9 @@ Identify EACH visible card separately. Return a JSON array:
 async function findMatches(parsed: CardIdentification, supabase: any) {
   const cardName = parsed.card_name || "";
   const setName = parsed.set_name || "";
-  const cardNumber = parsed.card_number?.replace(/\/.*/, "").replace(/^0+/, "") || "";
+  const rawNumber = parsed.card_number || "";
+  const cardNumberWithZeros = rawNumber.replace(/\/.*/, "").trim();
+  const cardNumber = cardNumberWithZeros.replace(/^0+/, "") || cardNumberWithZeros;
 
   // Strategy 1: number + set
   if (cardNumber && setName) {
@@ -193,12 +195,22 @@ async function findMatches(parsed: CardIdentification, supabase: any) {
       .limit(5);
 
     if (sets?.length > 0) {
-      const { data } = await supabase
+      const setIds = sets.map((s: any) => s.id);
+      let { data } = await supabase
         .from("cards")
         .select("id, name, number, rarity, card_type, image_url, market_value, set_id, card_sets(id, name, series, symbol_url)")
-        .in("set_id", sets.map((s: any) => s.id))
+        .in("set_id", setIds)
         .eq("number", cardNumber)
         .limit(5);
+      if ((!data || data.length === 0) && cardNumberWithZeros !== cardNumber) {
+        const retry = await supabase
+          .from("cards")
+          .select("id, name, number, rarity, card_type, image_url, market_value, set_id, card_sets(id, name, series, symbol_url)")
+          .in("set_id", setIds)
+          .eq("number", cardNumberWithZeros)
+          .limit(5);
+        data = retry.data;
+      }
       if (data?.length > 0) return data;
     }
   }

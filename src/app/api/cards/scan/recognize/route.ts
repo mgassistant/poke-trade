@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
   try {
     // Step 1: Send image to GPT-4o for card recognition
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      max_tokens: 300,
+      model: "gpt-4o",
+      max_tokens: 500,
       messages: [
         {
           role: "system",
@@ -34,19 +34,26 @@ export async function POST(request: NextRequest) {
 
 Return ONLY a JSON object with these fields:
 {
-  "card_name": "exact card name as printed (e.g. 'Pikachu VMAX', 'Charizard ex')",
-  "set_name": "the TCG set name (e.g. 'Vivid Voltage', 'Obsidian Flames', 'Paldea Evolved')",
-  "card_number": "the card number if visible (e.g. '044/185', '006')",
-  "rarity": "the rarity if identifiable (e.g. 'Rare Holo', 'Ultra Rare', 'Secret Rare')",
+  "card_name": "exact card name as printed on the card (e.g. 'Pikachu VMAX', 'Charizard ex')",
+  "set_name": "the TCG set name printed at the bottom of the card (e.g. 'Vivid Voltage', 'Obsidian Flames')",
+  "card_number": "the card number as printed (e.g. '044/185', '6/102', 'TG30/TG30')",
+  "rarity": "the rarity symbol or text (e.g. 'Rare Holo', 'Ultra Rare', 'Common')",
   "confidence": "high" | "medium" | "low",
-  "condition_estimate": "gem_mint" | "mint" | "near_mint" | "lightly_played" | "moderately_played" | "heavily_played" | "damaged",
+  "condition_estimate": "near_mint" | "lightly_played" | "moderately_played" | "heavily_played" | "damaged",
   "condition_notes": "brief notes on visible wear, centering, whitening, etc."
 }
 
-If you cannot identify the card, return:
-{ "error": "Could not identify card", "confidence": "none" }
+IMPORTANT IDENTIFICATION TIPS:
+- Read the card NAME from the top of the card
+- Read the SET SYMBOL and card NUMBER from the bottom-left corner
+- The set name is usually NOT printed on the card â€” identify it from the set symbol icon
+- Common modern sets: Scarlet & Violet base, Paldea Evolved, Obsidian Flames, 151, Paradox Rift, Paldean Fates, Temporal Forces, Twilight Masquerade, Shrouded Fable, Stellar Crown, Surging Sparks, Prismatic Evolutions
+- Common older sets: Base Set, Jungle, Fossil, Team Rocket, Gym Heroes, Neo Genesis, Evolving Skies, Brilliant Stars, Lost Origin, Silver Tempest, Crown Zenith
+- For card_number, include leading zeros as printed (e.g. '044/185' not '44')
+- If the image is blurry, rotated, or partially obscured, do your best but use 'low' confidence
 
-Be precise with names. Do not guess wildly. If the image is blurry or not a PokÃ©mon card, say so.`,
+If you absolutely cannot identify the card, return:
+{ "error": "Could not identify card", "confidence": "none" }`,
         },
         {
           role: "user",
@@ -89,7 +96,11 @@ Be precise with names. Do not guess wildly. If the image is blurry or not a PokÃ
     const svc = await createServiceClient();
     const cardName = parsed.card_name || "";
     const setName = parsed.set_name || "";
-    const cardNumber = parsed.card_number?.replace(/\/.*/, "").replace(/^0+/, "") || "";
+    // Normalize card number â€” handle both "044/185" and "44" formats
+    const rawNumber = parsed.card_number || "";
+    const cardNumberWithZeros = rawNumber.replace(/\/.*/, "").trim(); // "044"
+    const cardNumberNoZeros = cardNumberWithZeros.replace(/^0+/, ""); // "44"
+    const cardNumber = cardNumberNoZeros;
 
     // Try exact-ish match first: name + set + number
     let matches: any[] = [];
@@ -103,14 +114,41 @@ Be precise with names. Do not guess wildly. If the image is blurry or not a PokÃ
         .limit(5);
 
       if (sets && sets.length > 0) {
-        const { data } = await svc
+        const setIds = sets.map(s => s.id);
+        // Try without leading zeros first (most common DB format)
+        let { data } = await svc
           .from("cards")
           .select("id, name, number, rarity, card_type, image_url, market_value, set_id, card_sets(id, name, series, symbol_url)")
-          .in("set_id", sets.map(s => s.id))
+          .in("set_id", setIds)
           .eq("number", cardNumber)
           .limit(5);
+        // If no match, try with leading zeros
+        if ((!data || data.length === 0) && cardNumberWithZeros !== cardNumber) {
+          const retry = await svc
+            .from("cards")
+            .select("id, name, number, rarity, card_type, image_url, market_value, set_id, card_sets(id, name, series, symbol_url)")
+            .in("set_id", setIds)
+            .eq("number", cardNumberWithZeros)
+            .limit(5);
+          data = retry.data;
+        }
         if (data && data.length > 0) matches = data;
       }
+    }
+
+    // Strategy 1b: card number + name (no set match needed)
+    if (matches.length === 0 && cardNumber && cardName) {
+      const words = cardName.split(/\s+/).filter(Boolean).slice(0, 2);
+      let query = svc
+        .from("cards")
+        .select("id, name, number, rarity, card_type, image_url, market_value, set_id, card_sets(id, name, series, symbol_url)")
+        .or(`number.eq.${cardNumber},number.eq.${cardNumberWithZeros}`)
+        .limit(20);
+      for (const word of words) {
+        if (word.length >= 2) query = query.ilike("name", `%${word}%`);
+      }
+      const { data } = await query;
+      if (data && data.length > 0) matches = data;
     }
 
     // Strategy 2: Fuzzy name match
