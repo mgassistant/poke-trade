@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CONDITIONS, getConditionValue } from "@/lib/constants/conditions";
 import { compressForScan, compressForBinder, readAndCompressFile } from "@/lib/image-utils";
+import { ocrCardImage, searchByOcr } from "@/lib/card-ocr";
 
 /* ────────── Types ────────── */
 
@@ -196,41 +197,82 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
     setScannedCards((prev) => [placeholder, ...prev]);
 
     try {
-      const res = await fetch("/api/cards/scan/recognize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: dataUrl }),
-      });
-      const data = await res.json();
+      // ── Phase 1: Try OCR first (free, fast, client-side) ──
+      let matched = false;
+      try {
+        const ocr = await ocrCardImage(dataUrl);
+        if (ocr.cardNumberClean || (ocr.cardName && ocr.cardName.length >= 3)) {
+          const ocrResult = await searchByOcr(ocr);
+          if (ocrResult.matches.length > 0) {
+            const topMatch = ocrResult.matches[0];
+            const isDuplicate = existingCardIds?.has(topMatch.id);
+            playBeep(true);
+            setScannedCards((prev) =>
+              prev.map((c) =>
+                c.id === scanId
+                  ? {
+                      ...c,
+                      ai: {
+                        card_name: ocr.cardName || topMatch.name,
+                        set_name: topMatch.card_sets?.name || "",
+                        card_number: ocr.cardNumber || topMatch.number,
+                        rarity: topMatch.rarity || "",
+                        confidence: ocr.confidence > 70 ? "high" : ocr.confidence > 40 ? "medium" : "low",
+                        condition_estimate: "near_mint",
+                        condition_notes: `OCR match (${ocrResult.method})`,
+                      },
+                      matches: ocrResult.matches,
+                      selectedMatch: topMatch,
+                      condition: "near_mint",
+                      status: isDuplicate ? "duplicate" : "recognized",
+                    }
+                  : c
+              )
+            );
+            matched = true;
+          }
+        }
+      } catch {
+        // OCR failed, fall through to AI
+      }
 
-      if (data.recognized && data.ai && data.matches?.length > 0) {
-        const topMatch = data.matches[0];
-        const isDuplicate = existingCardIds?.has(topMatch.id);
+      // ── Phase 2: AI fallback (if OCR didn't match) ──
+      if (!matched) {
+        const res = await fetch("/api/cards/scan/recognize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: dataUrl }),
+        });
+        const data = await res.json();
 
-        playBeep(true);
-        setScannedCards((prev) =>
-          prev.map((c) =>
-            c.id === scanId
-              ? {
-                  ...c,
-                  ai: data.ai,
-                  matches: data.matches,
-                  selectedMatch: topMatch,
-                  condition: data.ai.condition_estimate || "near_mint",
-                  status: isDuplicate ? "duplicate" : "recognized",
-                }
-              : c
-          )
-        );
-      } else {
-        playBeep(false);
-        setScannedCards((prev) =>
-          prev.map((c) =>
-            c.id === scanId
-              ? { ...c, ai: data.ai || null, status: "failed", error: data.message || "Could not identify" }
-              : c
-          )
-        );
+        if (data.recognized && data.ai && data.matches?.length > 0) {
+          const topMatch = data.matches[0];
+          const isDuplicate = existingCardIds?.has(topMatch.id);
+          playBeep(true);
+          setScannedCards((prev) =>
+            prev.map((c) =>
+              c.id === scanId
+                ? {
+                    ...c,
+                    ai: data.ai,
+                    matches: data.matches,
+                    selectedMatch: topMatch,
+                    condition: data.ai.condition_estimate || "near_mint",
+                    status: isDuplicate ? "duplicate" : "recognized",
+                  }
+                : c
+            )
+          );
+        } else {
+          playBeep(false);
+          setScannedCards((prev) =>
+            prev.map((c) =>
+              c.id === scanId
+                ? { ...c, ai: data.ai || null, status: "failed", error: data.message || "Could not identify" }
+                : c
+            )
+          );
+        }
       }
     } catch {
       playBeep(false);
@@ -267,40 +309,73 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
 
     setScannedCards((prev) => [...newCards, ...prev]);
 
-    // Process sequentially to avoid rate limits
+    // Process sequentially — OCR first (free), AI fallback
     for (const card of newCards) {
       try {
-        const res = await fetch("/api/cards/scan/recognize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: card.image }),
-        });
-        const data = await res.json();
+        let matched = false;
 
-        if (data.recognized && data.matches?.length > 0) {
-          const topMatch = data.matches[0];
-          const isDuplicate = existingCardIds?.has(topMatch.id);
-          playBeep(true);
-          setScannedCards((prev) =>
-            prev.map((c) =>
-              c.id === card.id
-                ? {
-                    ...c,
-                    ai: data.ai,
-                    matches: data.matches,
-                    selectedMatch: topMatch,
-                    condition: data.ai?.condition_estimate || "near_mint",
-                    status: isDuplicate ? "duplicate" : "recognized",
-                  }
-                : c
-            )
-          );
-        } else {
-          setScannedCards((prev) =>
-            prev.map((c) =>
-              c.id === card.id ? { ...c, status: "failed", error: data.message || "Not identified" } : c
-            )
-          );
+        // Try OCR first (free, no API call)
+        try {
+          const ocr = await ocrCardImage(card.image);
+          if (ocr.cardNumberClean || (ocr.cardName && ocr.cardName.length >= 3)) {
+            const ocrResult = await searchByOcr(ocr);
+            if (ocrResult.matches.length > 0) {
+              const topMatch = ocrResult.matches[0];
+              const isDuplicate = existingCardIds?.has(topMatch.id);
+              playBeep(true);
+              setScannedCards((prev) =>
+                prev.map((c) =>
+                  c.id === card.id
+                    ? {
+                        ...c,
+                        ai: { card_name: ocr.cardName || topMatch.name, set_name: topMatch.card_sets?.name || "", card_number: ocr.cardNumber || topMatch.number, rarity: topMatch.rarity || "", confidence: ocr.confidence > 70 ? "high" : "medium", condition_estimate: "near_mint", condition_notes: `OCR (${ocrResult.method})` },
+                        matches: ocrResult.matches,
+                        selectedMatch: topMatch,
+                        condition: "near_mint",
+                        status: isDuplicate ? "duplicate" : "recognized",
+                      }
+                    : c
+                )
+              );
+              matched = true;
+            }
+          }
+        } catch { /* OCR failed, use AI */ }
+
+        // AI fallback
+        if (!matched) {
+          const res = await fetch("/api/cards/scan/recognize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image: card.image }),
+          });
+          const data = await res.json();
+
+          if (data.recognized && data.matches?.length > 0) {
+            const topMatch = data.matches[0];
+            const isDuplicate = existingCardIds?.has(topMatch.id);
+            playBeep(true);
+            setScannedCards((prev) =>
+              prev.map((c) =>
+                c.id === card.id
+                  ? {
+                      ...c,
+                      ai: data.ai,
+                      matches: data.matches,
+                      selectedMatch: topMatch,
+                      condition: data.ai?.condition_estimate || "near_mint",
+                      status: isDuplicate ? "duplicate" : "recognized",
+                    }
+                  : c
+              )
+            );
+          } else {
+            setScannedCards((prev) =>
+              prev.map((c) =>
+                c.id === card.id ? { ...c, status: "failed", error: data.message || "Not identified" } : c
+              )
+            );
+          }
         }
       } catch {
         setScannedCards((prev) =>
