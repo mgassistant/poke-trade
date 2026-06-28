@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import CardScanner from "@/components/cards/CardScanner";
+import BulkScanner from "@/components/cards/BulkScanner";
 import AddCardModal from "@/components/cards/AddCardModal";
 import { CONDITIONS as CONDITION_LIST, getConditionInfo } from "@/lib/constants/conditions";
 
@@ -88,6 +89,7 @@ export default function CollectionPage() {
   const [stats, setStats] = useState({ totalCards: 0, totalValue: 0, totalGraded: 0, totalForTrade: 0 });
   const [loading, setLoading] = useState(true);
   const [showScanner, setShowScanner] = useState(false);
+  const [showBulkScanner, setShowBulkScanner] = useState(false);
 
   // Add Card Modal
   const [addModalCard, setAddModalCard] = useState<{
@@ -160,6 +162,9 @@ export default function CollectionPage() {
         <div className="flex gap-2">
           <Button onClick={() => setShowScanner(true)} variant="outline" size="sm" className="gap-2">
             <Camera className="h-4 w-4" /> Scan
+          </Button>
+          <Button onClick={() => setShowBulkScanner(true)} size="sm" className="gap-2">
+            <Camera className="h-4 w-4" /> Bulk Scan
           </Button>
         </div>
       </div>
@@ -234,6 +239,32 @@ export default function CollectionPage() {
           }
           fetchCollection();
         }}
+      />
+
+      {/* Bulk Scanner */}
+      <BulkScanner
+        open={showBulkScanner}
+        onClose={() => { setShowBulkScanner(false); fetchCollection(); }}
+        onAddCard={async (cardId, condition, quantity) => {
+          let collectionId = collections[0]?.id;
+          if (!collectionId) {
+            const createRes = await fetch("/api/collection", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "create_collection", name: "My Collection" }),
+            });
+            const created = await createRes.json();
+            collectionId = created.collection?.id;
+          }
+          if (collectionId) {
+            await fetch("/api/collection", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "add_item", collection_id: collectionId, card_id: cardId, condition, quantity }),
+            });
+          }
+        }}
+        existingCardIds={new Set(collections.flatMap((c) => (c as any).items?.map((i: any) => i.card_id) || []))}
       />
 
       {/* Enhanced Add Card Modal */}
