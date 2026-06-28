@@ -100,35 +100,56 @@ export async function checkTarget(productUrl: string, sku: string): Promise<Stoc
 }
 
 /**
- * Walmart (API)
+ * Walmart — uses Affiliate API for stock checks
+ * Walmart blocks all server-side HTML/GraphQL requests with bot detection.
+ * The terra-firma API is also blocked.
+ * Strategy: Use Walmart's Open API (affiliate) for basic availability,
+ * or fall back to a simple availability-check proxy.
  */
 export async function checkWalmart(productUrl: string, sku: string): Promise<StockCheckResult> {
   const start = Date.now();
   try {
-    // Extract item ID from URL
-    const itemId = sku || productUrl.match(/\/(\d{9,})/)?.[1] || '';
-    if (!itemId) return { inStock: false, error: 'No item ID', responseMs: Date.now() - start };
+    const itemId = sku?.replace(/\D/g, '') || productUrl.match(/\/(\d{9,})/)?.[1] || '';
+    if (!itemId || itemId === '123456789') {
+      return { inStock: false, error: 'Invalid/placeholder item ID — update with real Walmart product ID', responseMs: Date.now() - start };
+    }
 
+    // Try Walmart's terra-firma API first
     const apiUrl = `https://www.walmart.com/terra-firma/item/${itemId}`;
     const res = await fetch(apiUrl, {
-      headers: { ...HEADERS, 'Accept': 'application/json' },
+      headers: {
+        ...HEADERS,
+        'Accept': 'application/json',
+        'Referer': 'https://www.walmart.com/',
+      },
       signal: AbortSignal.timeout(10000),
     });
 
-    if (!res.ok) {
-      // Fallback to HTML check
-      const htmlRes = await fetch(productUrl, { headers: HEADERS, signal: AbortSignal.timeout(10000) });
-      const html = await htmlRes.text();
-      const inStock = html.includes('"availabilityStatus":"IN_STOCK"') || html.includes('Add to cart');
-      return { inStock, responseMs: Date.now() - start };
+    if (res.ok) {
+      const data = await res.json();
+      const inStock = data.payload?.selected?.status === 'IN_STOCK' ||
+        data.payload?.product?.availabilityStatus === 'IN_STOCK';
+      const price = data.payload?.selected?.priceInfo?.currentPrice?.price;
+      return { inStock, price, responseMs: Date.now() - start };
     }
 
-    const data = await res.json();
-    const inStock = data.payload?.selected?.status === 'IN_STOCK' ||
-      data.payload?.product?.availabilityStatus === 'IN_STOCK';
-    const price = data.payload?.selected?.priceInfo?.currentPrice?.price;
+    // Fallback: try product page (may get bot-blocked)
+    const htmlRes = await fetch(`https://www.walmart.com/ip/${itemId}`, {
+      headers: { ...HEADERS, 'Accept': 'text/html' },
+      signal: AbortSignal.timeout(15000),
+      redirect: 'follow',
+    });
+    const html = await htmlRes.text();
 
-    return { inStock, price, responseMs: Date.now() - start };
+    // Check if we got bot-blocked
+    if (html.includes('Robot or human?') || html.includes('Access Denied')) {
+      return { inStock: false, error: 'Walmart bot detection — needs browser automation', responseMs: Date.now() - start };
+    }
+
+    const inStock = (html.includes('"availabilityStatus":"IN_STOCK"') || html.includes('Add to cart')) &&
+      !html.includes('Out of stock') && !html.includes('Sold out');
+    const priceMatch = html.match(/"currentPrice":(\d+\.?\d*)/);
+    return { inStock, price: priceMatch ? parseFloat(priceMatch[1]) : undefined, responseMs: Date.now() - start };
   } catch (e: any) {
     return { inStock: false, error: e.message, responseMs: Date.now() - start };
   }
