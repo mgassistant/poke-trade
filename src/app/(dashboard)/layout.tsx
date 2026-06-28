@@ -167,6 +167,9 @@ const sidebarLinks = [
     { href: "/dashboard/trust-score", label: "Trust Score", icon: Shield },
     { href: "/dashboard/disputes", label: "Disputes", icon: Gavel },
   ]},
+  { section: "Insurance", items: [
+    { href: "/collectors-insurance", label: "Collectors Insurance", icon: Shield },
+  ]},
   { section: "Account", items: [
     { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
     { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
