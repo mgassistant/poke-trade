@@ -4,7 +4,7 @@ import { Shield, Gem, Users, ArrowRight } from "lucide-react";
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden -mt-24 pt-24">
+    <section className="relative min-h-screen flex items-center overflow-hidden -mt-24 sm:-mt-28 pt-24 sm:pt-28">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-white via-gray-50 to-red-50/30" />
 

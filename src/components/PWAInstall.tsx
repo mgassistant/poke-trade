@@ -70,7 +70,7 @@ export default function PWAInstall() {
   if (!showBanner) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-in slide-in-from-bottom duration-300">
+    <div className="fixed bottom-20 sm:bottom-24 left-0 right-0 z-50 p-4 animate-in slide-in-from-bottom duration-300">
       <div className="max-w-md mx-auto bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
         {/* iOS Guide */}
         {isIOS && showIOSGuide && (
