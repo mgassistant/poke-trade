@@ -340,9 +340,10 @@ export default function DropsPage() {
               <span className="font-medium text-gray-700"> Tracking {totalProducts} products.</span>
             )}
           </p>
-          <p className="mt-2 text-sm text-gray-400">
-            Included with all membership tiers — Pro &amp; Elite get real-time alerts
-          </p>
+          <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-green-100/80 text-green-700 rounded-full text-sm font-medium border border-green-200/60">
+            <CheckCircle2 className="h-4 w-4" />
+            Included with every membership — no extra cost
+          </div>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             {isPro ? (
               <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white font-semibold shadow-lg" asChild>
@@ -352,20 +353,21 @@ export default function DropsPage() {
                 </Link>
               </Button>
             ) : (
-              <Button
-                size="lg"
-                className="bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg shadow-amber-500/20"
-                asChild
-              >
-                <Link href="/pricing">
-                  <Zap className="h-4 w-4 mr-1.5" />
-                  Upgrade for Real-Time Alerts
-                </Link>
-              </Button>
+              <>
+                <Button
+                  size="lg"
+                  className="bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg"
+                  asChild
+                >
+                  <Link href="/register">
+                    Sign Up Free Today
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" className="border-gray-300" asChild>
+                  <Link href="#compare">Compare Membership Tiers</Link>
+                </Button>
+              </>
             )}
-            <Button size="lg" variant="outline" className="border-gray-300" asChild>
-              <Link href="#compare">Compare Plans</Link>
-            </Button>
           </div>
         </div>
       </section>
@@ -848,13 +850,12 @@ export default function DropsPage() {
           ) : (
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg" asChild>
-                <Link href="/pricing">
-                  <Star className="h-4 w-4 mr-1.5" />
-                  Upgrade to Pro — $19.99/mo
+                <Link href="/register">
+                  Sign Up Today — It's Free
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/register">Sign Up Free</Link>
+                <Link href="/pricing">View Membership Plans</Link>
               </Button>
             </div>
           )}

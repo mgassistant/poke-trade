@@ -223,10 +223,8 @@ export const NAV_LINKS = [
   { href: "/marketplace", label: "Marketplace" },
   { href: "/trade-center", label: "Trade Center" },
   { href: "/shop", label: "Shop" },
-  { href: "/compare", label: "Compare" },
   { href: "/drops", label: "Drop Alerts" },
   { href: "/protect", label: "Protect" },
-  { href: "/collectors-insurance", label: "Insurance" },
   { href: "/membership", label: "Membership" },
   { href: "/support", label: "Support" },
 ] as const;

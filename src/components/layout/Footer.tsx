@@ -5,7 +5,7 @@ const footerLinks = {
   Platform: [
     { label: "Marketplace", href: "/marketplace" },
     { label: "Trade Center", href: "/trade-center" },
-    { label: "Compare Prices", href: "/compare" },
+
     { label: "Drop Alerts", href: "/drops" },
     { label: "Price Guide", href: "/price-guide" },
   ],
@@ -15,7 +15,7 @@ const footerLinks = {
     { label: "Membership", href: "/membership" },
     { label: "Community", href: "/community" },
     { label: "Wins Feed", href: "/wins" },
-    { label: "Collectors Insurance", href: "/collectors-insurance" },
+    { label: "Protect", href: "/protect" },
   ],
   Resources: [
     { label: "Help Center", href: "/help" },
