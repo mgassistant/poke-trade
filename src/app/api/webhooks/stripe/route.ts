@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 import { markEventProcessed } from "@/lib/webhook-idempotency";
-import { notifyPurchase, notifyNewSubscription } from "@/lib/email-notifications";
+import { notifyPurchase, notifyNewSubscription, sendUserNotification } from "@/lib/email-notifications";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -139,6 +139,21 @@ export async function POST(request: Request) {
                 .from("shop_cart_items")
                 .delete()
                 .eq("user_id", shopUserId);
+
+              // Email order confirmation (fire-and-forget)
+              const { data: shopBuyer } = await supabase.from("profiles").select("username, display_name, email").eq("id", shopUserId).single();
+              if (shopBuyer?.email) {
+                const itemNames = (orderItems ?? []).map((i: any) => `${i.quantity}x item`).join(", ");
+                void sendUserNotification(
+                  shopBuyer.email,
+                  "Order Confirmed! \uD83D\uDCE6",
+                  `<p>Hi ${shopBuyer.display_name || shopBuyer.username || "Trainer"},</p>
+                   <p>Your order <strong>#${orderId?.slice(0, 8)}</strong> has been confirmed!</p>
+                   <p>We'll notify you when your items ship.</p>`,
+                  "https://poke-trade.com/dashboard/orders",
+                  "View Order"
+                );
+              }
             }
           }
         }

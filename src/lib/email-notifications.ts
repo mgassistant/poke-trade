@@ -4,7 +4,7 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
-const FROM_ADDRESS = "Poké-Trade <notifications@poke-trade.com>";
+const FROM_ADDRESS = "Poké-Trade <notifications@updates.poke-trade.com>";
 const ADMIN_EMAIL = "info@poke-trade.com";
 
 function emailTemplate(title: string, body: string, ctaUrl?: string, ctaText?: string): string {

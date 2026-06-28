@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { notifyDisputeFiled } from "@/lib/email-notifications";
+import { notifyDisputeFiled, sendUserNotification } from "@/lib/email-notifications";
 
 const REASON_CATEGORIES = [
   "Item not received",
@@ -170,6 +170,27 @@ export async function POST(request: NextRequest) {
     tradeId || listing_id || "unknown",
     reason_category
   );
+
+  // Notify respondent via email (fire-and-forget)
+  if (respondentId) {
+    const { data: respondentProfile } = await supabase
+      .from("profiles")
+      .select("username, display_name, email")
+      .eq("id", respondentId)
+      .single();
+    if (respondentProfile?.email) {
+      void sendUserNotification(
+        respondentProfile.email,
+        "A dispute has been opened on your trade ⚠️",
+        `<p>Hi ${respondentProfile.display_name || respondentProfile.username || "Trader"},</p>
+         <p><strong>${disputeProfile?.display_name || disputeProfile?.username || "Another user"}</strong> filed a dispute.</p>
+         <p><strong>Reason:</strong> ${reason_category}</p>
+         <p>Please review and respond promptly.</p>`,
+        `https://poke-trade.com/dashboard/disputes/${dispute.id}`,
+        "View Dispute"
+      );
+    }
+  }
 
   return NextResponse.json({ dispute });
 }
