@@ -15,7 +15,7 @@ const footerLinks = {
     { label: "Membership", href: "/membership" },
     { label: "Community", href: "/community" },
     { label: "Wins Feed", href: "/wins" },
-    { label: "Protect", href: "/protect" },
+    { label: "Protect", href: "/collectors-insurance" },
   ],
   Resources: [
     { label: "Help Center", href: "/help" },

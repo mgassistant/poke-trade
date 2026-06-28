@@ -224,7 +224,7 @@ export const NAV_LINKS = [
   { href: "/trade-center", label: "Trade Center" },
   { href: "/shop", label: "Shop" },
   { href: "/drops", label: "Drop Alerts" },
-  { href: "/protect", label: "Protect" },
+  { href: "/collectors-insurance", label: "Protect" },
   { href: "/membership", label: "Membership" },
   { href: "/support", label: "Support" },
 ] as const;
