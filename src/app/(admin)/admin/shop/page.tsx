@@ -72,6 +72,28 @@ export default function AdminShopPage() {
   const [saving, setSaving] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createForm, setCreateForm] = useState<Record<string, string | number | boolean>>({
+    title: "",
+    slug: "",
+    description: "",
+    category: "sealed",
+    condition: "Factory Sealed",
+    product_type: "",
+    msrp_price: 0,
+    market_price: 0,
+    member_price: 0,
+    premium_member_price: 0,
+    public_price: 0,
+    cost_basis: 0,
+    inventory_count: 0,
+    max_qty_per_member: 1,
+    max_qty_per_household: 2,
+    status: "draft",
+    requires_membership: false,
+    premium_only: false,
+  });
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -80,27 +102,61 @@ export default function AdminShopPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      if (tab === "products") {
-        const res = await fetch("/api/shop/products?status=all");
-        const data = await res.json();
-        // Also fetch draft and archived
-        const res2 = await fetch("/api/shop/products?status=draft");
-        const data2 = await res2.json();
-        const res3 = await fetch("/api/shop/products?status=archived");
-        const data3 = await res3.json();
-        const all = [...(data.products ?? []), ...(data2.products ?? []), ...(data3.products ?? [])];
-        const unique = Array.from(new Map(all.map((p: Product) => [p.id, p])).values());
-        setProducts(unique as Product[]);
-      } else if (tab === "orders" || tab === "fraud") {
-        const statusParam = tab === "fraud" ? "&status=manual_review" : "";
-        const res = await fetch(`/api/shop/orders?all=true${statusParam}`);
-        const data = await res.json();
-        setOrders(data.orders ?? []);
-      }
+      // Always fetch products for stats
+      const res = await fetch("/api/shop/products?status=all");
+      const data = await res.json();
+      const res2 = await fetch("/api/shop/products?status=draft");
+      const data2 = await res2.json();
+      const res3 = await fetch("/api/shop/products?status=archived");
+      const data3 = await res3.json();
+      const all = [...(data.products ?? []), ...(data2.products ?? []), ...(data3.products ?? [])];
+      const unique = Array.from(new Map(all.map((p: Product) => [p.id, p])).values());
+      setProducts(unique as Product[]);
+
+      // Always fetch orders for stats
+      const statusParam = tab === "fraud" ? "&status=manual_review" : "";
+      const ordersRes = await fetch(`/api/shop/orders?all=true${statusParam}`);
+      const ordersData = await ordersRes.json();
+      setOrders(ordersData.orders ?? []);
     } catch {
       // Silent
     }
     setLoading(false);
+  };
+
+  const handleCreateProduct = async () => {
+    setCreating(true);
+    try {
+      // Auto-generate slug from title if empty
+      const slug = (createForm.slug as string) || (createForm.title as string).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const payload = { ...createForm, slug };
+      
+      const res = await fetch("/api/shop/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        setShowCreateForm(false);
+        setCreateForm({
+          title: "", slug: "", description: "", category: "sealed", condition: "Factory Sealed",
+          product_type: "", msrp_price: 0, market_price: 0, member_price: 0, premium_member_price: 0,
+          public_price: 0, cost_basis: 0, inventory_count: 0, max_qty_per_member: 1,
+          max_qty_per_household: 2, status: "draft", requires_membership: false, premium_only: false,
+        });
+        fetchData();
+        setMessage("Product created!");
+        setTimeout(() => setMessage(null), 3000);
+      } else {
+        const err = await res.json();
+        setMessage(`Error: ${err.error}`);
+        setTimeout(() => setMessage(null), 5000);
+      }
+    } catch {
+      setMessage("Failed to create product");
+      setTimeout(() => setMessage(null), 3000);
+    }
+    setCreating(false);
   };
 
   const handleSeed = async () => {
@@ -177,6 +233,12 @@ export default function AdminShopPage() {
         <div className="flex items-center gap-2">
           <Button
             size="sm"
+            onClick={() => setShowCreateForm(true)}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Add Product
+          </Button>
+          <Button
+            size="sm"
             variant="outline"
             onClick={handleSeed}
             disabled={seeding}
@@ -192,6 +254,42 @@ export default function AdminShopPage() {
           {message}
         </div>
       )}
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex items-center gap-2 text-gray-500 mb-1">
+            <Package className="h-4 w-4" />
+            <span className="text-xs font-medium">Products</span>
+          </div>
+          <div className="text-2xl font-bold text-gray-900">{products.length}</div>
+          <div className="text-xs text-gray-400">{products.filter((p) => p.status === "active").length} active</div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex items-center gap-2 text-gray-500 mb-1">
+            <Hash className="h-4 w-4" />
+            <span className="text-xs font-medium">Total Inventory</span>
+          </div>
+          <div className="text-2xl font-bold text-gray-900">{products.reduce((s, p) => s + p.inventory_count, 0)}</div>
+          <div className="text-xs text-gray-400">{products.filter((p) => p.inventory_count <= 3 && p.inventory_count > 0).length} low stock</div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex items-center gap-2 text-gray-500 mb-1">
+            <DollarSign className="h-4 w-4" />
+            <span className="text-xs font-medium">Total Sold</span>
+          </div>
+          <div className="text-2xl font-bold text-gray-900">{products.reduce((s, p) => s + (p.sold_count || 0), 0)}</div>
+          <div className="text-xs text-gray-400">${products.reduce((s, p) => s + (p.sold_count || 0) * (p.public_price || 0), 0).toFixed(0)} revenue</div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex items-center gap-2 text-gray-500 mb-1">
+            <Truck className="h-4 w-4" />
+            <span className="text-xs font-medium">Orders</span>
+          </div>
+          <div className="text-2xl font-bold text-gray-900">{orders.length}</div>
+          <div className="text-xs text-gray-400">{orders.filter((o) => o.status === "paid" || o.status === "processing").length} pending ship</div>
+        </div>
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-6 w-fit">
@@ -234,6 +332,179 @@ export default function AdminShopPage() {
             />
           </div>
 
+          {/* Create Product Modal */}
+          {showCreateForm && (
+            <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-gray-900">Create New Product</h3>
+                  <button onClick={() => setShowCreateForm(false)}>
+                    <X className="h-5 w-5 text-gray-400" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div className="sm:col-span-2">
+                    <label className="text-xs text-gray-500 mb-1 block">Title *</label>
+                    <Input
+                      value={String(createForm.title)}
+                      onChange={(e) => setCreateForm((prev) => ({ ...prev, title: e.target.value }))}
+                      placeholder="Pokémon TCG: Prismatic Evolutions Booster Box"
+                      className="h-9"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Slug (auto-generated)</label>
+                    <Input
+                      value={String(createForm.slug)}
+                      onChange={(e) => setCreateForm((prev) => ({ ...prev, slug: e.target.value }))}
+                      placeholder="auto-from-title"
+                      className="h-9"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Category</label>
+                    <select
+                      value={String(createForm.category)}
+                      onChange={(e) => setCreateForm((prev) => ({ ...prev, category: e.target.value }))}
+                      className="w-full h-9 rounded-md border border-gray-200 px-3 text-sm"
+                    >
+                      <option value="sealed">Sealed Product</option>
+                      <option value="singles">Single Card</option>
+                      <option value="graded">Graded Card</option>
+                      <option value="accessories">Accessories</option>
+                      <option value="bundles">Bundles</option>
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-xs text-gray-500 mb-1 block">Description</label>
+                    <textarea
+                      value={String(createForm.description)}
+                      onChange={(e) => setCreateForm((prev) => ({ ...prev, description: e.target.value }))}
+                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm h-20 resize-none"
+                      placeholder="Product description..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Condition</label>
+                    <Input
+                      value={String(createForm.condition)}
+                      onChange={(e) => setCreateForm((prev) => ({ ...prev, condition: e.target.value }))}
+                      className="h-9"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Product Type</label>
+                    <Input
+                      value={String(createForm.product_type)}
+                      onChange={(e) => setCreateForm((prev) => ({ ...prev, product_type: e.target.value }))}
+                      placeholder="Booster Box, ETB, Single Card..."
+                      className="h-9"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Status</label>
+                    <select
+                      value={String(createForm.status)}
+                      onChange={(e) => setCreateForm((prev) => ({ ...prev, status: e.target.value }))}
+                      className="w-full h-9 rounded-md border border-gray-200 px-3 text-sm"
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="active">Active (Visible)</option>
+                      <option value="scheduled">Scheduled</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Inventory Count</label>
+                    <Input
+                      type="number"
+                      value={String(createForm.inventory_count)}
+                      onChange={(e) => setCreateForm((prev) => ({ ...prev, inventory_count: parseInt(e.target.value) || 0 }))}
+                      className="h-9"
+                    />
+                  </div>
+
+                  {/* Pricing Section */}
+                  <div className="sm:col-span-2 border-t pt-3 mt-1">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">💰 Pricing</p>
+                  </div>
+                  {[
+                    { key: "msrp_price", label: "MSRP" },
+                    { key: "market_price", label: "Market Price" },
+                    { key: "public_price", label: "Public Price" },
+                    { key: "member_price", label: "Member Price (Pro)" },
+                    { key: "premium_member_price", label: "Premium Price (Elite)" },
+                    { key: "cost_basis", label: "Cost Basis" },
+                  ].map((f) => (
+                    <div key={f.key}>
+                      <label className="text-xs text-gray-500 mb-1 block">{f.label}</label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={String(createForm[f.key])}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, [f.key]: parseFloat(e.target.value) || 0 }))}
+                        className="h-9"
+                      />
+                    </div>
+                  ))}
+
+                  {/* Limits */}
+                  <div className="sm:col-span-2 border-t pt-3 mt-1">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">🛡️ Anti-Scalper Limits</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Max per Member</label>
+                    <Input
+                      type="number"
+                      value={String(createForm.max_qty_per_member)}
+                      onChange={(e) => setCreateForm((prev) => ({ ...prev, max_qty_per_member: parseInt(e.target.value) || 1 }))}
+                      className="h-9"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Max per Household</label>
+                    <Input
+                      type="number"
+                      value={String(createForm.max_qty_per_household)}
+                      onChange={(e) => setCreateForm((prev) => ({ ...prev, max_qty_per_household: parseInt(e.target.value) || 2 }))}
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2 text-xs text-gray-600">
+                      <input
+                        type="checkbox"
+                        checked={!!createForm.requires_membership}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, requires_membership: e.target.checked }))}
+                        className="rounded"
+                      />
+                      Requires Membership
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-gray-600">
+                      <input
+                        type="checkbox"
+                        checked={!!createForm.premium_only}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, premium_only: e.target.checked }))}
+                        className="rounded"
+                      />
+                      Elite Only
+                    </label>
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-4 mt-4 border-t">
+                  <Button
+                    onClick={handleCreateProduct}
+                    disabled={creating || !createForm.title}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    {creating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                    Create Product
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowCreateForm(false)}>Cancel</Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Product Edit Modal */}
           {editingProduct && (
             <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
@@ -247,7 +518,9 @@ export default function AdminShopPage() {
                 <div className="space-y-3 text-sm">
                   {[
                     { key: "title", label: "Title", type: "text" },
-                    { key: "status", label: "Status", type: "text" },
+                    { key: "status", label: "Status (draft/active/sold_out/archived)", type: "text" },
+                    { key: "description", label: "Description", type: "text" },
+                    { key: "condition", label: "Condition", type: "text" },
                     { key: "msrp_price", label: "MSRP Price", type: "number" },
                     { key: "market_price", label: "Market Price", type: "number" },
                     { key: "member_price", label: "Member Price", type: "number" },

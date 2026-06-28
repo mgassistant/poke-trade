@@ -93,6 +93,30 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  // Calculate shipping based on items
+  const hasSealed = cartItems.some((item) => (item.product as Record<string, unknown>)?.category === "sealed");
+  const hasSingles = cartItems.some((item) => {
+    const cat = (item.product as Record<string, unknown>)?.category;
+    return cat === "singles" || cat === "graded";
+  });
+  const totalQty = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Shipping tiers: free over $75, else $3.99 singles / $7.99 sealed
+  let shipping = 0;
+  if (subtotal < 75) {
+    if (hasSealed) {
+      shipping = 7.99;
+    } else if (hasSingles) {
+      shipping = 3.99;
+    } else {
+      shipping = 4.99;
+    }
+    // Add $1.99 for each additional item beyond the first
+    if (totalQty > 1) {
+      shipping += (totalQty - 1) * 1.99;
+    }
+  }
+
   // Create order record
   const { data: order, error: orderError } = await supabase
     .from("shop_orders")
@@ -100,8 +124,8 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       subtotal,
       tax: 0,
-      shipping: 0,
-      total: subtotal,
+      shipping,
+      total: subtotal + shipping,
       status: "pending",
     })
     .select()
@@ -142,6 +166,21 @@ export async function POST(request: NextRequest) {
 
   const { url } = request.nextUrl;
   const origin = new URL(url).origin;
+
+  // Add shipping line item if applicable
+  if (shipping > 0) {
+    lineItems.push({
+      price_data: {
+        currency: "usd",
+        product_data: {
+          name: "Shipping",
+          description: subtotal >= 75 ? undefined : `Standard shipping (free on orders $75+)`,
+        },
+        unit_amount: Math.round(shipping * 100),
+      },
+      quantity: 1,
+    });
+  }
 
   // Create Stripe checkout session
   const session = await stripe.checkout.sessions.create({
