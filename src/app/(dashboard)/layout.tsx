@@ -180,6 +180,19 @@ const sidebarLinks = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close user menu on click outside
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
   const { profile } = useUser();
 
   return (
@@ -255,13 +268,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="p-3 border-t border-gray-200">
             <div className="bg-gray-50 rounded-lg border border-gray-200 p-3 mb-3">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-semibold text-gray-900">Free Plan</span>
-                <Badge variant="outline" className="text-[10px]">Upgrade</Badge>
+                <span className="text-xs font-semibold text-gray-900">
+                  {profile?.subscription_tier === "elite" ? "Elite Plan" :
+                   profile?.subscription_tier === "pro" ? "Pro Plan" : "Free Plan"}
+                </span>
+                {(!profile?.subscription_tier || profile.subscription_tier === "free") && (
+                  <Link href="/dashboard/membership">
+                    <Badge variant="outline" className="text-[10px] cursor-pointer hover:bg-red-50">Upgrade</Badge>
+                  </Link>
+                )}
+                {profile?.subscription_tier === "pro" && (
+                  <Badge className="text-[10px] bg-blue-100 text-blue-700 border-blue-200">PRO</Badge>
+                )}
+                {profile?.subscription_tier === "elite" && (
+                  <Badge className="text-[10px] bg-purple-100 text-purple-700 border-purple-200">ELITE</Badge>
+                )}
               </div>
-              <p className="text-[10px] text-gray-500">7/10 free trades used this month</p>
-              <div className="h-1.5 bg-gray-200 rounded-full mt-2">
-                <div className="h-full bg-red-500 rounded-full" style={{ width: "70%" }} />
-              </div>
+              <p className="text-[10px] text-gray-500">
+                {profile?.subscription_tier === "elite" ? "Unlimited trades · 3% fees · $100 protection" :
+                 profile?.subscription_tier === "pro" ? "Unlimited trades · 3% fees · $50 protection" :
+                 `${profile?.trade_count_this_month || 0}/10 free trades this month`}
+              </p>
+              {(!profile?.subscription_tier || profile.subscription_tier === "free") && (
+                <div className="h-1.5 bg-gray-200 rounded-full mt-2">
+                  <div className="h-full bg-red-500 rounded-full transition-all" style={{ width: `${Math.min((profile?.trade_count_this_month || 0) * 10, 100)}%` }} />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -281,8 +313,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
           <div className="flex-1" />
           <NotificationBell />
-          <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
-            U
+          <div className="relative" ref={userMenuRef}>
+            <button
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center text-xs font-bold text-red-600 hover:bg-red-200 transition-colors cursor-pointer"
+            >
+              {profile?.display_name?.[0]?.toUpperCase() || profile?.username?.[0]?.toUpperCase() || "U"}
+            </button>
+            {userMenuOpen && (
+              <div className="absolute right-0 top-10 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50">
+                <div className="px-4 py-2 border-b border-gray-100">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{profile?.display_name || profile?.username || "User"}</p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {profile?.subscription_tier === "elite" ? "Elite Member" :
+                     profile?.subscription_tier === "pro" ? "Pro Member" : "Free Plan"}
+                  </p>
+                </div>
+                <Link href="/dashboard/settings" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <Settings className="h-4 w-4" /> Settings
+                </Link>
+                <Link href="/dashboard/trust-score" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <Shield className="h-4 w-4" /> Trust Score
+                </Link>
+                <Link href="/dashboard/membership" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <CreditCard className="h-4 w-4" /> Membership
+                </Link>
+                <Separator className="my-1" />
+                <button
+                  onClick={async () => {
+                    setUserMenuOpen(false);
+                    const { createClient } = await import("@/lib/supabase/client");
+                    const supabase = createClient();
+                    await supabase.auth.signOut();
+                    window.location.href = "/";
+                  }}
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
+                >
+                  <LogOut className="h-4 w-4" /> Sign Out
+                </button>
+              </div>
+            )}
           </div>
         </header>
 

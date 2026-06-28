@@ -67,38 +67,33 @@ export async function checkPokemonCenter(productUrl: string, sku: string): Promi
 export async function checkTarget(productUrl: string, sku: string): Promise<StockCheckResult> {
   const start = Date.now();
   try {
-    // Extract TCIN from URL or SKU — Target uses numeric TCINs
+    // Extract TCIN from URL or SKU
     const tcinMatch = productUrl.match(/A-(\d+)/) || sku.match(/(\d{7,})/);
     const tcin = tcinMatch?.[1] || sku.replace(/\D/g, '');
 
     if (!tcin) return { inStock: false, error: 'No TCIN found', responseMs: Date.now() - start };
 
-    // Target's fulfillment API
-    const apiUrl = `https://redsky.target.com/redsky_aggregations/v1/web/pdp_fulfillment_v1?key=9f36aeafbe60771e321a7cc95a78140772ab3e96&tcin=${tcin}&store_id=911&has_store_positions_store_id=911&scheduled_delivery_store_id=911&pricing_store_id=911`;
-
-    const res = await fetch(apiUrl, {
-      headers: { ...HEADERS, 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(10000),
+    // Target Redsky API is deprecated (410). Use HTML scraping.
+    const pageUrl = `https://www.target.com/p/-/A-${tcin}`;
+    const res = await fetch(pageUrl, {
+      headers: { ...HEADERS, 'Accept': 'text/html' },
+      signal: AbortSignal.timeout(15000),
     });
 
-    if (!res.ok) return { inStock: false, error: `API ${res.status}`, responseMs: Date.now() - start };
+    if (!res.ok) return { inStock: false, error: `HTTP ${res.status}`, responseMs: Date.now() - start };
 
-    const data = await res.json();
-    const product = data.data?.product;
-    const fulfillment = product?.fulfillment;
+    const html = await res.text();
 
-    // Check shipping availability
-    const shippingAvailable = fulfillment?.shipping_options?.availability_status === 'IN_STOCK';
-    const pickupAvailable = fulfillment?.store_options?.[0]?.order_pickup?.availability_status === 'IN_STOCK';
+    // Check stock indicators in HTML
+    const hasAddToCart = /add to cart/i.test(html) || /addToCart/i.test(html);
+    const isOOS = /out of stock/i.test(html) || /sold out/i.test(html) || /unavailable/i.test(html);
+    const inStock = hasAddToCart && !isOOS;
 
-    const price = product?.price?.formatted_current_price;
-    const priceNum = price ? parseFloat(price.replace(/[^0-9.]/g, '')) : undefined;
+    // Extract price from HTML
+    const priceMatch = html.match(/\$(\d+\.\d{2})/);
+    const price = priceMatch ? parseFloat(priceMatch[1]) : undefined;
 
-    return {
-      inStock: shippingAvailable || pickupAvailable,
-      price: priceNum,
-      responseMs: Date.now() - start,
-    };
+    return { inStock, price, responseMs: Date.now() - start };
   } catch (e: any) {
     return { inStock: false, error: e.message, responseMs: Date.now() - start };
   }
