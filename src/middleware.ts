@@ -149,8 +149,9 @@ export async function middleware(request: NextRequest) {
     const contentLength = request.headers.get("content-length");
     if (contentLength) {
       const size = parseInt(contentLength);
-      // 1MB limit for regular API routes
-      if (size > 1_048_576) {
+      // Card scan routes need larger body (compressed images)
+      const maxSize = pathname.startsWith("/api/cards/scan") ? 5_242_880 : 1_048_576; // 5MB scan, 1MB default
+      if (size > maxSize) {
         return NextResponse.json(
           { error: "Request too large" },
           { status: 413 }
@@ -161,6 +162,10 @@ export async function middleware(request: NextRequest) {
 
   // ── Supabase session update (existing auth middleware) ──
   const response = await updateSession(request);
+
+  // ── Add request ID for correlation ──
+  const requestId = `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  response.headers.set("X-Request-Id", requestId);
 
   // ── Add security headers to all responses ──
   response.headers.set("X-Frame-Options", "DENY");
