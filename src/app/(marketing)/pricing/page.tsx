@@ -1,9 +1,7 @@
 "use client";
-
-import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Check, Crown, ArrowRight, Zap, Bell, Lock, CheckCircle2 } from "lucide-react";
+import { Check, Crown, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -87,55 +85,6 @@ export default function PricingPage() {
           ))}
         </div>
 
-        {/* Drop Alerts Add-On */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="mt-16 max-w-3xl mx-auto"
-        >
-          <Card className="border-2 border-amber-200 overflow-hidden">
-            <CardContent className="p-0">
-              <div className="bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 p-8 md:p-10">
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                  <div className="flex-1">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold mb-3">
-                      <Zap className="h-3.5 w-3.5" />
-                      ADD-ON
-                    </div>
-                    <h3 className="text-2xl font-bold mb-1">
-                      ⚡ Drop Alerts — <span className="text-amber-500">$5.99/mo</span>
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Available with any membership tier (Free, Pro, or Elite)
-                    </p>
-                    <ul className="space-y-2 mb-6">
-                      {[
-                        "Instant restock alerts across 8 retailers",
-                        "Price drop notifications",
-                        "Target price alerts",
-                        "Low stock warnings",
-                        "Watchlist & alert history",
-                        "New release notifications",
-                      ].map((f) => (
-                        <li key={f} className="flex items-center gap-2 text-sm">
-                          <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0" />
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                    <DropAlertsSubscribeButton />
-                    <p className="text-xs text-muted-foreground mt-3">
-                      Add this to your existing membership for enhanced protection features.
-                    </p>
-                  </div>
-                  <div className="hidden md:block text-8xl opacity-15 select-none">⚡</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
         {/* FAQ */}
         <div className="mt-24 max-w-3xl mx-auto">
           <h2 className="text-2xl font-bold text-center mb-12">
@@ -171,35 +120,3 @@ export default function PricingPage() {
   );
 }
 
-function DropAlertsSubscribeButton() {
-  const [subscribing, setSubscribing] = useState(false);
-
-  const handleSubscribe = async () => {
-    setSubscribing(true);
-    try {
-      const res = await fetch("/api/drops/subscribe", { method: "POST" });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else if (data.error) {
-        alert(data.error);
-      }
-    } catch {
-      alert("Failed to start checkout. Please try again.");
-    } finally {
-      setSubscribing(false);
-    }
-  };
-
-  return (
-    <Button
-      size="lg"
-      className="bg-amber-500 hover:bg-amber-600 text-black font-bold shadow-lg shadow-amber-500/25"
-      onClick={handleSubscribe}
-      disabled={subscribing}
-    >
-      <Zap className="h-4 w-4 mr-1.5" />
-      {subscribing ? "Loading..." : "Subscribe — $5.99/mo"}
-    </Button>
-  );
-}

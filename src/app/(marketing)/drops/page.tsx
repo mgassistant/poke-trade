@@ -6,7 +6,7 @@ import {
   Bell, Zap, ExternalLink, Search, Filter,
   ChevronDown, Eye, Clock, ArrowUpDown,
   TrendingDown, TrendingUp, Package, ShoppingCart,
-  Lock, Shield, CheckCircle2,
+  Lock, Shield, CheckCircle2, Crown, Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -108,15 +108,15 @@ const ALERT_COLORS: Record<string, string> = {
   low_stock: "border-l-yellow-500 bg-yellow-50/50",
 };
 
-const DROP_ALERTS_FEATURES = [
-  "Instant restock alerts",
-  "Price drop notifications",
-  "Target price alerts",
-  "Low stock warnings",
-  "Watchlist across 8 retailers",
-  "Live alerts ticker",
-  "Alert history",
-  "New release notifications",
+const TIER_COMPARISON = [
+  { feature: "Restock alerts", free: "Daily digest", pro: "Real-time", elite: "Priority (30s faster)" },
+  { feature: "Price drop alerts", free: "Daily digest", pro: "Real-time", elite: "Priority (30s faster)" },
+  { feature: "Retailers monitored", free: "8 retailers", pro: "8 retailers", elite: "8 retailers" },
+  { feature: "Watchlist", free: "Up to 5", pro: "Unlimited", elite: "Unlimited" },
+  { feature: "Alert history", free: "7 days", pro: "Unlimited", elite: "Unlimited" },
+  { feature: "New release alerts", free: "✓", pro: "✓", elite: "✓ (early access)" },
+  { feature: "Target price alerts", free: "—", pro: "✓", elite: "✓" },
+  { feature: "Low stock warnings", free: "—", pro: "✓", elite: "✓" },
 ];
 
 /* ────────── helpers ────────── */
@@ -175,10 +175,11 @@ export default function DropsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Subscription state
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [subLoading, setSubLoading] = useState(true);
-  const [subscribing, setSubscribing] = useState(false);
+  // Membership tier check (free/pro/elite)
+  const [memberTier, setMemberTier] = useState<"free" | "pro" | "elite">("free");
+  const [tierLoading, setTierLoading] = useState(true);
+  const isPro = memberTier === "pro" || memberTier === "elite";
+  const isElite = memberTier === "elite";
 
   // Filters
   const [retailerFilter, setRetailerFilter] = useState("");
@@ -191,20 +192,22 @@ export default function DropsPage() {
   // Watchlist tracking (local state)
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
 
-  // Check subscription status
+  // Check membership tier
   useEffect(() => {
-    async function checkSubscription() {
+    async function checkTier() {
       try {
-        const res = await fetch("/api/drops/subscribe");
-        const data = await res.json();
-        setIsSubscribed(data.active === true);
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          setMemberTier(data.user?.subscription_tier || "free");
+        }
       } catch {
-        // Not logged in or error
+        // Not logged in
       } finally {
-        setSubLoading(false);
+        setTierLoading(false);
       }
     }
-    checkSubscription();
+    checkTier();
   }, []);
 
   const fetchProducts = useCallback(async () => {
@@ -253,9 +256,9 @@ export default function DropsPage() {
     fetchAlerts();
   }, [fetchAlerts]);
 
-  // Load watchlist (only if subscribed)
+  // Load watchlist (only if Pro or Elite)
   useEffect(() => {
-    if (!isSubscribed) return;
+    if (!isPro) return;
     async function loadWatchlist() {
       try {
         const res = await fetch("/api/drops/watchlist");
@@ -268,10 +271,10 @@ export default function DropsPage() {
       }
     }
     loadWatchlist();
-  }, [isSubscribed]);
+  }, [isPro]);
 
   const toggleWatch = async (productId: string) => {
-    if (!isSubscribed) return; // gated
+    if (!isPro) return;
     const isWatched = watchedIds.has(productId);
     const newSet = new Set(watchedIds);
 
@@ -301,23 +304,6 @@ export default function DropsPage() {
         newSet.delete(productId);
         setWatchedIds(new Set(newSet));
       }
-    }
-  };
-
-  const handleSubscribe = async () => {
-    setSubscribing(true);
-    try {
-      const res = await fetch("/api/drops/subscribe", { method: "POST" });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else if (data.error) {
-        alert(data.error);
-      }
-    } catch {
-      alert("Failed to start checkout. Please try again.");
-    } finally {
-      setSubscribing(false);
     }
   };
 
@@ -354,8 +340,11 @@ export default function DropsPage() {
               <span className="font-medium text-gray-700"> Tracking {totalProducts} products.</span>
             )}
           </p>
+          <p className="mt-2 text-sm text-gray-400">
+            Included with all membership tiers — Pro &amp; Elite get real-time alerts
+          </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-            {isSubscribed ? (
+            {isPro ? (
               <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white font-semibold shadow-lg" asChild>
                 <Link href="/dashboard/drops">
                   <CheckCircle2 className="h-4 w-4 mr-1.5" />
@@ -366,15 +355,16 @@ export default function DropsPage() {
               <Button
                 size="lg"
                 className="bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg shadow-amber-500/20"
-                onClick={handleSubscribe}
-                disabled={subscribing}
+                asChild
               >
-                <Zap className="h-4 w-4 mr-1.5" />
-                {subscribing ? "Loading..." : "Subscribe — $5.99/mo"}
+                <Link href="/pricing">
+                  <Zap className="h-4 w-4 mr-1.5" />
+                  Upgrade for Real-Time Alerts
+                </Link>
               </Button>
             )}
             <Button size="lg" variant="outline" className="border-gray-300" asChild>
-              <Link href="/pricing">View Plans</Link>
+              <Link href="#compare">Compare Plans</Link>
             </Button>
           </div>
         </div>
@@ -388,15 +378,15 @@ export default function DropsPage() {
               <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
               <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Live Alerts</h2>
               <span className="text-xs text-gray-400">Last 24 hours</span>
-              {!isSubscribed && (
+              {!isPro && (
                 <Badge variant="outline" className="text-[10px] border-amber-300 text-amber-600 ml-auto">
                   <Lock className="h-3 w-3 mr-1" />
-                  Subscribers Only
+                  Pro &amp; Elite Members
                 </Badge>
               )}
             </div>
 
-            {isSubscribed ? (
+            {isPro ? (
               <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
                 {alerts.slice(0, 8).map((alert) => (
                   <div
@@ -425,7 +415,7 @@ export default function DropsPage() {
                 ))}
               </div>
             ) : (
-              /* Blurred preview for non-subscribers */
+              /* Blurred preview for free users */
               <div className="relative">
                 <div className="space-y-2 max-h-48 overflow-hidden filter blur-[6px] pointer-events-none select-none">
                   {alerts.slice(0, 4).map((alert) => (
@@ -444,14 +434,14 @@ export default function DropsPage() {
                 <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-lg">
                   <div className="text-center">
                     <Lock className="h-6 w-6 text-amber-500 mx-auto mb-2" />
-                    <p className="text-sm font-semibold text-gray-700">Subscribe to see live alerts</p>
+                    <p className="text-sm font-semibold text-gray-700">Upgrade to see real-time alerts</p>
+                    <p className="text-xs text-gray-500 mt-1">Free members get a daily digest</p>
                     <Button
                       size="sm"
-                      className="mt-2 bg-amber-500 hover:bg-amber-600 text-black font-semibold"
-                      onClick={handleSubscribe}
-                      disabled={subscribing}
+                      className="mt-3 bg-amber-500 hover:bg-amber-600 text-black font-semibold"
+                      asChild
                     >
-                      {subscribing ? "Loading..." : "Unlock — $5.99/mo"}
+                      <Link href="/pricing">View Plans</Link>
                     </Button>
                   </div>
                 </div>
@@ -461,50 +451,65 @@ export default function DropsPage() {
         </section>
       )}
 
-      {/* ── Drop Alerts Pro Upsell ── */}
-      {!subLoading && !isSubscribed && (
-        <section className="py-12 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-b border-amber-200/50">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-            <div className="bg-white rounded-2xl border-2 border-amber-200 shadow-lg shadow-amber-100/50 p-8 md:p-10">
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
-                <div className="flex-1">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold mb-4">
-                    <Zap className="h-3.5 w-3.5" />
-                    DROP ALERTS PRO
-                  </div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                    Never miss a restock — <span className="text-amber-500">$5.99/mo</span>
-                  </h2>
-                  <p className="text-gray-500 mb-6">
-                    Get instant alerts across {RETAILERS.length} retailers. Available as an add-on to any membership tier.
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
-                    {DROP_ALERTS_FEATURES.map((feature) => (
-                      <div key={feature} className="flex items-center gap-2 text-sm text-gray-700">
-                        <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0" />
-                        {feature}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      size="lg"
-                      className="bg-amber-500 hover:bg-amber-600 text-black font-bold shadow-lg shadow-amber-500/25"
-                      onClick={handleSubscribe}
-                      disabled={subscribing}
-                    >
-                      <Zap className="h-4 w-4 mr-1.5" />
-                      {subscribing ? "Loading..." : "Subscribe Now"}
-                    </Button>
-                    <span className="text-xs text-gray-400">Available with any membership tier</span>
-                  </div>
+      {/* ── Tier Comparison ── */}
+      <section id="compare" className="py-12 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-b border-amber-200/50">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-center mb-2">
+            Drop Alerts by <span className="text-amber-500">Membership Tier</span>
+          </h2>
+          <p className="text-center text-gray-500 text-sm mb-8">
+            Every member gets drop alerts — upgrade for faster, real-time notifications
+          </p>
+
+          {/* Comparison Table */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+            {/* Header */}
+            <div className="grid grid-cols-4 border-b border-gray-100">
+              <div className="p-4" />
+              <div className="p-4 text-center">
+                <div className="text-sm font-semibold text-gray-900">Free</div>
+                <div className="text-xs text-gray-500">$0/mo</div>
+              </div>
+              <div className="p-4 text-center bg-red-50/50 border-x border-red-100">
+                <div className="text-sm font-semibold text-red-600 flex items-center justify-center gap-1">
+                  <Star className="h-3.5 w-3.5" /> Pro
                 </div>
-                <div className="hidden md:block shrink-0 text-8xl opacity-20 select-none">⚡</div>
+                <div className="text-xs text-gray-500">$19.99/mo</div>
+              </div>
+              <div className="p-4 text-center">
+                <div className="text-sm font-semibold text-amber-600 flex items-center justify-center gap-1">
+                  <Crown className="h-3.5 w-3.5" /> Elite
+                </div>
+                <div className="text-xs text-gray-500">$29.99/mo</div>
               </div>
             </div>
+            {/* Rows */}
+            {TIER_COMPARISON.map((row, i) => (
+              <div key={row.feature} className={`grid grid-cols-4 ${i < TIER_COMPARISON.length - 1 ? "border-b border-gray-50" : ""}`}>
+                <div className="p-3 text-sm text-gray-700 font-medium">{row.feature}</div>
+                <div className="p-3 text-center text-xs text-gray-500">{row.free}</div>
+                <div className="p-3 text-center text-xs text-gray-700 font-medium bg-red-50/30 border-x border-red-50">{row.pro}</div>
+                <div className="p-3 text-center text-xs text-gray-700 font-medium">{row.elite}</div>
+              </div>
+            ))}
           </div>
-        </section>
-      )}
+
+          <div className="flex justify-center gap-3 mt-8">
+            <Button className="bg-red-600 hover:bg-red-700 text-white font-semibold" asChild>
+              <Link href="/pricing">
+                <Star className="h-4 w-4 mr-1.5" />
+                Get Pro
+              </Link>
+            </Button>
+            <Button variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50" asChild>
+              <Link href="/pricing">
+                <Crown className="h-4 w-4 mr-1.5" />
+                Get Elite
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
 
       {/* ── Retailer Grid ── */}
       <section className="py-10 bg-gray-50/80">
@@ -544,7 +549,6 @@ export default function DropsPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Filter Bar */}
           <div className="flex flex-col md:flex-row items-start md:items-center gap-3 mb-6">
-            {/* Search */}
             <form onSubmit={handleSearch} className="relative flex-1 w-full md:max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -555,7 +559,6 @@ export default function DropsPage() {
               />
             </form>
 
-            {/* Category */}
             <div className="relative">
               <select
                 value={categoryFilter}
@@ -569,7 +572,6 @@ export default function DropsPage() {
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
 
-            {/* Stock */}
             <div className="relative">
               <select
                 value={stockFilter}
@@ -583,7 +585,6 @@ export default function DropsPage() {
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
 
-            {/* Sort */}
             <div className="relative">
               <select
                 value={sortBy}
@@ -597,7 +598,6 @@ export default function DropsPage() {
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
 
-            {/* Active filter clear */}
             {(retailerFilter || categoryFilter || stockFilter || searchQuery) && (
               <Button
                 size="sm"
@@ -617,7 +617,6 @@ export default function DropsPage() {
             )}
           </div>
 
-          {/* Results count */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-gray-500">
               {loading ? "Loading..." : `${totalProducts} products found`}
@@ -664,15 +663,12 @@ export default function DropsPage() {
                 return (
                   <Card key={product.id} className="group hover:shadow-md transition-all hover:-translate-y-0.5 overflow-hidden">
                     <CardContent className="p-0">
-                      {/* Product image placeholder */}
                       <div className="h-32 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center relative">
                         <span className="text-4xl opacity-20">🃏</span>
-                        {/* Stock badge overlay */}
                         <div className="absolute top-2 left-2">
                           {stockBadge(product.in_stock)}
                         </div>
-                        {/* Watch button — gated */}
-                        {isSubscribed ? (
+                        {isPro ? (
                           <button
                             onClick={() => toggleWatch(product.id)}
                             className={`absolute top-2 right-2 p-1.5 rounded-full transition-all ${
@@ -685,13 +681,13 @@ export default function DropsPage() {
                             <Bell className="h-3.5 w-3.5" fill={isWatched ? "currentColor" : "none"} />
                           </button>
                         ) : (
-                          <button
-                            onClick={handleSubscribe}
-                            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 text-gray-300 hover:text-amber-500 hover:bg-white shadow-sm transition-all group/watch"
-                            title="Subscribe to Watch — $5.99/mo"
+                          <Link
+                            href="/pricing"
+                            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 text-gray-300 hover:text-amber-500 hover:bg-white shadow-sm transition-all"
+                            title="Upgrade to Pro for watchlist"
                           >
                             <Lock className="h-3.5 w-3.5" />
-                          </button>
+                          </Link>
                         )}
                         {onSale && (
                           <div className="absolute bottom-2 left-2">
@@ -703,20 +699,16 @@ export default function DropsPage() {
                         )}
                       </div>
 
-                      {/* Details */}
                       <div className="p-4 space-y-2.5">
-                        {/* Retailer badge */}
                         <div className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${retailerBadgeClass(product.retailer)}`}>
                           <span>{retailerIcon(product.retailer)}</span>
                           {retailerLabel(product.retailer)}
                         </div>
 
-                        {/* Name */}
                         <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 min-h-[2.5rem]">
                           {product.product_name}
                         </h3>
 
-                        {/* Set + Category */}
                         {(product.set_name || product.category) && (
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {product.set_name && (
@@ -732,7 +724,6 @@ export default function DropsPage() {
                           </div>
                         )}
 
-                        {/* Price */}
                         <div className="flex items-baseline gap-2">
                           <span className="text-lg font-bold text-gray-900">
                             ${product.current_price?.toFixed(2) ?? "—"}
@@ -744,7 +735,6 @@ export default function DropsPage() {
                           )}
                         </div>
 
-                        {/* Actions */}
                         <div className="flex items-center gap-2 pt-1">
                           {product.in_stock && product.product_url ? (
                             <a
@@ -775,7 +765,6 @@ export default function DropsPage() {
                           )}
                         </div>
 
-                        {/* Last checked */}
                         {product.last_checked_at && (
                           <p className="text-[10px] text-gray-400 flex items-center gap-1">
                             <Clock className="h-3 w-3" />
@@ -827,7 +816,7 @@ export default function DropsPage() {
             {[
               { icon: "🔍", title: "We Monitor 24/7", desc: "Bots check major retailers every 30–60 seconds for stock changes, price drops, and new listings." },
               { icon: "⚡", title: "Instant Detection", desc: "The moment stock appears, we detect it — usually within 30 seconds of going live." },
-              { icon: "🔔", title: "Push Notification", desc: "Get notified instantly via push notification, email, or in-app alert. You choose how." },
+              { icon: "🔔", title: "Push Notification", desc: "Pro members get instant alerts. Elite members get priority — 30 seconds faster than everyone else." },
               { icon: "🛒", title: "One-Tap Buy", desc: "Direct links take you straight to the product page. Add to cart before it sells out." },
             ].map((step) => (
               <div key={step.title} className="text-center p-6 rounded-xl bg-white border border-gray-100 shadow-sm">
@@ -849,7 +838,7 @@ export default function DropsPage() {
           <p className="text-gray-500 mb-8">
             Join thousands of collectors who never miss a drop.
           </p>
-          {isSubscribed ? (
+          {isPro ? (
             <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white font-semibold shadow-lg" asChild>
               <Link href="/dashboard/drops">
                 <CheckCircle2 className="h-4 w-4 mr-1.5" />
@@ -857,15 +846,17 @@ export default function DropsPage() {
               </Link>
             </Button>
           ) : (
-            <Button
-              size="lg"
-              className="bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg shadow-amber-500/20"
-              onClick={handleSubscribe}
-              disabled={subscribing}
-            >
-              <Zap className="h-4 w-4 mr-1.5" />
-              {subscribing ? "Loading..." : "Subscribe to Drop Alerts — $5.99/mo"}
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg" asChild>
+                <Link href="/pricing">
+                  <Star className="h-4 w-4 mr-1.5" />
+                  Upgrade to Pro — $19.99/mo
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="/register">Sign Up Free</Link>
+              </Button>
+            </div>
           )}
         </div>
       </section>

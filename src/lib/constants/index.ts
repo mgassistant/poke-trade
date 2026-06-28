@@ -74,6 +74,7 @@ export const SUBSCRIPTION_TIERS = [
       "5% marketplace sale fee",
       "Basic collection tracking",
       "Basic trade matching",
+      "Drop alerts (daily digest)",
       "Community access",
     ],
   },
@@ -83,13 +84,14 @@ export const SUBSCRIPTION_TIERS = [
     price: 19.99, // Stripe price: $19.99/mo
     features: [
       "Unlimited P2P trades (no per-trade fee)",
-      "Unlimited drop alerts (real-time)",
+      "Real-time restock & drop alerts",
       "Unlimited marketplace listings",
       "3% marketplace sale fee",
       "Advanced trade matching",
       "Collection analytics & value charts",
       "Market price alerts",
-      "All 7 retailers monitored",
+      "All 8 retailers monitored",
+      "Watchlist & alert history",
       "Pro badge on profile",
       "Priority support",
     ],
@@ -100,7 +102,7 @@ export const SUBSCRIPTION_TIERS = [
     price: 29.99,
     features: [
       "Everything in Pro",
-      "Priority drop alerts (30s faster)",
+      "Priority restock & drop alerts (30s faster)",
       "Portfolio analytics & investment tracking",
       "Card authentication discount (20% off)",
       "Trade Protection included (up to $100 platform credit)",

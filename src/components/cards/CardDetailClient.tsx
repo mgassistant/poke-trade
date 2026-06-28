@@ -70,6 +70,14 @@ interface RelatedCard {
   card_sets: { name: string } | null;
 }
 
+interface EbayPriceData {
+  averagePrice: number | null;
+  medianPrice: number | null;
+  lowestPrice: number | null;
+  highestPrice: number | null;
+  totalResults: number;
+}
+
 export function CardDetailClient({ card }: CardDetailClientProps) {
   const marketPrice = getMarketPrice(card);
   const [listings, setListings] = useState<ListingData[]>([]);
@@ -80,6 +88,33 @@ export function CardDetailClient({ card }: CardDetailClientProps) {
   const [relatedSameName, setRelatedSameName] = useState<RelatedCard[]>([]);
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [offerListing, setOfferListing] = useState<ListingData | null>(null);
+  const [ebayPrices, setEbayPrices] = useState<EbayPriceData | null>(null);
+  const [ebayLoading, setEbayLoading] = useState(true);
+
+  // Fetch eBay prices for this card
+  useEffect(() => {
+    const fetchEbay = async () => {
+      try {
+        const q = encodeURIComponent(card.name + " " + card.set.name + " pokemon");
+        const res = await fetch(`/api/ebay/search?q=${q}&limit=25`);
+        if (res.ok) {
+          const data = await res.json();
+          setEbayPrices({
+            averagePrice: data.averagePrice,
+            medianPrice: data.medianPrice,
+            lowestPrice: data.lowestPrice,
+            highestPrice: data.highestPrice,
+            totalResults: data.totalResults || 0,
+          });
+        }
+      } catch {
+        // eBay prices are supplementary, don't block
+      } finally {
+        setEbayLoading(false);
+      }
+    };
+    fetchEbay();
+  }, [card.name, card.set.name]);
 
   // Fetch listings for this card
   useEffect(() => {
@@ -424,18 +459,39 @@ export function CardDetailClient({ card }: CardDetailClientProps) {
 
                 {/* eBay */}
                 <a
-                  href={`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(card.name + " " + card.set.name + " pokemon")}&LH_Complete=1&LH_Sold=1&_sop=13`}
+                  href={`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(card.name + " " + card.set.name + " pokemon")}&_sacat=183454&_sop=13`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border border-transparent hover:border-primary/20"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">🔨</span>
-                    <span className="text-sm font-semibold">eBay Sold</span>
+                    <span className="text-lg">🛒</span>
+                    <span className="text-sm font-semibold">eBay</span>
                     <ExternalLink className="h-3 w-3 text-muted-foreground ml-auto" />
                   </div>
-                  <p className="text-sm text-muted-foreground">View recent sales</p>
-                  <Badge variant="outline" className="mt-2 text-[9px]">Live Data</Badge>
+                  {ebayLoading ? (
+                    <div className="space-y-2">
+                      <div className="h-6 w-16 bg-muted/40 rounded animate-pulse" />
+                      <div className="h-3 w-24 bg-muted/30 rounded animate-pulse" />
+                    </div>
+                  ) : ebayPrices && ebayPrices.averagePrice ? (
+                    <>
+                      <p className="text-xl font-bold">{formatCardPrice(ebayPrices.averagePrice)}</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        Avg ({ebayPrices.totalResults.toLocaleString()} listings)
+                      </p>
+                      {ebayPrices.lowestPrice && ebayPrices.highestPrice && (
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatCardPrice(ebayPrices.lowestPrice)} – {formatCardPrice(ebayPrices.highestPrice)}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground">View listings</p>
+                      <Badge variant="outline" className="mt-2 text-[9px]">Live Data</Badge>
+                    </>
+                  )}
                 </a>
 
                 {/* CardMarket */}
