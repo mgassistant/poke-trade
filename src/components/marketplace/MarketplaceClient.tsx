@@ -106,7 +106,7 @@ export function MarketplaceClient() {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [selectedSet, setSelectedSet] = useState("");
-  const [setSearch, setSetSearch] = useState("");
+  const [setSearchQuery, setSetSearchQuery] = useState("");
   const [sort, setSort] = useState("value-desc");
   const [loading, setLoading] = useState(true);
   const [gridSize, setGridSize] = useState<"sm" | "lg">("lg");
@@ -186,7 +186,7 @@ export function MarketplaceClient() {
 
   // Filter sets client-side
   const filteredSets = sets.filter((s) =>
-    !setSearch || s.name.toLowerCase().includes(setSearch.toLowerCase()) || s.series?.toLowerCase().includes(setSearch.toLowerCase())
+    !setSearchQuery || s.name.toLowerCase().includes(setSearchQuery.toLowerCase()) || s.series?.toLowerCase().includes(setSearchQuery.toLowerCase())
   );
 
   // Group sets by series
@@ -259,8 +259,8 @@ export function MarketplaceClient() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search sets... (e.g. Evolving Skies, Scarlet & Violet)"
-                  value={setSearch}
-                  onChange={(e) => setSetSearch(e.target.value)}
+                  value={setSearchQuery}
+                  onChange={(e) => setSetSearchQuery(e.target.value)}
                   className="pl-10"
                 />
               </div>
