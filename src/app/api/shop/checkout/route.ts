@@ -205,9 +205,10 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // Create Stripe checkout session
+  // Create Stripe Embedded Checkout session
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
+    ui_mode: "embedded",
     customer: profile?.stripe_customer_id || undefined,
     customer_email: !profile?.stripe_customer_id ? user.email : undefined,
     line_items: lineItems,
@@ -219,8 +220,7 @@ export async function POST(request: NextRequest) {
       order_id: order.id,
       user_id: user.id,
     },
-    success_url: `${origin}/dashboard/orders?success=true&order_id=${order.id}`,
-    cancel_url: `${origin}/shop/cart?canceled=true`,
+    return_url: `${origin}/shop/checkout/complete?session_id={CHECKOUT_SESSION_ID}`,
   });
 
   // Update order with Stripe session ID
@@ -229,5 +229,5 @@ export async function POST(request: NextRequest) {
     .update({ stripe_session_id: session.id })
     .eq("id", order.id);
 
-  return NextResponse.json({ url: session.url });
+  return NextResponse.json({ clientSecret: session.client_secret });
 }

@@ -95,6 +95,10 @@ export function CartClient() {
   const handleCheckout = async () => {
     setCheckingOut(true);
     setError(null);
+    // Navigate to embedded checkout page (Stripe Embedded Checkout)
+    window.location.href = "/shop/checkout";
+    return;
+    // Legacy Stripe hosted checkout (kept for reference)
     try {
       const res = await fetch("/api/shop/checkout", {
         method: "POST",
