@@ -70,13 +70,22 @@ export default function CardScanner({ open, onClose, onAddCard }: CardScannerPro
     setCameraError(null);
     setCameraReady(false);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 960 },
-        },
-      });
+      // Try rear camera first (mobile), fallback to any camera (desktop)
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 960 },
+          },
+        });
+      } catch {
+        // Fallback: any available camera
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 960 } },
+        });
+      }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -161,12 +170,14 @@ export default function CardScanner({ open, onClose, onAddCard }: CardScannerPro
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // Resize to max 800px wide for faster AI processing and smaller payload
+    const scale = Math.min(1, 800 / video.videoWidth);
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
     setCapturedImage(dataUrl);
     stopCamera();
     setStep("identify");

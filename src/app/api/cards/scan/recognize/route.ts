@@ -50,6 +50,11 @@ export async function POST(request: NextRequest) {
   const mimeMatch = image.match(/^data:(image\/\w+);base64,/);
   const mediaType = mimeMatch ? mimeMatch[1] : "image/jpeg";
 
+  // Validate image size (max 4MB base64 = ~3MB actual image)
+  if (base64.length > 4 * 1024 * 1024) {
+    return NextResponse.json({ error: "Image too large. Please use a smaller image (max 3MB)." }, { status: 400 });
+  }
+
   try {
     // Step 1: Send image to GPT-4o for card recognition
     const completion = await openai.chat.completions.create({
@@ -167,16 +172,29 @@ If you absolutely cannot identify the card, return:
     // Strategy 1b: card number + name (no set match needed)
     if (matches.length === 0 && cardNumber && cardName) {
       const words = cardName.split(/\s+/).filter(Boolean).slice(0, 2);
-      let query = svc
+      // Try exact number match first (avoids .or() issues with special chars)
+      let { data } = await svc
         .from("cards")
         .select("id, name, number, rarity, card_type, image_url, market_value, set_id, card_sets(id, name, series, symbol_url)")
-        .or(`number.eq.${cardNumber},number.eq.${cardNumberWithZeros}`)
+        .eq("number", cardNumber)
         .limit(20);
-      for (const word of words) {
-        if (word.length >= 2) query = query.ilike("name", `%${word}%`);
+      // Try with leading zeros
+      if ((!data || data.length === 0) && cardNumberWithZeros !== cardNumber) {
+        const retry = await svc
+          .from("cards")
+          .select("id, name, number, rarity, card_type, image_url, market_value, set_id, card_sets(id, name, series, symbol_url)")
+          .eq("number", cardNumberWithZeros)
+          .limit(20);
+        data = retry.data;
       }
-      const { data } = await query;
-      if (data && data.length > 0) matches = data;
+      // Filter by name words if we got results
+      if (data && data.length > 0) {
+        const nameFiltered = data.filter((d: any) => {
+          const dName = (d.name || "").toLowerCase();
+          return words.every(w => w.length < 2 || dName.includes(w.toLowerCase()));
+        });
+        matches = nameFiltered.length > 0 ? nameFiltered : data;
+      }
     }
 
     // Strategy 2: Fuzzy name match

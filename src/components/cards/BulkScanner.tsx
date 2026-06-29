@@ -358,12 +358,20 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
           }
         } catch { /* OCR failed, use AI */ }
 
-        // AI fallback
+        // AI fallback — compress image before sending to avoid payload size issues
         if (!matched) {
+          let imageToSend = card.image;
+          // Compress if image is too large (> 500KB base64 = ~375KB actual)
+          if (imageToSend.length > 500_000) {
+            try {
+              const { compressForScan } = await import("@/lib/image-utils");
+              imageToSend = await compressForScan(imageToSend);
+            } catch { /* use original */ }
+          }
           const res = await fetch("/api/cards/scan/recognize", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ image: card.image }),
+            body: JSON.stringify({ image: imageToSend }),
           });
           const data = await res.json();
 

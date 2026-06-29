@@ -35,11 +35,16 @@ async function getWorker() {
   workerLoading = true;
   try {
     const Tesseract = await import("tesseract.js");
-    worker = await Tesseract.createWorker("eng", 1, {
-      // Use CDN for worker files to avoid bundling issues
-      workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
-      corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js",
-    });
+    // Try CDN first, then fall back to default (bundled)
+    try {
+      worker = await Tesseract.createWorker("eng", 1, {
+        workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
+        corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js",
+      });
+    } catch {
+      // Fallback: let Tesseract use default paths (bundled or auto-resolved)
+      worker = await Tesseract.createWorker("eng");
+    }
     // Optimize for reading numbers and short text
     await worker.setParameters({
       tessedit_char_whitelist: "0123456789/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz .-'éÉ",
@@ -94,9 +99,11 @@ export async function ocrCardImage(imageDataUrl: string): Promise<OcrResult> {
   const confidence = Math.max(bottomResult.data.confidence, topResult.data.confidence);
   
   // Extract card number from bottom text
-  // Common patterns: "044/185", "4/102", "TG30/TG30", "SV065/SV121"
+  // Common patterns: "044/185", "4/102", "TG30/TG30", "SV065/SV121", "GG70/GG70", "SWSH262"
   const numberMatch = bottomText.match(
-    /\b([A-Z]{0,3}\d{1,4})\s*[\/\\]\s*([A-Z]{0,3}\d{1,4})\b/i
+    /\b([A-Z]{0,4}\d{1,4})\s*[\/\\]\s*([A-Z]{0,4}\d{1,4})\b/i
+  ) || bottomText.match(
+    /\b(SWSH|SM|XY|BW|DP|PL)\d{2,4}\b/i  // Promo card patterns
   );
   
   let cardNumber: string | null = null;
@@ -193,7 +200,20 @@ function cropImage(
   canvas.height = h;
   const ctx = canvas.getContext("2d")!;
   // Enhance contrast for better OCR
-  ctx.filter = "contrast(1.5) grayscale(1)";
+  // Note: ctx.filter not supported in all browsers (Safari <17), use manual approach
   ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
+  // Manual grayscale + contrast enhancement for broader browser support
+  try {
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      // Grayscale
+      const avg = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+      // Contrast (1.5x)
+      const contrasted = Math.min(255, Math.max(0, ((avg - 128) * 1.5) + 128));
+      data[i] = data[i + 1] = data[i + 2] = contrasted;
+    }
+    ctx.putImageData(imageData, 0, 0);
+  } catch { /* CORS or security error — use unprocessed image */ }
   return canvas;
 }
