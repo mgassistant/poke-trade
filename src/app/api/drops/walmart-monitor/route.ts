@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { checkWalmartStock, addToWalmartCart } from "@/lib/restock-monitor/walmart-bot";
 import { WALMART_DROPS_2026_06_29 } from "@/lib/restock-monitor/walmart-drops";
+import { sendDropAlert } from "@/lib/restock-monitor/sms-alert";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -137,6 +138,15 @@ export async function POST(req: NextRequest) {
           price: stock.price,
           error: cartResult.error,
         });
+
+        // SMS alert
+        await sendDropAlert(
+          "Walmart",
+          product.product_name,
+          stock.price,
+          product.product_url,
+          cartResult.success ? "carted" : "failed"
+        );
 
         await supabase.from("drop_purchases").insert({
           retailer: "walmart",

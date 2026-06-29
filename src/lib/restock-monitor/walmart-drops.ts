@@ -26,7 +26,7 @@ export const WALMART_DROPS_2026_06_29: WalmartDropProduct[] = [
     set_name: "Mega Evolution",
     priority: 1,
     auto_buy: true,
-    max_price: 109.99,
+    max_price: 109.99, // MSRP + 10%
   },
   {
     product_name: "Ascended Heroes Elite Trainer Box",
@@ -37,7 +37,7 @@ export const WALMART_DROPS_2026_06_29: WalmartDropProduct[] = [
     set_name: "Ascended Heroes",
     priority: 1,
     auto_buy: true,
-    max_price: 59.99,
+    max_price: 60.49, // MSRP + 10%
   },
   {
     product_name: "Prismatic Evolutions Super-Premium Collection",
@@ -48,7 +48,7 @@ export const WALMART_DROPS_2026_06_29: WalmartDropProduct[] = [
     set_name: "Prismatic Evolutions",
     priority: 2,
     auto_buy: true,
-    max_price: 99.99,
+    max_price: 98.99, // MSRP + 10%
   },
   {
     product_name: "Destined Rivals Elite Trainer Box",
@@ -59,7 +59,7 @@ export const WALMART_DROPS_2026_06_29: WalmartDropProduct[] = [
     set_name: "Destined Rivals",
     priority: 2,
     auto_buy: true,
-    max_price: 59.99,
+    max_price: 60.49, // MSRP + 10%
   },
 
   // ═══ MEDIUM PRIORITY ═══
@@ -72,7 +72,7 @@ export const WALMART_DROPS_2026_06_29: WalmartDropProduct[] = [
     set_name: "Ascended Heroes",
     priority: 3,
     auto_buy: true,
-    max_price: 29.99,
+    max_price: 27.49, // MSRP + 10%
   },
   {
     product_name: "Spring Charizard Ex Special Collection",
@@ -83,6 +83,6 @@ export const WALMART_DROPS_2026_06_29: WalmartDropProduct[] = [
     set_name: "Spring 2026",
     priority: 3,
     auto_buy: true,
-    max_price: 34.99,
+    max_price: 32.99, // MSRP + 10%
   },
 ];

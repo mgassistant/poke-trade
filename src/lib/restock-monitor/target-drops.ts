@@ -32,7 +32,7 @@ export const TARGET_DROPS_2026_06_29: TargetDropProduct[] = [
     estimated_stock: "<1000",
     priority: 1,
     auto_buy: true,
-    max_price: 109.99,
+    max_price: 109.99, // MSRP + 10%
   },
   {
     product_name: "Ascended Heroes Elite Trainer Box",
@@ -45,7 +45,7 @@ export const TARGET_DROPS_2026_06_29: TargetDropProduct[] = [
     estimated_stock: "<1000",
     priority: 1,
     auto_buy: true,
-    max_price: 59.99,
+    max_price: 60.49, // MSRP + 10%
   },
   {
     product_name: "Mega Evolution Booster Bundle",
@@ -58,7 +58,7 @@ export const TARGET_DROPS_2026_06_29: TargetDropProduct[] = [
     estimated_stock: "<1000",
     priority: 1,
     auto_buy: true,
-    max_price: 29.99,
+    max_price: 27.49, // MSRP + 10%
   },
   {
     product_name: "Prismatic Evolutions Super-Premium Collection",
@@ -71,7 +71,7 @@ export const TARGET_DROPS_2026_06_29: TargetDropProduct[] = [
     estimated_stock: "9K",
     priority: 2,
     auto_buy: true,
-    max_price: 99.99,
+    max_price: 98.99, // MSRP + 10%
   },
 
   // ═══ MEDIUM PRIORITY — Good stock, still valuable ═══
@@ -86,7 +86,7 @@ export const TARGET_DROPS_2026_06_29: TargetDropProduct[] = [
     estimated_stock: "5k+",
     priority: 3,
     auto_buy: true,
-    max_price: 44.99,
+    max_price: 43.99, // MSRP + 10%
   },
   {
     product_name: "First Partner Illustration Collection Series 2",
@@ -99,7 +99,7 @@ export const TARGET_DROPS_2026_06_29: TargetDropProduct[] = [
     estimated_stock: "8k+",
     priority: 3,
     auto_buy: true,
-    max_price: 54.99,
+    max_price: 54.99, // MSRP + 10%
   },
   {
     product_name: "Mega Moonlit Tin — Mega Clefable",
@@ -112,7 +112,7 @@ export const TARGET_DROPS_2026_06_29: TargetDropProduct[] = [
     estimated_stock: "6k+",
     priority: 4,
     auto_buy: false,
-    max_price: 29.99,
+    max_price: 30.79, // MSRP + 10%
   },
   {
     product_name: "Mega Moonlit Tin — Mega Gengar",
@@ -125,7 +125,7 @@ export const TARGET_DROPS_2026_06_29: TargetDropProduct[] = [
     estimated_stock: "6k+",
     priority: 4,
     auto_buy: false,
-    max_price: 29.99,
+    max_price: 30.79, // MSRP + 10%
   },
   {
     product_name: "Prismatic Evolutions Poster Collection",
@@ -138,7 +138,7 @@ export const TARGET_DROPS_2026_06_29: TargetDropProduct[] = [
     estimated_stock: "20k+",
     priority: 5,
     auto_buy: false,
-    max_price: 29.99,
+    max_price: 27.49, // MSRP + 10%
   },
 
   // ═══ LOWER PRIORITY — High stock ═══
@@ -153,7 +153,7 @@ export const TARGET_DROPS_2026_06_29: TargetDropProduct[] = [
     estimated_stock: "20k+",
     priority: 5,
     auto_buy: false,
-    max_price: 29.99,
+    max_price: 27.49, // MSRP + 10%
   },
   {
     product_name: "Chaos Rising Elite Trainer Box",
@@ -166,7 +166,7 @@ export const TARGET_DROPS_2026_06_29: TargetDropProduct[] = [
     estimated_stock: "20k",
     priority: 5,
     auto_buy: false,
-    max_price: 59.99,
+    max_price: 60.49, // MSRP + 10%
   },
   {
     product_name: "Chaos Rising Booster Bundle",
@@ -179,7 +179,7 @@ export const TARGET_DROPS_2026_06_29: TargetDropProduct[] = [
     estimated_stock: "20k",
     priority: 5,
     auto_buy: false,
-    max_price: 29.99,
+    max_price: 27.49, // MSRP + 10%
   },
   {
     product_name: "Chaos Rising Three-Booster Blister",
@@ -192,7 +192,7 @@ export const TARGET_DROPS_2026_06_29: TargetDropProduct[] = [
     estimated_stock: "15k+",
     priority: 6,
     auto_buy: false,
-    max_price: 16.99,
+    max_price: 16.49, // MSRP + 10%
   },
 
   // ═══ POTENTIAL SURPRISE DROPS ═══
@@ -207,6 +207,6 @@ export const TARGET_DROPS_2026_06_29: TargetDropProduct[] = [
     estimated_stock: "Unknown",
     priority: 2,
     auto_buy: true,
-    max_price: 59.99,
+    max_price: 60.49, // MSRP + 10%
   },
 ];
