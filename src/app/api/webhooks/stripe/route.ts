@@ -300,7 +300,8 @@ export async function POST(request: Request) {
 
 function mapPriceToTier(priceId: string): "free" | "pro" | "elite" {
   const priceMap: Record<string, "pro" | "elite"> = {
-    // Will be auto-populated when products are created via /api/membership/checkout
+    [process.env.STRIPE_PRO_PRICE_ID || "price_1TlKrKFODhR335gyotMD3D0k"]: "pro",
+    [process.env.STRIPE_ELITE_PRICE_ID || "price_1TlKrKFODhR335gyVeNlWLhG"]: "elite",
   };
   return priceMap[priceId] || "free";
 }
