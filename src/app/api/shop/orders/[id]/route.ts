@@ -61,6 +61,8 @@ export async function PUT(
   if (body.tracking_number) allowedFields.tracking_number = body.tracking_number;
   if (body.fraud_status) allowedFields.fraud_status = body.fraud_status;
   if (body.manual_review_reason) allowedFields.manual_review_reason = body.manual_review_reason;
+  if (body.admin_notes !== undefined) allowedFields.admin_notes = body.admin_notes;
+  if (body.shipping_carrier) allowedFields.shipping_carrier = body.shipping_carrier;
 
   const { data, error } = await supabase
     .from("shop_orders")

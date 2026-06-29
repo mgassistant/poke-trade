@@ -36,12 +36,21 @@ interface Order {
   id: string;
   status: string;
   total: number;
+  subtotal: number;
+  shipping: number;
+  tax: number;
   user_id: string;
   tracking_number: string | null;
+  shipping_name: string | null;
+  shipping_address: Record<string, string> | null;
+  stripe_payment_intent_id: string | null;
+  admin_notes: string | null;
   fraud_status: string | null;
   manual_review_reason: string | null;
+  refund_amount: number | null;
+  refunded_at: string | null;
   created_at: string;
-  items: { quantity: number; unit_price: number; price_type: string }[];
+  items: { quantity: number; unit_price: number; price_type: string; product_snapshot?: Record<string, unknown> }[];
 }
 
 type Tab = "products" | "orders" | "fraud";
@@ -73,6 +82,10 @@ export default function AdminShopPage() {
   const [saving, setSaving] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderForm, setOrderForm] = useState<Record<string, string>>({});
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [refunding, setRefunding] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createForm, setCreateForm] = useState<Record<string, string | number | boolean>>({
     title: "",
@@ -434,6 +447,28 @@ export default function AdminShopPage() {
                       <option value="scheduled">Scheduled</option>
                     </select>
                   </div>
+                  {/* Drop Scheduling (visible when status = scheduled) */}
+                  {createForm.status === 'scheduled' && (
+                    <>
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Scheduled Release</label>
+                        <Input type="datetime-local" value={String(createForm.scheduled_at || '')} onChange={(e) => setCreateForm(prev => ({ ...prev, scheduled_at: e.target.value }))} className="h-9" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Elite Early Access</label>
+                        <Input type="datetime-local" value={String(createForm.elite_early_access_at || '')} onChange={(e) => setCreateForm(prev => ({ ...prev, elite_early_access_at: e.target.value }))} className="h-9" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Pro Early Access</label>
+                        <Input type="datetime-local" value={String(createForm.pro_early_access_at || '')} onChange={(e) => setCreateForm(prev => ({ ...prev, pro_early_access_at: e.target.value }))} className="h-9" />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="text-xs text-gray-500 mb-1 block">Release Notes</label>
+                        <textarea value={String(createForm.release_notes || '')} onChange={(e) => setCreateForm(prev => ({ ...prev, release_notes: e.target.value }))} className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm h-16 resize-none" placeholder="Drop details, quantity info..." />
+                      </div>
+                    </>
+                  )}
+
                   <div>
                     <label className="text-xs text-gray-500 mb-1 block">Inventory Count</label>
                     <Input
@@ -786,6 +821,9 @@ export default function AdminShopPage() {
                 )}
 
                 <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => { setSelectedOrder(order); setOrderForm({ status: order.status, tracking_number: order.tracking_number || '', admin_notes: order.admin_notes || '' }); }}>
+                    <Eye className="h-3 w-3 mr-1" /> Details
+                  </Button>
                   {order.status === "paid" && (
                     <Button
                       size="sm"
@@ -840,6 +878,112 @@ export default function AdminShopPage() {
               </div>
             ))
           )}
+        </div>
+      )}
+
+      {/* Order Detail Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-gray-900">Order #{selectedOrder.id.slice(0, 8)}</h3>
+              <button onClick={() => setSelectedOrder(null)}><X className="h-5 w-5 text-gray-400" /></button>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-2">
+                <div><span className="text-gray-500">Date:</span> {new Date(selectedOrder.created_at).toLocaleString()}</div>
+                <div><span className="text-gray-500">Total:</span> <strong>${selectedOrder.total.toFixed(2)}</strong></div>
+                {selectedOrder.subtotal > 0 && <div><span className="text-gray-500">Subtotal:</span> ${selectedOrder.subtotal.toFixed(2)}</div>}
+                {selectedOrder.shipping > 0 && <div><span className="text-gray-500">Shipping:</span> ${selectedOrder.shipping.toFixed(2)}</div>}
+              </div>
+
+              {selectedOrder.shipping_name && (
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">Ship To:</p>
+                  <p className="font-medium">{selectedOrder.shipping_name}</p>
+                  {selectedOrder.shipping_address && (
+                    <p className="text-xs text-gray-600">
+                      {selectedOrder.shipping_address.line1}{selectedOrder.shipping_address.line2 ? `, ${selectedOrder.shipping_address.line2}` : ''}<br/>
+                      {selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.state} {selectedOrder.shipping_address.postal_code}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {selectedOrder.items?.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Items:</p>
+                  {selectedOrder.items.map((item, i) => (
+                    <div key={i} className="flex justify-between py-1 border-b border-gray-100 text-xs">
+                      <span>{(item.product_snapshot as any)?.title || 'Item'} x{item.quantity}</span>
+                      <span>${(item.unit_price * item.quantity).toFixed(2)} ({item.price_type})</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Status</label>
+                <select value={orderForm.status || selectedOrder.status} onChange={(e) => setOrderForm(prev => ({ ...prev, status: e.target.value }))} className="w-full h-9 rounded-md border border-gray-200 px-3 text-sm">
+                  {['pending','paid','processing','shipped','delivered','canceled','refunded','manual_review'].map(s => (
+                    <option key={s} value={s}>{s.replace('_',' ')}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Tracking Number</label>
+                <Input value={orderForm.tracking_number || ''} onChange={(e) => setOrderForm(prev => ({ ...prev, tracking_number: e.target.value }))} placeholder="1Z999AA10123456784" className="h-9" />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Admin Notes</label>
+                <textarea value={orderForm.admin_notes || ''} onChange={(e) => setOrderForm(prev => ({ ...prev, admin_notes: e.target.value }))} className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm h-16 resize-none" placeholder="Internal notes..." />
+              </div>
+
+              {selectedOrder.refund_amount && selectedOrder.refund_amount > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
+                  Refunded ${selectedOrder.refund_amount.toFixed(2)} on {selectedOrder.refunded_at ? new Date(selectedOrder.refunded_at).toLocaleDateString() : 'N/A'}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-3 border-t">
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={savingOrder} onClick={async () => {
+                  setSavingOrder(true);
+                  try {
+                    await fetch(`/api/shop/orders/${selectedOrder.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderForm) });
+                    setMessage('Order updated!');
+                    setTimeout(() => setMessage(null), 3000);
+                    fetchData();
+                    setSelectedOrder(null);
+                  } catch {} finally { setSavingOrder(false); }
+                }}>
+                  {savingOrder ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />} Save
+                </Button>
+
+                {selectedOrder.stripe_payment_intent_id && selectedOrder.status !== 'refunded' && (
+                  <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-50" disabled={refunding} onClick={async () => {
+                    if (!confirm('Process full refund? This cannot be undone.')) return;
+                    setRefunding(true);
+                    try {
+                      const res = await fetch(`/api/shop/orders/${selectedOrder.id}/refund`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: orderForm.admin_notes || 'Admin refund' }) });
+                      const data = await res.json();
+                      if (data.success) {
+                        setMessage('Refund processed!');
+                        fetchData();
+                        setSelectedOrder(null);
+                      } else { setMessage(`Refund error: ${data.error}`); }
+                    } catch {} finally { setRefunding(false); setTimeout(() => setMessage(null), 5000); }
+                  }}>
+                    {refunding ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <DollarSign className="h-4 w-4 mr-1" />} Refund
+                  </Button>
+                )}
+
+                <Button size="sm" variant="outline" onClick={() => setSelectedOrder(null)}>Close</Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
