@@ -28,6 +28,7 @@ interface Product {
   cost_basis: number | null;
   requires_membership: boolean;
   premium_only: boolean;
+  images: string[] | null;
   created_at: string;
 }
 
@@ -94,6 +95,25 @@ export default function AdminShopPage() {
     premium_only: false,
   });
   const [creating, setCreating] = useState(false);
+  const [productImages, setProductImages] = useState<string[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageUpload = async (file: File, slug?: string) => {
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('slug', slug || String(createForm.slug || createForm.title || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+      const res = await fetch('/api/shop/products/upload', { method: 'POST', body: formData });
+      if (res.ok) {
+        const data = await res.json();
+        setProductImages(prev => [...prev, data.url]);
+        return data.url;
+      }
+    } catch {}
+    setUploadingImage(false);
+    return null;
+  };
 
   useEffect(() => {
     fetchData();
@@ -129,7 +149,7 @@ export default function AdminShopPage() {
     try {
       // Auto-generate slug from title if empty
       const slug = (createForm.slug as string) || (createForm.title as string).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-      const payload = { ...createForm, slug };
+      const payload = { ...createForm, slug, images: productImages };
       
       const res = await fetch("/api/shop/products", {
         method: "POST",
@@ -138,6 +158,7 @@ export default function AdminShopPage() {
       });
       if (res.ok) {
         setShowCreateForm(false);
+        setProductImages([]);
         setCreateForm({
           title: "", slug: "", description: "", category: "sealed", condition: "Factory Sealed",
           product_type: "", msrp_price: 0, market_price: 0, member_price: 0, premium_member_price: 0,
@@ -189,7 +210,7 @@ export default function AdminShopPage() {
       const res = await fetch(`/api/shop/products/${editingProduct.slug}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify({ ...editForm, images: productImages }),
       });
       if (res.ok) {
         setEditingProduct(null);
@@ -447,6 +468,49 @@ export default function AdminShopPage() {
                     </div>
                   ))}
 
+                  {/* Product Images */}
+                  <div className="sm:col-span-2 border-t pt-3 mt-1">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">📷 Product Images</p>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {productImages.map((url, i) => (
+                        <div key={i} className="relative w-20 h-20 rounded-lg border border-gray-200 overflow-hidden group">
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setProductImages(prev => prev.filter((_, idx) => idx !== i))}
+                            className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      <label className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                        {uploadingImage ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                        ) : (
+                          <>
+                            <Plus className="h-5 w-5 text-gray-400" />
+                            <span className="text-[10px] text-gray-400 mt-0.5">Upload</span>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              await handleImageUpload(file);
+                              setUploadingImage(false);
+                            }
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <p className="text-[10px] text-gray-400">JPG, PNG, or WebP. First image is the cover photo.</p>
+                  </div>
+
                   {/* Limits */}
                   <div className="sm:col-span-2 border-t pt-3 mt-1">
                     <p className="text-xs font-semibold text-gray-700 mb-2">🛡️ Anti-Scalper Limits</p>
@@ -554,6 +618,33 @@ export default function AdminShopPage() {
                     </div>
                   ))}
                   <div className="flex gap-2 pt-2">
+                    {/* Image Upload in Edit */}
+                    <div className="border-t pt-3 mt-3">
+                      <p className="text-xs font-semibold text-gray-700 mb-2">📷 Images</p>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {productImages.map((url, i) => (
+                          <div key={i} className="relative w-16 h-16 rounded-lg border overflow-hidden group">
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setProductImages(prev => prev.filter((_, idx) => idx !== i))}
+                              className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                        <label className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400">
+                          {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin text-gray-400" /> : <Plus className="h-4 w-4 text-gray-400" />}
+                          <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) { await handleImageUpload(file, editingProduct?.slug); setUploadingImage(false); }
+                            e.target.value = '';
+                          }} />
+                        </label>
+                      </div>
+                    </div>
+
                     <Button
                       size="sm"
                       className="bg-red-600 hover:bg-red-700 text-white"
@@ -566,7 +657,7 @@ export default function AdminShopPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => { setEditingProduct(null); setEditForm({}); }}
+                      onClick={() => { setEditingProduct(null); setEditForm({}); setProductImages([]); }}
                     >
                       Cancel
                     </Button>
@@ -620,7 +711,7 @@ export default function AdminShopPage() {
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
-                            onClick={() => { setEditingProduct(product); setEditForm({}); }}
+                            onClick={() => { setEditingProduct(product); setEditForm({}); setProductImages(product.images || []); }}
                             className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                             title="Edit"
                           >
