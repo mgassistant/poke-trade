@@ -34,7 +34,11 @@ export async function POST(request: NextRequest) {
   const isPremium = profile?.is_premium ?? false;
   const isMember = profile?.subscription_tier !== "free";
 
-  // Validate each item
+  // Re-validate inventory and refresh reservations at checkout time
+  // Cart reservations may have expired since items were added
+  const CHECKOUT_RESERVATION_MINUTES = 30;
+  const checkoutReservedUntil = new Date(Date.now() + CHECKOUT_RESERVATION_MINUTES * 60 * 1000).toISOString();
+
   const lineItems = [];
   let subtotal = 0;
 
@@ -42,13 +46,32 @@ export async function POST(request: NextRequest) {
     const product = item.product as Record<string, unknown>;
     if (!product) continue;
 
-    // Check inventory
-    const available = (product.inventory_count as number) - (product.reserved_count as number);
-    if (available < item.quantity) {
+    // Re-fetch fresh inventory data (cart join may be stale)
+    const { data: freshProduct } = await supabase
+      .from("shop_products")
+      .select("inventory_count, reserved_count, status, title")
+      .eq("id", product.id as string)
+      .single();
+
+    if (!freshProduct || freshProduct.status !== "active") {
       return NextResponse.json({
-        error: `"${product.title}" is out of stock`,
+        error: `"${freshProduct?.title || product.title}" is no longer available`,
       }, { status: 400 });
     }
+
+    // Check fresh inventory
+    const available = freshProduct.inventory_count - freshProduct.reserved_count;
+    if (available < item.quantity) {
+      return NextResponse.json({
+        error: `"${freshProduct.title}" is out of stock (only ${Math.max(0, available)} available)`,
+      }, { status: 400 });
+    }
+
+    // Refresh cart reservation timestamp for checkout window
+    await supabase
+      .from("shop_cart_items")
+      .update({ reserved_until: checkoutReservedUntil })
+      .eq("id", item.id);
 
     // Anti-scalper: purchase limit check
     const limitCheck = await checkPurchaseLimit(user.id, product.id as string);
