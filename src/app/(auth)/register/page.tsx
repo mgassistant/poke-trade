@@ -35,6 +35,9 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [honeypot, setHoneypot] = useState(""); // bot trap
   const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [smsConsent, setSmsConsent] = useState(false);
+  const [emailConsent, setEmailConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -107,6 +110,9 @@ export default function RegisterPage() {
           data: {
             username: username.toLowerCase(),
             display_name: username,
+            phone: phone || undefined,
+            sms_consent: smsConsent,
+            email_consent: emailConsent,
           },
           emailRedirectTo: `${window.location.origin}/api/auth/callback`,
         },
@@ -242,6 +248,59 @@ export default function RegisterPage() {
               </div>
             )}
             <p className="text-xs text-muted-foreground">At least 8 characters</p>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="phone" className="text-sm font-medium">Phone Number <span className="text-muted-foreground font-normal">(optional)</span></label>
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="(555) 123-4567"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </div>
+
+          {/* Communication Preferences — required for ClickSend SMS compliance */}
+          <div className="space-y-3 rounded-lg border border-border p-3">
+            <p className="text-sm font-medium">Communication Preferences</p>
+
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="sms-consent"
+                className="mt-1 accent-primary"
+                checked={smsConsent}
+                onChange={(e) => setSmsConsent(e.target.checked)}
+              />
+              <label htmlFor="sms-consent" className="text-xs text-muted-foreground">
+                I agree to receive <strong>text messages</strong> from Poké-Trade regarding my account,
+                trade updates, restock alerts, and promotions. Message frequency may vary.
+                Message and data rates may apply. Reply STOP to opt out or HELP for assistance.
+              </label>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="email-consent"
+                className="mt-1 accent-primary"
+                checked={emailConsent}
+                onChange={(e) => setEmailConsent(e.target.checked)}
+              />
+              <label htmlFor="email-consent" className="text-xs text-muted-foreground">
+                I agree to receive <strong>emails</strong> from Poké-Trade regarding my account,
+                trade updates, restock alerts, and promotions. You may unsubscribe at any time.
+              </label>
+            </div>
+
+            <p className="text-[11px] text-red-500">
+              Consent is not a condition of purchase. Your mobile information will not be shared with
+              third parties or affiliates for marketing or promotional purposes.{" "}
+              <Link href="/sms-terms" className="text-primary hover:underline">SMS Terms</Link>
+              {" · "}
+              <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
+            </p>
           </div>
 
           <div className="flex items-start gap-2">
