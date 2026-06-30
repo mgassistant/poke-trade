@@ -36,7 +36,8 @@ export default function RegisterPage() {
   const [honeypot, setHoneypot] = useState(""); // bot trap
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [phone, setPhone] = useState("");
-  const [smsConsent, setSmsConsent] = useState(false);
+  const [smsTransactional, setSmsTransactional] = useState(false);
+  const [smsMarketing, setSmsMarketing] = useState(false);
   const [emailConsent, setEmailConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -111,7 +112,8 @@ export default function RegisterPage() {
             username: username.toLowerCase(),
             display_name: username,
             phone: phone || undefined,
-            sms_consent: smsConsent,
+            sms_transactional: smsTransactional,
+            sms_marketing: smsMarketing,
             email_consent: emailConsent,
           },
           emailRedirectTo: `${window.location.origin}/api/auth/callback`,
@@ -261,25 +263,42 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* Communication Preferences — required for ClickSend SMS compliance */}
+          {/* Communication Preferences — ClickSend TFN compliance requires separate transactional + marketing checkboxes */}
           <div className="space-y-3 rounded-lg border border-border p-3">
             <p className="text-sm font-medium">Communication Preferences</p>
 
+            {/* Transactional SMS (order updates, account reminders) */}
             <div className="flex items-start gap-2">
               <input
                 type="checkbox"
-                id="sms-consent"
+                id="sms-transactional"
                 className="mt-1 accent-primary"
-                checked={smsConsent}
-                onChange={(e) => setSmsConsent(e.target.checked)}
+                checked={smsTransactional}
+                onChange={(e) => setSmsTransactional(e.target.checked)}
               />
-              <label htmlFor="sms-consent" className="text-xs text-muted-foreground">
-                I agree to receive <strong>text messages</strong> from Poké-Trade regarding my account,
-                trade updates, restock alerts, and promotions. Message frequency may vary.
-                Message and data rates may apply. Reply STOP to opt out or HELP for assistance.
+              <label htmlFor="sms-transactional" className="text-xs text-muted-foreground">
+                ☐ By checking this box, I consent to receive transactional SMS messages from <strong>Poké-Trade</strong> to the phone number provided, including <em>trade updates, order confirmations, account notifications, and appointment reminders</em>. Message & data rates may apply. Message frequency varies. Reply STOP to cancel or HELP for assistance. See our{" "}
+                <Link href="/sms-terms" className="text-primary hover:underline">SMS Terms</Link>
+                {" "}and{" "}
+                <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
               </label>
             </div>
 
+            {/* Marketing SMS (promotions, discounts) */}
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="sms-marketing"
+                className="mt-1 accent-primary"
+                checked={smsMarketing}
+                onChange={(e) => setSmsMarketing(e.target.checked)}
+              />
+              <label htmlFor="sms-marketing" className="text-xs text-muted-foreground">
+                ☐ By checking this box, I consent to receive recurring promotional SMS messages from <strong>Poké-Trade</strong> at the phone number provided, including <em>restock alerts, exclusive deals, and special offers</em>. Consent is not a condition of purchase. Max 4 msgs/month. Reply STOP to cancel.
+              </label>
+            </div>
+
+            {/* Email Marketing */}
             <div className="flex items-start gap-2">
               <input
                 type="checkbox"
@@ -294,12 +313,8 @@ export default function RegisterPage() {
               </label>
             </div>
 
-            <p className="text-[11px] text-red-500">
-              Consent is not a condition of purchase. Your mobile information will not be shared with
-              third parties or affiliates for marketing or promotional purposes.{" "}
-              <Link href="/sms-terms" className="text-primary hover:underline">SMS Terms</Link>
-              {" · "}
-              <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              Your mobile information will not be shared with third parties or affiliates for marketing or promotional purposes.
             </p>
           </div>
 
