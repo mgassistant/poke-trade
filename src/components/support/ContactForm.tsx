@@ -29,9 +29,13 @@ export function ContactForm() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phone: "",
     category: "",
     subject: "",
     message: "",
+    consent_calls: false,
+    consent_sms: false,
+    consent_email: false,
   });
 
   // Pre-fill from user profile
@@ -180,6 +184,72 @@ export function ContactForm() {
               placeholder="Tell us more about your question or issue..."
               className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none resize-none"
             />
+          </div>
+
+          {/* Phone Number */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone Number</label>
+            <Input
+              type="tel"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="(555) 123-4567"
+              className="bg-white border-gray-300 focus:border-red-500 focus:ring-red-500"
+            />
+          </div>
+
+          {/* Communication Preferences — Required opt-in */}
+          <div className="rounded-lg border border-gray-300 p-4 space-y-3">
+            <p className="text-sm font-semibold text-gray-900">Communication Preferences *</p>
+
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.consent_calls}
+                onChange={(e) => setForm({ ...form, consent_calls: e.target.checked })}
+                className="mt-0.5 w-4 h-4 accent-red-600 rounded"
+              />
+              <span className="text-xs text-gray-600 leading-relaxed">
+                I agree to receive <strong>phone calls</strong> from Poké-Trade regarding my inquiry,
+                order updates, and customer support (including autodialed and pre-recorded messages).
+                Call frequency may vary.
+              </span>
+            </label>
+
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.consent_sms}
+                onChange={(e) => setForm({ ...form, consent_sms: e.target.checked })}
+                className="mt-0.5 w-4 h-4 accent-red-600 rounded"
+              />
+              <span className="text-xs text-gray-600 leading-relaxed">
+                I agree to receive <strong>text messages</strong> from Poké-Trade regarding my inquiry,
+                order updates, restock alerts, and customer support. Message frequency may vary.
+                Message and data rates may apply. Reply STOP to opt out or HELP for assistance.
+              </span>
+            </label>
+
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.consent_email}
+                onChange={(e) => setForm({ ...form, consent_email: e.target.checked })}
+                className="mt-0.5 w-4 h-4 accent-red-600 rounded"
+              />
+              <span className="text-xs text-gray-600 leading-relaxed">
+                I agree to receive <strong>emails</strong> from Poké-Trade regarding my inquiry,
+                order updates, restock alerts, and promotions. You may unsubscribe at any time.
+              </span>
+            </label>
+
+            <p className="text-[11px] text-red-600 leading-relaxed">
+              Consent is not a condition of purchase. Your mobile information will not be shared with
+              third parties or affiliates for marketing or promotional purposes.{" "}
+              <a href="/sms-terms" className="text-red-700 underline hover:text-red-800">SMS Terms</a>
+              {" · "}
+              <a href="/privacy" className="text-red-700 underline hover:text-red-800">Privacy Policy</a>
+            </p>
           </div>
 
           {error && (
