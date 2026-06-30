@@ -106,6 +106,22 @@ export default function AdminShopPage() {
     status: "draft",
     requires_membership: false,
     premium_only: false,
+    sku: "",
+    upc: "",
+    set_name: "",
+    card_name: "",
+    card_number: "",
+    rarity: "",
+    grade: "",
+    grading_company: "",
+    language: "English",
+    brand: "Pokémon",
+    shipping_weight_oz: 0,
+    handling_days: 3,
+    marketplace_ready: false,
+    ebay_price: 0,
+    tcgplayer_price: 0,
+    amazon_price: 0,
   });
   const [creating, setCreating] = useState(false);
   const [productImages, setProductImages] = useState<string[]>([]);
@@ -508,6 +524,62 @@ export default function AdminShopPage() {
                       />
                     </div>
                   ))}
+
+                  {/* Marketplace Readiness */}
+                  <div className="sm:col-span-2 border-t pt-3 mt-1">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">🌍 Multi-Channel Listing</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">SKU (auto-generated if blank)</label>
+                    <Input value={String(createForm.sku || '')} onChange={(e) => setCreateForm(prev => ({ ...prev, sku: e.target.value }))} placeholder="PT-SEA-001234" className="h-9" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">UPC/EAN</label>
+                    <Input value={String(createForm.upc || '')} onChange={(e) => setCreateForm(prev => ({ ...prev, upc: e.target.value }))} placeholder="820650853814" className="h-9" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Set Name</label>
+                    <Input value={String(createForm.set_name || '')} onChange={(e) => setCreateForm(prev => ({ ...prev, set_name: e.target.value }))} placeholder="Prismatic Evolutions" className="h-9" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Card Name</label>
+                    <Input value={String(createForm.card_name || '')} onChange={(e) => setCreateForm(prev => ({ ...prev, card_name: e.target.value }))} placeholder="Umbreon VMAX" className="h-9" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Card #</label>
+                    <Input value={String(createForm.card_number || '')} onChange={(e) => setCreateForm(prev => ({ ...prev, card_number: e.target.value }))} placeholder="215/203" className="h-9" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Rarity</label>
+                    <Input value={String(createForm.rarity || '')} onChange={(e) => setCreateForm(prev => ({ ...prev, rarity: e.target.value }))} placeholder="Secret Rare" className="h-9" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Weight (oz)</label>
+                    <Input type="number" step="0.1" value={String(createForm.shipping_weight_oz || '')} onChange={(e) => setCreateForm(prev => ({ ...prev, shipping_weight_oz: parseFloat(e.target.value) || 0 }))} className="h-9" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Handling Days</label>
+                    <Input type="number" value={String(createForm.handling_days || 3)} onChange={(e) => setCreateForm(prev => ({ ...prev, handling_days: parseInt(e.target.value) || 3 }))} className="h-9" />
+                  </div>
+
+                  {/* Channel-Specific Pricing */}
+                  <div className="sm:col-span-2 border-t pt-3 mt-1">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">🏪 Channel Pricing</p>
+                  </div>
+                  {[
+                    { key: "ebay_price", label: "eBay Price" },
+                    { key: "tcgplayer_price", label: "TCGPlayer Price" },
+                    { key: "amazon_price", label: "Amazon Price" },
+                  ].map((f) => (
+                    <div key={f.key}>
+                      <label className="text-xs text-gray-500 mb-1 block">{f.label}</label>
+                      <Input type="number" step="0.01" value={String(createForm[f.key] || '')} onChange={(e) => setCreateForm(prev => ({ ...prev, [f.key]: parseFloat(e.target.value) || 0 }))} className="h-9" />
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!createForm.marketplace_ready} onChange={(e) => setCreateForm(prev => ({ ...prev, marketplace_ready: e.target.checked }))} className="rounded" />
+                    <label className="text-xs text-gray-600">✅ Ready for Marketplace Listing</label>
+                  </div>
 
                   {/* Product Images */}
                   <div className="sm:col-span-2 border-t pt-3 mt-1">
