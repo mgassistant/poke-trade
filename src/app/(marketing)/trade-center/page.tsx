@@ -134,7 +134,7 @@ export default function TradeCenterPage() {
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
                   <div className="text-xs font-semibold text-primary mb-3">🎴 YOU OFFER</div>
                   <div className="flex items-center gap-3 p-2 bg-muted/20 rounded-lg mb-2">
-                    <div className="h-14 w-10 rounded overflow-hidden bg-muted/40 relative shrink-0"><Image src="https://images.pokemontcg.io/sv3/254_hires.png" alt="Charizard ex" fill className="object-contain" sizes="40px" /></div>
+                    <div className="h-14 w-10 rounded overflow-hidden bg-muted/40 relative shrink-0"><Image src="https://images.pokemontcg.io/sv3/228.png" alt="Charizard ex" fill className="object-contain" sizes="40px" /></div>
                     <div>
                       <div className="font-semibold text-sm">Charizard EX</div>
                       <div className="text-xs text-muted-foreground">Obsidian Flames · NM</div>
