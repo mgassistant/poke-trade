@@ -228,12 +228,18 @@ export default function AdminShopPage() {
       if (res.ok) {
         setEditingProduct(null);
         setEditForm({});
+        setProductImages([]);
         fetchData();
         setMessage("Product updated!");
         setTimeout(() => setMessage(null), 3000);
+      } else {
+        const err = await res.json();
+        setMessage(`Error: ${err.error || 'Update failed'}`);
+        setTimeout(() => setMessage(null), 5000);
       }
-    } catch {
-      // Silent
+    } catch (e: any) {
+      setMessage(`Error: ${e.message || 'Update failed'}`);
+      setTimeout(() => setMessage(null), 5000);
     }
     setSaving(false);
   };

@@ -33,11 +33,12 @@ export async function PUT(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: profile } = await supabase
+  // Use service role for admin check + update (bypasses RLS)
+  const { data: profile } = await serviceClient
     .from("profiles")
     .select("is_admin")
     .eq("id", user.id)
@@ -51,14 +52,14 @@ export async function PUT(
 
   // If inventory changed, log the event
   if (body.inventory_count !== undefined) {
-    const { data: existing } = await supabase
+    const { data: existing } = await serviceClient
       .from("shop_products")
       .select("id, inventory_count")
       .eq("slug", slug)
       .single();
 
     if (existing && body.inventory_count !== existing.inventory_count) {
-      await supabase.from("shop_inventory_events").insert({
+      await serviceClient.from("shop_inventory_events").insert({
         product_id: existing.id,
         event_type: "adjusted",
         quantity: body.inventory_count - existing.inventory_count,
@@ -70,7 +71,7 @@ export async function PUT(
     }
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await serviceClient
     .from("shop_products")
     .update(body)
     .eq("slug", slug)
@@ -86,11 +87,11 @@ export async function DELETE(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: profile } = await supabase
+  const { data: profile } = await serviceClient
     .from("profiles")
     .select("is_admin")
     .eq("id", user.id)
@@ -100,7 +101,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await serviceClient
     .from("shop_products")
     .update({ status: "archived" })
     .eq("slug", slug)

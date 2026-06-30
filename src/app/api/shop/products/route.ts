@@ -35,11 +35,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: profile } = await supabase
+  const { data: profile } = await serviceClient
     .from("profiles")
     .select("is_admin")
     .eq("id", user.id)
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { data, error } = await supabase
+  const { data, error } = await serviceClient
     .from("shop_products")
     .insert(body)
     .select()
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
   // Log inventory event
   if (body.inventory_count > 0) {
-    await supabase.from("shop_inventory_events").insert({
+    await serviceClient.from("shop_inventory_events").insert({
       product_id: data.id,
       event_type: "created",
       quantity: body.inventory_count,
