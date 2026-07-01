@@ -69,6 +69,8 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
   const [autoCapture, setAutoCapture] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showHistory, setShowHistory] = useState(true);
+  const [defaultCondition, setDefaultCondition] = useState<string>("near_mint");
+  const [autoApprove, setAutoApprove] = useState(true);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -220,6 +222,12 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
           if (ocrResult.matches.length > 0) {
             const topMatch = ocrResult.matches[0];
             const isDuplicate = existingCardIds?.has(topMatch.id);
+            const highConfidence = ocr.confidence > 70;
+            const singleMatch = ocrResult.matches.length === 1;
+            
+            // Auto-approve if: high confidence + single match + not duplicate + auto-approve enabled
+            const shouldAutoApprove = autoApprove && highConfidence && singleMatch && !isDuplicate;
+            
             playBeep(true);
             setScannedCards((prev) =>
               prev.map((c) =>
@@ -231,14 +239,14 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
                         set_name: topMatch.card_sets?.name || "",
                         card_number: ocr.cardNumber || topMatch.number,
                         rarity: topMatch.rarity || "",
-                        confidence: ocr.confidence > 70 ? "high" : ocr.confidence > 40 ? "medium" : "low",
-                        condition_estimate: "near_mint",
+                        confidence: highConfidence ? "high" : ocr.confidence > 40 ? "medium" : "low",
+                        condition_estimate: defaultCondition,
                         condition_notes: `OCR match (${ocrResult.method})`,
                       },
                       matches: ocrResult.matches,
                       selectedMatch: topMatch,
-                      condition: "near_mint",
-                      status: isDuplicate ? "duplicate" : "recognized",
+                      condition: defaultCondition,
+                      status: isDuplicate ? "duplicate" : shouldAutoApprove ? "confirmed" : "recognized",
                     }
                   : c
               )
@@ -262,6 +270,12 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
         if (data.recognized && data.ai && data.matches?.length > 0) {
           const topMatch = data.matches[0];
           const isDuplicate = existingCardIds?.has(topMatch.id);
+          const highConfidence = data.ai.confidence === "high";
+          const singleMatch = data.matches.length === 1;
+          
+          // Auto-approve if: high confidence + single match + not duplicate + auto-approve enabled
+          const shouldAutoApprove = autoApprove && highConfidence && singleMatch && !isDuplicate;
+          
           playBeep(true);
           setScannedCards((prev) =>
             prev.map((c) =>
@@ -271,8 +285,8 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
                     ai: data.ai,
                     matches: data.matches,
                     selectedMatch: topMatch,
-                    condition: data.ai.condition_estimate || "near_mint",
-                    status: isDuplicate ? "duplicate" : "recognized",
+                    condition: defaultCondition,
+                    status: isDuplicate ? "duplicate" : shouldAutoApprove ? "confirmed" : "recognized",
                   }
                 : c
             )
@@ -588,6 +602,36 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
                 {m.icon} {m.label}
               </button>
             ))}
+            
+            {/* Batch/Binder settings */}
+            {(mode === "batch" || mode === "binder") && (
+              <div className="flex items-center gap-3 px-2">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-white/60">Default:</label>
+                  <select
+                    value={defaultCondition}
+                    onChange={(e) => setDefaultCondition(e.target.value)}
+                    className="text-xs bg-white/10 text-white border border-white/20 rounded px-2 py-1"
+                  >
+                    {CONDITIONS.map(c => (
+                      <option key={c.value} value={c.value} className="bg-black text-white">
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-white/70 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoApprove}
+                    onChange={(e) => setAutoApprove(e.target.checked)}
+                    className="accent-primary"
+                  />
+                  Auto-confirm
+                </label>
+              </div>
+            )}
+            
             <div className="ml-auto flex items-center gap-1">
               <button
                 onClick={() => setSoundEnabled(!soundEnabled)}
