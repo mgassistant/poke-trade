@@ -434,22 +434,41 @@ export default function BulkScanner({ open, onClose, onAddCard, existingCardIds 
       const data = await res.json();
 
       if (data.results) {
-        const newCards: ScannedCard[] = data.results.map((r: any, i: number) => {
-          const topMatch = r.matches?.[0] || null;
-          const isDuplicate = topMatch && existingCardIds?.has(topMatch.id);
-          return {
-            id: `binder-${Date.now()}-${i}`,
-            image: dataUrl, // share binder image
-            ai: r.ai,
-            matches: r.matches || [],
-            selectedMatch: topMatch,
-            condition: r.ai?.condition_estimate || "near_mint",
-            quantity: 1,
-            status: !r.recognized ? "failed" : isDuplicate ? "duplicate" : topMatch ? "recognized" : "failed",
-            error: r.error,
-          };
-        });
-        playBeep(true);
+        const newCards: ScannedCard[] = data.results
+          .filter((r: any) => !r.empty) // Skip empty binder positions
+          .map((r: any, i: number) => {
+            const topMatch = r.matches?.[0] || null;
+            const isDuplicate = topMatch && existingCardIds?.has(topMatch.id);
+            const position = r.ai?.position;
+            return {
+              id: `binder-${Date.now()}-${i}`,
+              image: dataUrl, // all cards share the same binder image
+              ai: {
+                ...r.ai,
+                // Preserve position info for display
+                position: position ? { row: position.row, col: position.col } : undefined,
+              },
+              matches: r.matches || [],
+              selectedMatch: topMatch,
+              condition: r.ai?.condition_estimate || "near_mint",
+              quantity: 1,
+              status: !r.recognized 
+                ? "failed" 
+                : isDuplicate 
+                ? "duplicate" 
+                : topMatch 
+                ? "recognized" 
+                : "failed",
+              error: r.error,
+            };
+          });
+        
+        // Play success beep for successful recognitions
+        const successCount = newCards.filter(c => c.status === "recognized").length;
+        if (successCount > 0) {
+          playBeep(true);
+        }
+        
         setScannedCards((prev) => [...newCards, ...prev]);
       }
     } catch {

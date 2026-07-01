@@ -126,38 +126,63 @@ async function processBinder(image: string, supabase: any) {
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o",
-    max_tokens: 2000,
+    max_tokens: 3000,
     messages: [
       {
         role: "system",
-        content: `You are a Pokémon TCG card identification expert. This image shows a binder page with multiple Pokémon cards arranged in a grid (typically 3x3 or 2x2).
+        content: `You are a Pokémon TCG card scanner analyzing a binder page with 9 cards in a 3×3 grid.
 
-Identify EACH visible card separately. Return a JSON array:
+**CRITICAL INSTRUCTIONS:**
+1. Look at the BOTTOM-LEFT corner of EACH card for the card number (e.g., "044/185", "6/102", "SV065/SV121")
+2. Read the card NAME from the top of each card
+3. Identify cards in LEFT-TO-RIGHT, TOP-TO-BOTTOM order:
+   - Row 1: positions 1, 2, 3 (top row, left to right)
+   - Row 2: positions 4, 5, 6 (middle row, left to right)  
+   - Row 3: positions 7, 8, 9 (bottom row, left to right)
+
+**RETURN A JSON ARRAY WITH EXACTLY 9 OBJECTS (one per position):**
 [
   {
-    "card_name": "exact card name",
-    "set_name": "TCG set name",
-    "card_number": "card number if visible",
-    "rarity": "rarity if identifiable",
-    "confidence": "high" | "medium" | "low",
-    "condition_estimate": "near_mint",
-    "condition_notes": "brief notes",
-    "position": { "row": 1, "col": 1 }
+    "position": { "row": 1, "col": 1, "number": 1 },
+    "card_name": "Pikachu VMAX",
+    "card_number": "044/185",
+    "set_code": "SV" or "SWSH" or "PAL" etc (if visible),
+    "set_name": "Vivid Voltage" (identify from set code or symbol),
+    "confidence": "high" (if number clearly visible) | "medium" (partial) | "low" (obscured) | "empty" (no card)
   },
   ...
 ]
 
-- Number cards left to right, top to bottom
-- Include ALL visible cards, even partially visible ones
-- If a slot is empty, skip it
-- Use "low" confidence for partially visible cards
-- Be precise with names and sets`,
+**SET CODE REFERENCE:**
+- SV = Scarlet & Violet base
+- PAL = Paldea Evolved
+- OBF = Obsidian Flames  
+- MEW = 151
+- PAR = Paradox Rift
+- PAF = Paldean Fates
+- TEF = Temporal Forces
+- TWM = Twilight Masquerade
+- SFA = Shrouded Fable
+- SCR = Stellar Crown
+- SSP = Surging Sparks
+- PEV = Prismatic Evolutions
+- EVS = Evolving Skies
+- BST = Brilliant Stars
+- LOR = Lost Origin
+- CRZ = Crown Zenith
+
+**RULES:**
+- If a position is empty or card is face-down: { "position": {...}, "confidence": "empty" }
+- Do NOT guess card numbers — read them from bottom-left corner
+- Use "high" confidence ONLY if card number is clearly readable
+- Use "low" confidence if card is blurry, angled, or number not visible
+- Return ALL 9 positions in order (1-9)`,
       },
       {
         role: "user",
         content: [
           { type: "image_url", image_url: { url: `data:${mediaType};base64,${base64}`, detail: "high" } },
-          { type: "text", text: "Identify all Pokémon cards visible on this binder page." },
+          { type: "text", text: "Scan this 3×3 binder page and identify all 9 card positions. Focus on reading the card numbers from the bottom-left corner of each card." },
         ],
       },
     ],
@@ -167,12 +192,53 @@ Identify EACH visible card separately. Return a JSON array:
   const jsonStr = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
   const cards: CardIdentification[] = JSON.parse(jsonStr);
 
+  // Validate: should be exactly 9 positions
+  if (cards.length !== 9) {
+    // If AI returned fewer cards, pad with empty positions
+    while (cards.length < 9) {
+      cards.push({
+        card_name: "",
+        set_name: "",
+        card_number: "",
+        rarity: "",
+        confidence: "empty",
+        condition_estimate: "near_mint",
+        condition_notes: "Empty position",
+        position: { row: Math.floor(cards.length / 3) + 1, col: (cards.length % 3) + 1 } as any,
+      });
+    }
+  }
+
   // Match each card in DB
   const results = [];
   for (const card of cards) {
+    // Skip empty positions
+    if (card.confidence === "empty" || !card.card_name) {
+      results.push({
+        recognized: false,
+        ai: card,
+        matches: [],
+        match_count: 0,
+        empty: true,
+      });
+      continue;
+    }
+
+    // Reject low-confidence cards without card numbers (same gating as single scan)
+    if (card.confidence === "low" && !card.card_number) {
+      results.push({
+        recognized: false,
+        ai: card,
+        matches: [],
+        match_count: 0,
+        error: "Card number not readable at this position",
+      });
+      continue;
+    }
+
     const matches = await findMatches(card, supabase);
     results.push({
-      recognized: true,
+      recognized: matches.length > 0,
       ai: card,
       matches,
       match_count: matches.length,
