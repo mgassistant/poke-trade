@@ -80,8 +80,9 @@ export async function ocrCardImage(imageDataUrl: string): Promise<OcrResult> {
   const img = await loadImage(imageDataUrl);
   const { width, height } = img;
   
-  // Crop bottom 22% for card number (where number/set info lives)
-  const bottomCanvas = cropImage(img, 0, Math.floor(height * 0.78), width, Math.floor(height * 0.22));
+  // Crop bottom-LEFT corner for card number (where number/set code lives)
+  // Card numbers are in the bottom-left ~40% width, bottom 18% height
+  const bottomCanvas = cropImage(img, 0, Math.floor(height * 0.82), Math.floor(width * 0.4), Math.floor(height * 0.18));
   const bottomDataUrl = bottomCanvas.toDataURL("image/png");
   
   // Crop top 15% for card name
@@ -100,10 +101,13 @@ export async function ocrCardImage(imageDataUrl: string): Promise<OcrResult> {
   
   // Extract card number from bottom text
   // Common patterns: "044/185", "4/102", "TG30/TG30", "SV065/SV121", "GG70/GG70", "SWSH262"
+  // Also look for set codes like "SV" or "SWSH" followed by numbers
   const numberMatch = bottomText.match(
     /\b([A-Z]{0,4}\d{1,4})\s*[\/\\]\s*([A-Z]{0,4}\d{1,4})\b/i
   ) || bottomText.match(
-    /\b(SWSH|SM|XY|BW|DP|PL)\d{2,4}\b/i  // Promo card patterns
+    /\b(SWSH|SM|XY|BW|DP|PL|SV)\d{2,4}\b/i  // Promo/special set patterns
+  ) || bottomText.match(
+    /\b(\d{1,4})[\/\\](\d{1,4})\b/  // Plain numbers without letters
   );
   
   let cardNumber: string | null = null;

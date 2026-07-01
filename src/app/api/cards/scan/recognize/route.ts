@@ -76,17 +76,38 @@ Return ONLY a JSON object with these fields:
   "condition_notes": "brief notes on visible wear, centering, whitening, etc."
 }
 
-IMPORTANT IDENTIFICATION TIPS:
-- Read the card NAME from the top of the card
-- Read the SET SYMBOL and card NUMBER from the bottom-left corner
-- The set name is usually NOT printed on the card — identify it from the set symbol icon
-- Common modern sets: Scarlet & Violet base, Paldea Evolved, Obsidian Flames, 151, Paradox Rift, Paldean Fates, Temporal Forces, Twilight Masquerade, Shrouded Fable, Stellar Crown, Surging Sparks, Prismatic Evolutions
-- Common older sets: Base Set, Jungle, Fossil, Team Rocket, Gym Heroes, Neo Genesis, Evolving Skies, Brilliant Stars, Lost Origin, Silver Tempest, Crown Zenith
-- For card_number, include leading zeros as printed (e.g. '044/185' not '44')
-- If the image is blurry, rotated, or partially obscured, do your best but use 'low' confidence
+CRITICAL IDENTIFICATION RULES:
+1. **CARD NUMBER (most important)**: Look at the BOTTOM-LEFT corner. You will see a number like "044/185" or "6/102" or "SV065/SV121". This is the card number. READ IT EXACTLY as printed, including leading zeros.
+2. **CARD NAME**: Read from the top of the card.
+3. **SET CODE**: Look at the bottom-left area near the card number. You may see a 2-4 letter code like "SV", "SWSH", "SM", "XY", "BST", "EVS", "CRZ", "PAL", "MEW", "OBF", "PAR", "PAF", "TEF", "TWM", "SFA", "SCR", "SSP", "PEV". This is the set code.
+4. **SET NAME**: Identify the set from the code OR the set symbol icon. Common sets:
+   - SV = Scarlet & Violet base
+   - PAL = Paldea Evolved  
+   - OBF = Obsidian Flames
+   - MEW = 151
+   - PAR = Paradox Rift
+   - PAF = Paldean Fates
+   - TEF = Temporal Forces
+   - TWM = Twilight Masquerade
+   - SFA = Shrouded Fable
+   - SCR = Stellar Crown
+   - SSP = Surging Sparks
+   - PEV = Prismatic Evolutions
+   - EVS = Evolving Skies
+   - BST = Brilliant Stars
+   - LOR = Lost Origin
+   - SIT = Silver Tempest
+   - CRZ = Crown Zenith
 
-If you absolutely cannot identify the card, return:
-{ "error": "Could not identify card", "confidence": "none" }`,
+**CONFIDENCE GUIDELINES:**
+- "high": Card number is clearly visible and readable in bottom-left corner
+- "medium": Card number is partially visible or image is slightly blurry
+- "low": Card number is not visible, image is very blurry, or card is obscured
+
+**IF YOU CANNOT READ THE CARD NUMBER FROM THE BOTTOM-LEFT CORNER:**
+Return: { "error": "Cannot read card number", "confidence": "none" }
+
+Do NOT guess or make up card numbers. The bottom-left corner number is the ground truth.`,
         },
         {
           role: "user",
@@ -121,8 +142,17 @@ If you absolutely cannot identify the card, return:
       }, { status: 500 });
     }
 
-    if (parsed.error) {
-      return NextResponse.json({ recognized: false, message: parsed.error });
+    if (parsed.error || parsed.confidence === "none") {
+      return NextResponse.json({ recognized: false, message: parsed.error || "Could not identify card" });
+    }
+
+    // Reject low-confidence results without a card number
+    if (parsed.confidence === "low" && !parsed.card_number) {
+      return NextResponse.json({ 
+        recognized: false, 
+        message: "Card number not visible. Please take a clearer photo with the bottom-left corner in focus.",
+        ai: parsed
+      });
     }
 
     // Step 2: Search our database for matching cards
